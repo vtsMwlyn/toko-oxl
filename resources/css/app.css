@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+th {
+    @apply text-start;
+}
+
+th, td {
+    @apply py-2 px-4;
+}
+
+td {
+    @apply border-t border-gray-300;
+}
