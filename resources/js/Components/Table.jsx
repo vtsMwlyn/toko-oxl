@@ -2,7 +2,7 @@ function EmptyTablePlaceholder({ cols, invertColor = false }){
     return (
         <tr className={invertColor ? 'bg-slate-100' : 'bg-white'}>
             <td colSpan={cols}>
-                <p className="text-center">- No Data Found -</p>
+                <p className="text-center">- Data Tidak Ditemukan -</p>
             </td>
         </tr>
     )

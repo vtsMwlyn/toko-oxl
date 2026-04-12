@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Navbar  from '@/Layouts/partials/Navbar';
 import Sidebar from '@/Layouts/partials/Sidebar';
 
-export default function AuthenticatedLayout({ children, title = 'Dashboard' }) {
+export default function AuthenticatedLayout({ children, title = 'Toko OXL' }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
@@ -21,7 +21,7 @@ export default function AuthenticatedLayout({ children, title = 'Dashboard' }) {
                     onMenuClick={() => setSidebarOpen(true)}
                 />
 
-                <main className="flex-1 overflow-y-auto px-4 pb-4 pt-1 text-sm">
+                <main className="flex-1 overflow-y-auto px-6 pb-4 pt-1 text-sm">
                     {children}
                 </main>
             </div>

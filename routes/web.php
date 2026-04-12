@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -27,6 +26,13 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/store', [ProductController::class, 'store'])->name('store');
             Route::post('/{product}/edit', [ProductController::class, 'update'])->name('update');
             Route::delete('/{product}/delete', [ProductController::class, 'destroy'])->name('destroy');
+
+            // Discount
+            Route::prefix('/discount')->name('discount.')->group(function(){
+                Route::post('/{product}/store', [ProductController::class, 'store_discount'])->name('store');
+                Route::post('/{discount}/edit', [ProductController::class, 'update_discount'])->name('update');
+                Route::delete('/{discount}/delete', [ProductController::class, 'destroy_discount'])->name('destroy');
+            });
         });
     });
 

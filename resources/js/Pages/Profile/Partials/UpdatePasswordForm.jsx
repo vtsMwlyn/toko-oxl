@@ -52,8 +52,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-600">
-                    Ensure your account is using a long, random password to stay
-                    secure.
+                    Pastikan akun Anda menggunakan kombinasi karakter, simbol, dan angka yang cukup untuk memastikan keamanan akun Anda.
                 </p>
             </header>
 
@@ -61,7 +60,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 <div>
                     <InputLabel
                         htmlFor="current_password"
-                        value="Current Password"
+                        value="Password Saat Ini"
                     />
 
                     <TextInput
@@ -83,7 +82,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="password" value="New Password" />
+                    <InputLabel htmlFor="password" value="Password Baru" />
 
                     <TextInput
                         id="password"
@@ -101,7 +100,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 <div>
                     <InputLabel
                         htmlFor="password_confirmation"
-                        value="Confirm Password"
+                        value="Konfirmasi Password Baru"
                     />
 
                     <TextInput
@@ -122,7 +121,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton disabled={processing} loading={processing}>{!processing ? 'Simpan' : 'Menyimpan...'}</PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}

@@ -1,19 +1,49 @@
-import { Link, usePage } from '@inertiajs/react';
+import { useState, useRef, useEffect } from 'react';
+import { Link, usePage, router } from '@inertiajs/react';
 import {
     LayoutDashboard,
     Landmark,
     X,
     LogOut,
+    UserPen,
+    ChevronUp,
 } from 'lucide-react';
 
 const navItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, urlPrefix: '/dashboard', href: route('dashboard') },
-    { label: 'Product', icon: Landmark, urlPrefix: '/admin/product', href: route('admin.product.index') },
+    { label: 'Dashboard', icon: LayoutDashboard, urlPrefix: '/dashboard',     href: route('dashboard') },
+    { label: 'Product',   icon: Landmark,        urlPrefix: '/admin/product', href: route('admin.product.index') },
 ];
 
 export default function Sidebar({ open, onClose }) {
     const { url, props } = usePage();
     const { auth } = props;
+
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef(null);
+
+    // Close popover on outside click
+    useEffect(() => {
+        if (!menuOpen) return;
+        function handleOutside(e) {
+            if (menuRef.current && !menuRef.current.contains(e.target)) {
+                setMenuOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleOutside);
+        return () => document.removeEventListener('mousedown', handleOutside);
+    }, [menuOpen]);
+
+    function handleLogout() {
+        router.post(route('logout'));
+    }
+
+    // Initials from user name
+    const initials = auth.user.name
+        .split(' ')
+        .map(w => w[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
 
     return (
         <>
@@ -40,7 +70,7 @@ export default function Sidebar({ open, onClose }) {
                 <div className="flex items-center gap-3 px-6 py-5">
                     <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                        <path d="M12 2C9 2 7 4 7 4S3 4 3 8c0 3 2 5 2 5H5l1 9h12l1-9h.03S20 11 20 8c0-4-4-4-4-4S15 2 12 2z" />
+                            <path d="M12 2C9 2 7 4 7 4S3 4 3 8c0 3 2 5 2 5H5l1 9h12l1-9h.03S20 11 20 8c0-4-4-4-4-4S15 2 12 2z" />
                         </svg>
                     </div>
                     <div>
@@ -81,14 +111,13 @@ export default function Sidebar({ open, onClose }) {
                                     size={18}
                                     className={`transition-colors shrink-0 ${
                                         active
-                                        ? 'text-emerald-900'
-                                        : 'text-emerald-600 group-hover:text-emerald-600'
+                                            ? 'text-emerald-900'
+                                            : 'text-emerald-600 group-hover:text-emerald-600'
                                     }`}
                                 />
 
                                 {item.label}
 
-                                {/* Active indicator dot */}
                                 {active && (
                                     <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-600" />
                                 )}
@@ -98,25 +127,56 @@ export default function Sidebar({ open, onClose }) {
                 </nav>
 
                 {/* ── User card (bottom) ── */}
-                <div className="p-3">
-                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-emerald-50 transition-colors group cursor-pointer">
+                <div className="p-3 relative" ref={menuRef}>
+
+                    {/* ── Popover menu ── */}
+                    {menuOpen && (
+                        <div className="absolute bottom-full left-3 right-3 mb-1 bg-white rounded-xl border border-emerald-100 shadow-lg shadow-emerald-100/50 overflow-hidden">
+                            <Link
+                                href={route('profile.edit')}
+                                className="flex items-center gap-3 px-4 py-3 text-sm text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                onClick={() => setMenuOpen(false)}
+                            >
+                                <UserPen size={16} className="text-emerald-500 shrink-0" />
+                                Edit Profil
+                            </Link>
+                            <div className="h-px bg-emerald-50" />
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                                <LogOut size={16} className="shrink-0" />
+                                Keluar
+                            </button>
+                        </div>
+                    )}
+
+                    {/* ── Trigger button ── */}
+                    <button
+                        onClick={() => setMenuOpen(prev => !prev)}
+                        className={`
+                            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+                            transition-colors group
+                            ${menuOpen ? 'bg-emerald-50' : 'hover:bg-emerald-50'}
+                        `}
+                    >
                         {/* Avatar */}
                         <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                            RM
+                            {initials}
                         </div>
 
                         {/* Name & role */}
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 text-left">
                             <p className="text-sm font-medium text-emerald-900 truncate">{auth.user.name}</p>
-                            <p className="text-[11px] text-emerald-600 truncate">{auth.user.role}</p>
+                            <p className="text-[11px] text-emerald-500 truncate">{auth.user.role}</p>
                         </div>
 
-                        {/* Logout icon */}
-                        <LogOut
+                        {/* Chevron */}
+                        <ChevronUp
                             size={16}
-                            className="text-emerald-600 group-hover:text-red-500 transition-colors"
+                            className={`text-emerald-400 transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`}
                         />
-                    </div>
+                    </button>
                 </div>
             </aside>
         </>
