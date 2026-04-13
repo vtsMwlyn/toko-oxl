@@ -7,11 +7,13 @@ import {
     LogOut,
     UserPen,
     ChevronUp,
+    User
 } from 'lucide-react';
 
 const navItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, urlPrefix: '/dashboard',     href: route('dashboard') },
-    { label: 'Product',   icon: Landmark,        urlPrefix: '/admin/product', href: route('admin.product.index') },
+    { label: 'Dashboard', icon: LayoutDashboard, urlPrefix: '/dashboard', href: route('dashboard') },
+    { label: 'Produk', icon: Landmark, urlPrefix: '/admin/product', href: route('admin.product.index') },
+    { label: 'Pengguna', icon: User, urlPrefix: '/admin/user', href: route('admin.user.index') },
 ];
 
 export default function Sidebar({ open, onClose }) {

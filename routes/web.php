@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -33,6 +34,13 @@ Route::middleware(['auth'])->group(function () {
                 Route::post('/{discount}/edit', [ProductController::class, 'update_discount'])->name('update');
                 Route::delete('/{discount}/delete', [ProductController::class, 'destroy_discount'])->name('destroy');
             });
+        });
+
+        Route::prefix('/user')->name('user.')->group(function(){
+            Route::get('/', [UserController::class, 'index'])   ->name('index');
+            Route::post('/', [UserController::class, 'store'])   ->name('store');
+            Route::post('/{user}', [UserController::class, 'update'])  ->name('update');
+            Route::delete('/{user}', [UserController::class, 'destroy']) ->name('destroy');
         });
     });
 
