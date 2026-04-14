@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -41,6 +42,13 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/', [UserController::class, 'store'])   ->name('store');
             Route::post('/{user}', [UserController::class, 'update'])  ->name('update');
             Route::delete('/{user}', [UserController::class, 'destroy']) ->name('destroy');
+        });
+
+        Route::prefix('/sale')->name('sale.')->group(function(){
+            Route::get('/', [SaleController::class, 'index'])   ->name('index');
+            Route::post('/', [SaleController::class, 'store'])   ->name('store');
+            Route::post('/{sale}', [SaleController::class, 'update'])  ->name('update');
+            Route::delete('/{sale}', [SaleController::class, 'destroy']) ->name('destroy');
         });
     });
 

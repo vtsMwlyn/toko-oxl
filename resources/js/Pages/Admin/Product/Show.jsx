@@ -3,6 +3,7 @@ import { Image, Plus, Pencil, Trash2 } from "lucide-react"
 import Popup from "@/Components/Popup"
 import PrimaryButton from "@/Components/PrimaryButton"
 import Table from "@/Components/Table"
+import SectionTitle from "@/Components/SectionTitle"
 
 import AddEdit from "./Discount/AddEdit"
 import Remove from "./Discount/Remove"
@@ -57,7 +58,7 @@ export default function Show({ isOpen, onClose, product }){
                 </div>
             </div>
 
-            <h1 className="font-bold text-emerald-700 mt-8 mb-2">Harga Spesial Pembelian dengan Jumlah Tertentu</h1>
+            <SectionTitle>Harga Spesial Pembelian dengan Jumlah Tertentu</SectionTitle>
 
             <Table
                 isEmpty={product.discounts.length === 0} disableHeight={true}

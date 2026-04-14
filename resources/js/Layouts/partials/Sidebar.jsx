@@ -7,12 +7,14 @@ import {
     LogOut,
     UserPen,
     ChevronUp,
-    User
+    User,
+    DollarSign
 } from 'lucide-react';
 
 const navItems = [
     { label: 'Dashboard', icon: LayoutDashboard, urlPrefix: '/dashboard', href: route('dashboard') },
     { label: 'Produk', icon: Landmark, urlPrefix: '/admin/product', href: route('admin.product.index') },
+    { label: 'Penjualan', icon: DollarSign, urlPrefix: '/admin/sale', href: route('admin.sale.index') },
     { label: 'Pengguna', icon: User, urlPrefix: '/admin/user', href: route('admin.user.index') },
 ];
 

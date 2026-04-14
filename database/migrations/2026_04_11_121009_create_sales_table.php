@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
             $table->date('date');
-            $table->unsignedBigInteger('customer_id')->nullable();
-            $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');
-            $table->string('random_customer_name')->nullable();
+            $table->time('time');
+            $table->string('customer_name')->nullable();
+            $table->enum('status', ['Draft', 'Fixed'])->default('Draft');
             $table->timestamps();
         });
     }
