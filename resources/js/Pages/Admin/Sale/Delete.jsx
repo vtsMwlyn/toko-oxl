@@ -5,6 +5,8 @@ import Popup from '@/Components/Popup';
 import PrimaryButton from '@/Components/PrimaryButton';
 import OperationSuccess from '@/Components/OperationSuccess';
 
+import formatDate from '@/Helpers/formatDate';
+
 export default function Delete({ isOpen, onClose, sale }) {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -31,7 +33,7 @@ export default function Delete({ isOpen, onClose, sale }) {
                 <form onSubmit={submit} className="w-full flex flex-col">
                     <p>
                         Apakah Anda yakin ingin <strong>menghapus</strong> penjualan
-                        tanggal <strong>{sale?.date}</strong> atas nama <strong>{sale?.customer_name || 'tanpa nama'}</strong>?
+                        tanggal <strong>{formatDate(sale?.date)}</strong> atas nama <strong>{sale?.customer_name || 'tanpa nama'}</strong>?
                         Tindakan ini tidak dapat dibatalkan.
                     </p>
                     <div className="w-full flex justify-center mt-4">

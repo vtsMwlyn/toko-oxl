@@ -10,7 +10,7 @@ function EmptyTablePlaceholder({ cols, invertColor = false }){
 
 export default function Table({ headers, isEmpty = false, invertColor = false, children, className, disableHeight = false }){
     return (
-        <div className={`w-full overflow-x-auto ${!disableHeight && 'h-[60vh]'} ${className}`}>
+        <div className={`text-sm w-full overflow-x-auto ${!disableHeight && 'h-[60vh]'} ${className}`}>
             <table className="w-full">
                 <thead>
                     <tr>

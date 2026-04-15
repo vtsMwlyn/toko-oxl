@@ -11,7 +11,7 @@ import Show from './Show';
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
 
-import { formatPrice } from '@/Helpers/formatPrice';
+import formatPrice from '@/Helpers/formatPrice';
 
 // ── Full-screen image preview overlay ─────────────────────────────────────────
 function ImagePreview({ src, onClose }) {

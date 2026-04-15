@@ -14,7 +14,7 @@ import Table from '@/Components/Table';
 import ItemAddEdit from './Item/AddEdit';
 import ItemRemove from './Item/Remove';
 
-import { formatPrice } from '@/Helpers/formatPrice';
+import formatPrice from '@/Helpers/formatPrice';
 
 function SectionTitle({ children }) {
     return <h2 className="font-bold text-emerald-700 mt-6 mb-2">{children}</h2>;
@@ -150,8 +150,8 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
                                 onChange={(e) => setData('status', e.target.value)}
                                 className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                             >
-                                <option value="draft">Draft</option>
-                                <option value="fixed">Fixed</option>
+                                <option value="Draft">Draft</option>
+                                <option value="Fixed">Fixed</option>
                             </select>
                             <InputError message={errors.status} />
                         </div>
@@ -199,7 +199,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
 
                     {/* ── Grand total ── */}
                     <div className="mt-6 flex justify-end">
-                        <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
+                        <div className="w-1/3 bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
                             <p className="text-xs text-emerald-500 mb-0.5">Total Penjualan</p>
                             <p className="text-xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
                         </div>

@@ -1,4 +1,5 @@
 import { Image, Plus, Pencil, Trash2 } from "lucide-react"
+import { useState } from "react"
 
 import Popup from "@/Components/Popup"
 import PrimaryButton from "@/Components/PrimaryButton"
@@ -7,9 +8,9 @@ import SectionTitle from "@/Components/SectionTitle"
 
 import AddEdit from "./Discount/AddEdit"
 import Remove from "./Discount/Remove"
+import BarcodeDownload from "./BarcodeDownload"
 
-import { formatPrice } from "@/Helpers/formatPrice"
-import { useState } from "react"
+import formatPrice from "@/Helpers/formatPrice"
 
 export default function Show({ isOpen, onClose, product }){
     const [isAdding, setIsAdding] = useState(false);
@@ -57,6 +58,10 @@ export default function Show({ isOpen, onClose, product }){
                     </div>
                 </div>
             </div>
+
+            <SectionTitle>Barcode</SectionTitle>
+
+            <BarcodeDownload barcode={product.barcode} />
 
             <SectionTitle>Harga Spesial Pembelian dengan Jumlah Tertentu</SectionTitle>
 

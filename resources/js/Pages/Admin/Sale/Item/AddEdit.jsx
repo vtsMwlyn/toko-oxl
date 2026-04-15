@@ -7,7 +7,7 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import Select from '@/Components/Select';
 
-import { formatPrice } from '@/Helpers/formatPrice';
+import formatPrice from '@/Helpers/formatPrice';
 
 // Find the best matching discount tier for the given qty.
 // Tiers are sorted descending so the first match is the highest qualifying tier.
