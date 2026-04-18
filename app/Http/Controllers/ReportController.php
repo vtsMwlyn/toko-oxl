@@ -1,0 +1,91 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+
+class ReportController extends Controller
+{
+    public function index(Request $request)
+    {
+        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $to   = $request->input('to',   now()->toDateString());
+
+        // ── Omzet per day in range ────────────────────────────────────────────
+        $sales = Sale::where('status', 'fixed')
+            ->whereBetween('date', [$from, $to])
+            ->with('items')
+            ->get();
+
+        // Group by date and compute net total per day
+        $omzetPerDay = $sales->groupBy('date')->map(function ($daySales, $date) {
+            $total = $daySales->sum(fn($sale) =>
+                $sale->items->reduce(fn($c, $i) =>
+                    $c + ($i->type === 'Sell' ? ($i->price - $i->discount) * $i->qty
+                                              : -(($i->price - $i->discount) * $i->qty))
+                , 0)
+            );
+            return ['date' => $date, 'total' => $total];
+        })->sortKeys()->values();
+
+        $totalOmzet   = $omzetPerDay->sum('total');
+        $totalSales   = $sales->count();
+        $averageOmzet = $totalSales > 0 ? round($totalOmzet / $totalSales) : 0;
+
+        // ── Per-product statistics in range ───────────────────────────────────
+        $itemStats = SaleItem::whereHas('sale', fn($q) =>
+                $q->where('status', 'fixed')->whereBetween('date', [$from, $to])
+            )
+            ->select(
+                'product_id',
+                'type',
+                DB::raw('SUM(qty) as total_qty'),
+                DB::raw('SUM((price - discount) * qty) as total_revenue')
+            )
+            ->groupBy('product_id', 'type')
+            ->with('product:id,name,code,variant')
+            ->get();
+
+        // Merge Sell and Return rows into one entry per product
+        $productStats = $itemStats->groupBy('product_id')->map(function ($rows) {
+            $product = $rows->first()->product;
+            $sell    = $rows->firstWhere('type', 'Sell');
+            $return  = $rows->firstWhere('type', 'Return');
+
+            $sellQty     = $sell?->total_qty     ?? 0;
+            $returnQty   = $return?->total_qty   ?? 0;
+            $sellRev     = $sell?->total_revenue  ?? 0;
+            $returnRev   = $return?->total_revenue ?? 0;
+
+            return [
+                'product_id'   => $product?->id,
+                'name'         => $product?->name  ?? '—',
+                'code'         => $product?->code  ?? '—',
+                'variant'      => $product?->variant,
+                'sell_qty'     => $sellQty,
+                'return_qty'   => $returnQty,
+                'net_qty'      => $sellQty - $returnQty,
+                'net_revenue'  => $sellRev - $returnRev,
+            ];
+        })
+        ->sortByDesc('net_revenue')
+        ->values();
+
+        return Inertia::render('Admin/Report/Index', [
+            'from'          => $from,
+            'to'            => $to,
+            'omzet_per_day' => $omzetPerDay,
+            'summary' => [
+                'total_omzet'   => $totalOmzet,
+                'total_sales'   => $totalSales,
+                'average_omzet' => $averageOmzet,
+            ],
+            'product_stats' => $productStats,
+        ]);
+    }
+}

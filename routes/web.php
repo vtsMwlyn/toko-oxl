@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -11,9 +13,7 @@ Route::get('/', function () {
     return redirect()->route('dashboard');
 })->name('home');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
     // Profile
@@ -50,6 +50,8 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{sale}', [SaleController::class, 'update'])  ->name('update');
             Route::delete('/{sale}', [SaleController::class, 'destroy']) ->name('destroy');
         });
+
+        Route::get('/report', [ReportController::class, 'index'])->name('report.index');
     });
 
 });

@@ -7,15 +7,19 @@ import {
     LogOut,
     UserPen,
     ChevronUp,
-    User,
-    DollarSign
+    ShoppingBag,
+    BarChart2,
+    Users,
+    ShoppingCart,
 } from 'lucide-react';
 
 const navItems = [
-    { label: 'Dashboard', icon: LayoutDashboard, urlPrefix: '/dashboard', href: route('dashboard') },
-    { label: 'Produk', icon: Landmark, urlPrefix: '/admin/product', href: route('admin.product.index') },
-    { label: 'Penjualan', icon: DollarSign, urlPrefix: '/admin/sale', href: route('admin.sale.index') },
-    { label: 'Pengguna', icon: User, urlPrefix: '/admin/user', href: route('admin.user.index') },
+    { label: 'Dashboard',  icon: LayoutDashboard, urlPrefix: '/dashboard',     href: route('dashboard') },
+    // { label: 'Kasir',      icon: ShoppingCart,    urlPrefix: '/cashier',       href: route('cashier.index') },
+    { label: 'Produk',     icon: Landmark,        urlPrefix: '/admin/product', href: route('admin.product.index') },
+    { label: 'Penjualan',  icon: ShoppingBag,     urlPrefix: '/admin/sale',    href: route('admin.sale.index') },
+    { label: 'Pengguna',   icon: Users,           urlPrefix: '/admin/user',    href: route('admin.user.index') },
+    { label: 'Laporan',    icon: BarChart2,        urlPrefix: '/admin/report',  href: route('admin.report.index') },
 ];
 
 export default function Sidebar({ open, onClose }) {
