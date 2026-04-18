@@ -47,8 +47,8 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
     const [price,          setPrice]          = useState(item?.price    ?? '');
     const [discount,       setDiscount]       = useState(item?.discount ?? '');
 
-    // Track whether the user manually overrode the auto price
-    const [priceTouched, setPriceTouched] = useState(!!item?.price);
+    // Start untouched so auto-price/tier logic fires immediately on open
+    const [priceTouched, setPriceTouched] = useState(false);
 
     const matched       = selectedOption?.product ?? null;
     const discountTier  = resolveDiscount(matched?.discounts, qty);

@@ -30,11 +30,13 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
-    const [soldItems, setSoldItems] = useState(
-        sale?.items?.filter(i => i.type === 'Sell') ?? []
+    const [soldItems, setSoldItems] = useState(() =>
+        (sale?.items?.filter(i => i.type === 'Sell') ?? [])
+            .map(i => ({ ...i, _localId: i._localId ?? i.id }))
     );
-    const [returnItems, setReturnItems] = useState(
-        sale?.items?.filter(i => i.type === 'Return') ?? []
+    const [returnItems, setReturnItems] = useState(() =>
+        (sale?.items?.filter(i => i.type === 'Return') ?? [])
+            .map(i => ({ ...i, _localId: i._localId ?? i.id }))
     );
 
     const [itemPopup, setItemPopup] = useState(null);
@@ -50,9 +52,12 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
     function handleItemSave(type, item) {
         const setter = type === 'Sell' ? setSoldItems : setReturnItems;
         setter(prev => {
-            if (item._localId) {
+            const exists = prev.some(i => i._localId === item._localId);
+            if (exists) {
+                // Replace the matching row in-place
                 return prev.map(i => i._localId === item._localId ? item : i);
             }
+            // Brand-new item — mint a fresh _localId
             return [...prev, { ...item, _localId: Date.now() }];
         });
     }
@@ -150,8 +155,8 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
                                 onChange={(e) => setData('status', e.target.value)}
                                 className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                             >
-                                <option value="Draft">Draft</option>
-                                <option value="Fixed">Fixed</option>
+                                <option value="draft">Draft</option>
+                                <option value="fixed">Fixed</option>
                             </select>
                             <InputError message={errors.status} />
                         </div>
@@ -199,7 +204,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
 
                     {/* ── Grand total ── */}
                     <div className="mt-6 flex justify-end">
-                        <div className="w-1/3 bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
                             <p className="text-xs text-emerald-500 mb-0.5">Total Penjualan</p>
                             <p className="text-xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
                         </div>

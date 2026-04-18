@@ -2,6 +2,7 @@ import { Eye } from 'lucide-react';
 
 import Popup from '@/Components/Popup';
 import Table from '@/Components/Table';
+import Receipt from './Receipt';
 
 import formatPrice from '@/Helpers/formatPrice';
 import formatDate from '@/Helpers/formatDate';
@@ -40,7 +41,6 @@ function ItemsTable({ items, products, emptyText }) {
                 {items.map((item, index) => {
                     const product  = products.find(p => p.id === item.product_id);
                     const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
-
                     return (
                         <tr key={index} className="hover:bg-slate-50">
                             <td>
@@ -52,7 +52,7 @@ function ItemsTable({ items, products, emptyText }) {
                             <td>{formatPrice(item.price)}</td>
                             <td>
                                 {item.discount
-                                    ? <span>{formatPrice(item.discount)}</span>
+                                    ? <span className="text-red-500">- {formatPrice(item.discount)}</span>
                                     : <span className="text-slate-300">—</span>
                                 }
                             </td>
@@ -61,17 +61,14 @@ function ItemsTable({ items, products, emptyText }) {
                         </tr>
                     );
                 })}
-
-                <tr>
-                    <td>Total</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td>
-                        <span className="font-semibold text-slate-700">{formatPrice(sellTotal)}</span>
-                    </td>
-                </tr>
             </Table>
+
+            {/* Section subtotal */}
+            <div className="flex justify-end mt-1 pr-1">
+                <p className="text-xs text-slate-500">
+                    Subtotal: <span className="font-semibold text-slate-700">{formatPrice(sellTotal)}</span>
+                </p>
+            </div>
         </div>
     );
 }
@@ -91,34 +88,21 @@ export default function Show({ isOpen, onClose, sale, products }) {
             title="Detail Penjualan"
             isOpen={isOpen}
             onClose={onClose}
-            className="max-w-6xl"
+            className="max-w-2xl"
         >
             {/* ── Sale header info ── */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-4 border-b border-slate-100">
-                <InfoRow label="Tanggal" value={formatDate(sale.date)} />
-                <InfoRow label="Waktu"   value={formatTime(sale.time)} />
+                <InfoRow label="Tanggal" value={sale.date} />
+                <InfoRow label="Waktu"   value={sale.time} />
                 <InfoRow label="Pelanggan" value={sale.customer_name} />
                 <InfoRow
                     label="Status"
                     value={
-                        <span className={`px-2 py-0.5 rounded-md text-sm font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.draft}`}>
+                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.draft}`}>
                             {sale.status}
                         </span>
                     }
                 />
-
-                <div className="grid gap-0.5">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Penjualan</span>
-                    <span className="font-bold text-green-600">{formatPrice(soldTotal) ?? <span className="text-slate-300 italic">—</span>}</span>
-                </div>
-                <div className="grid gap-0.5">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Retur</span>
-                    <span className="font-bold text-red-600">{formatPrice(returnTotal) ?? <span className="text-slate-300 italic">—</span>}</span>
-                </div>
-                <div className="grid gap-0.5">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Total</span>
-                    <span className="font-bold text-green-600">{formatPrice(grandTotal) ?? <span className="text-slate-300 italic">—</span>}</span>
-                </div>
             </div>
 
             {/* ── Sold items ── */}
@@ -136,6 +120,28 @@ export default function Show({ isOpen, onClose, sale, products }) {
                 products={products}
                 emptyText="Tidak ada produk retur."
             />
+
+            {/* ── Grand total + print ── */}
+            <div className="mt-5 pt-4 border-t border-slate-100 flex justify-between items-end">
+                <Receipt sale={sale} products={products} />
+
+                <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
+                    {returnItems.length > 0 && (
+                        <div className="flex justify-between gap-8 text-xs text-slate-500 mb-1">
+                            <span>Penjualan</span>
+                            <span>{formatPrice(soldTotal)}</span>
+                        </div>
+                    )}
+                    {returnItems.length > 0 && (
+                        <div className="flex justify-between gap-8 text-xs text-red-400 mb-2">
+                            <span>Retur</span>
+                            <span>- {formatPrice(returnTotal)}</span>
+                        </div>
+                    )}
+                    <p className="text-xs text-emerald-500 mb-0.5">Total</p>
+                    <p className="text-xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
+                </div>
+            </div>
         </Popup>
     );
 }
