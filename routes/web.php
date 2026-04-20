@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CashierController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -54,6 +55,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/report', [ReportController::class, 'index'])->name('report.index');
     });
 
+    Route::prefix('cashier')->name('cashier.')->group(function () {
+        Route::get('/',    [CashierController::class, 'index'])->name('index');
+        Route::post('/',   [CashierController::class, 'store'])->name('sale.store');
+    });
 });
 
 require __DIR__.'/auth.php';

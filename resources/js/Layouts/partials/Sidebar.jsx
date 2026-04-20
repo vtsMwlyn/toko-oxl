@@ -15,7 +15,7 @@ import {
 
 const navItems = [
     { label: 'Dashboard',  icon: LayoutDashboard, urlPrefix: '/dashboard',     href: route('dashboard') },
-    // { label: 'Kasir',      icon: ShoppingCart,    urlPrefix: '/cashier',       href: route('cashier.index') },
+    { label: 'Kasir',      icon: ShoppingCart,    urlPrefix: '/cashier',       href: route('cashier.index') },
     { label: 'Produk',     icon: Landmark,        urlPrefix: '/admin/product', href: route('admin.product.index') },
     { label: 'Penjualan',  icon: ShoppingBag,     urlPrefix: '/admin/sale',    href: route('admin.sale.index') },
     { label: 'Pengguna',   icon: Users,           urlPrefix: '/admin/user',    href: route('admin.user.index') },
