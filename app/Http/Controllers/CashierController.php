@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\BarcodeHelper;
 use App\Models\Sale;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class CashierController extends Controller
             'date'               => 'required|date',
             'time'               => 'required',
             'customer_name'      => 'nullable|string|max:255',
-            'status'             => 'required|in:draft,fixed',
+            'status'             => 'required|in:Draft,fixed',
             'items'              => 'required|array|min:1',
             'items.*.product_id' => 'required|integer|exists:products,id',
             'items.*.price'      => 'required|numeric|min:0',
@@ -48,5 +49,11 @@ class CashierController extends Controller
         }
 
         return back();
+    }
+
+    public function barcode_scanner_test(){
+        return Inertia::render('Cashier/BarcodeScannerTest', [
+            'barcode' => BarcodeHelper::generate(),
+        ]);
     }
 }

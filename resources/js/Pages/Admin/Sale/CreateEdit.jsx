@@ -46,7 +46,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
         date:          sale?.date          ?? new Date().toISOString().slice(0, 10),
         time:          sale?.time          ?? new Date().toTimeString().slice(0, 5),
         customer_name: sale?.customer_name ?? '',
-        status:        sale?.status        ?? 'draft',
+        status:        sale?.status        ?? 'Draft',
     });
 
     function handleItemSave(type, item) {
@@ -155,8 +155,8 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
                                 onChange={(e) => setData('status', e.target.value)}
                                 className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                             >
-                                <option value="draft">Draft</option>
-                                <option value="fixed">Fixed</option>
+                                <option value="Draft">Draft</option>
+                                <option value="Fixed">Fixed</option>
                             </select>
                             <InputError message={errors.status} />
                         </div>

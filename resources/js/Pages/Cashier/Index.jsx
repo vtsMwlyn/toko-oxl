@@ -33,7 +33,7 @@ function resolveAutoPrice(product, discountTier, customerName) {
 
 // ── Blank item input state ────────────────────────────────────────────────────
 function blankItem() {
-    return { selectedOption: null, qty: '', price: '', discount: '', priceTouched: false };
+    return { selectedOption: null, qty: 1, price: 0, discount: 0, priceTouched: false };
 }
 
 // ── Item input row (inline, no popup) ────────────────────────────────────────
@@ -82,7 +82,7 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
         const code = barcodeVal.trim();
         if (!code) return;
 
-        const found = products.find(p => p.code === code);
+        const found = products.find(p => p.barcode === code);
         if (!found) {
             setBarcodeErr(`Produk dengan kode "${code}" tidak ditemukan.`);
             setBarcodeVal('');
@@ -178,7 +178,7 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
             </div>
 
             {/* ── Qty · price · discount ── */}
-            <div className="grid grid-cols-3 gap-3 mb-3">
+            <div className="grid grid-cols-3 items-start gap-3 mb-3">
                 <div className="grid gap-1">
                     <InputLabel htmlFor={`${label}-qty`} value="Qty" />
                     <TextInput
@@ -187,7 +187,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
                         type="number" min="1"
                         value={field.qty}
                         className="block w-full"
-                        placeholder="0"
                         onChange={e => setField(f => ({ ...f, qty: e.target.value }))}
                         onKeyDown={handleQtyKeyDown}
                     />
@@ -201,7 +200,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
                         type="number" min="0"
                         value={field.price}
                         className="block w-full"
-                        placeholder="0"
                         onChange={e => setField(f => ({ ...f, price: e.target.value, priceTouched: true }))}
                     />
                     {priceHint && <p className="text-[10px] text-emerald-600">{priceHint}</p>}
@@ -215,7 +213,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
                         type="number" min="0"
                         value={field.discount}
                         className="block w-full"
-                        placeholder="0"
                         onChange={e => setField(f => ({ ...f, discount: e.target.value }))}
                         onKeyDown={handleDiscountKeyDown}
                     />

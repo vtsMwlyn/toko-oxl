@@ -58,6 +58,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('cashier')->name('cashier.')->group(function () {
         Route::get('/',    [CashierController::class, 'index'])->name('index');
         Route::post('/',   [CashierController::class, 'store'])->name('sale.store');
+        Route::get('/barcode-scanner-test',    [CashierController::class, 'barcode_scanner_test'])->name('barcode-scanner-test');
     });
 });
 
