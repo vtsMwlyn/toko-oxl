@@ -1,15 +1,15 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { Plus, Eye, Pencil, Trash2, X, Image } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, FileDown } from 'lucide-react';
 import { useState } from 'react';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 
-import Show from './Show';
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
+import PrintBarcodes from './PrintBarcodes';
 
 import formatPrice from '@/Helpers/formatPrice';
 
@@ -44,7 +44,7 @@ function ProductImage({ src, name, onClick }) {
     if (!src) {
         return (
             <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-300 text-[10px] font-medium select-none">
-                <Image />
+                –
             </div>
         );
     }
@@ -62,12 +62,9 @@ function ProductImage({ src, name, onClick }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Index({ products }) {
     const [isCreating, setIsCreating] = useState(false);
-    const [isShowing, setIsShowing] = useState(null);
     const [isEditing, setIsEditing] = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
-
-    const [search, setSearch] = useState('');
 
     return (
         <AuthenticatedLayout title="Daftar Produk">
@@ -79,10 +76,18 @@ export default function Index({ products }) {
             )}
 
             <div className="w-full flex justify-between items-center">
-                <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
-                    Tambah Produk
-                </PrimaryButton>
-                <TextInput onInput={(e) => setSearch(e.target.value)} placeholder="Cari produk..." />
+                <div className="flex gap-2">
+                    <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
+                        Tambah Produk
+                    </PrimaryButton>
+                    <PrintBarcodes products={products} formatPrice={formatPrice} />
+                    <a href={route('admin.product.export')}>
+                        <PrimaryButton icon={<FileDown className="size-4" />} type="button">
+                            Export Excel
+                        </PrimaryButton>
+                    </a>
+                </div>
+                <TextInput placeholder="Cari produk..." />
             </div>
 
             <Table
@@ -90,9 +95,7 @@ export default function Index({ products }) {
                 headers={['Foto', 'Kode', 'Nama', 'Varian', 'Stok', 'Harga Jual', 'Aksi']}
                 className="mt-4"
             >
-                {products.filter(
-                    p => `${p.name} ${p.variant}`.toLowerCase().includes(search.toLowerCase())
-                ).map((product, index) => (
+                {products.map((product, index) => (
                     <tr key={index} className="hover:bg-slate-200">
                         <td>
                             <ProductImage
@@ -105,34 +108,22 @@ export default function Index({ products }) {
                         <td>{product.name}</td>
                         <td>{product.variant}</td>
                         <td>{product.stock}</td>
-                        <td>
-                            <div className="w-full grid">
-                                <p>{formatPrice(product.normal_price)}</p>
-                                <p className="text-emerald-100 bg-emerald-600 font-bold text-[8pt] w-fit rounded-full px-1">{formatPrice(product.customer_price)}</p>
-                            </div>
-                        </td>
+                        <td>{formatPrice(product.price)}</td>
                         <td>
                             <div className="flex gap-2 items-center">
                                 <PrimaryButton
                                     styled={false}
                                     className="text-emerald-600"
-                                    icon={<Eye className="size-4" />}
-                                    type="button"
-                                    onClick={() => setIsShowing(product.id)}
-                                />
-                                <PrimaryButton
-                                    styled={false}
-                                    className="text-emerald-600"
                                     icon={<Pencil className="size-4" />}
                                     type="button"
-                                    onClick={() => setIsEditing(product.id)}
+                                    onClick={() => setIsEditing(product)}
                                 />
                                 <PrimaryButton
                                     styled={false}
                                     className="text-emerald-600"
                                     icon={<Trash2 className="size-4" />}
                                     type="button"
-                                    onClick={() => setIsDeleting(product.id)}
+                                    onClick={() => setIsDeleting(product)}
                                 />
                             </div>
                         </td>
@@ -141,27 +132,13 @@ export default function Index({ products }) {
             </Table>
 
             {isCreating && (
-                <CreateEdit
-                    mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)}
-                />
-            )}
-            {isShowing && (
-                <Show
-                    isOpen={!!isShowing} onClose={() => setIsShowing(false)}
-                    product={products.find(p => p.id === isShowing)}
-                />
+                <CreateEdit mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)} />
             )}
             {isEditing && (
-                <CreateEdit
-                    mode="Edit" isOpen={!!isEditing} onClose={() => setIsEditing(null)}
-                    product={products.find(p => p.id === isEditing)}
-                />
+                <CreateEdit mode="Edit" isOpen={!!isEditing} onClose={() => setIsEditing(null)} product={isEditing} />
             )}
             {isDeleting && (
-                <Delete
-                    isOpen={!!isDeleting} onClose={() => setIsDeleting(null)}
-                    product={products.find(p => p.id === isDeleting)}
-                />
+                <Delete isOpen={!!isDeleting} onClose={() => setIsDeleting(null)} product={isDeleting} />
             )}
         </AuthenticatedLayout>
     );

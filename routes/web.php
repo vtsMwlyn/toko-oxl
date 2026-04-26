@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CashierController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -22,6 +23,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // ==== ADMIN ==== //
     Route::prefix('/admin')->middleware('admin')->name('admin.')->group(function(){
         // Product
         Route::prefix('/product')->name('product.')->group(function(){
@@ -29,6 +31,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/store', [ProductController::class, 'store'])->name('store');
             Route::post('/{product}/edit', [ProductController::class, 'update'])->name('update');
             Route::delete('/{product}/delete', [ProductController::class, 'destroy'])->name('destroy');
+            Route::get('/export', [ProductController::class, 'export'])->name('export');
 
             // Discount
             Route::prefix('/discount')->name('discount.')->group(function(){
@@ -38,13 +41,16 @@ Route::middleware(['auth'])->group(function () {
             });
         });
 
-        Route::prefix('/user')->name('user.')->group(function(){
-            Route::get('/', [UserController::class, 'index'])   ->name('index');
-            Route::post('/', [UserController::class, 'store'])   ->name('store');
-            Route::post('/{user}', [UserController::class, 'update'])  ->name('update');
-            Route::delete('/{user}', [UserController::class, 'destroy']) ->name('destroy');
+        // Customer
+        Route::prefix('/customer')->name('customer.')->group(function(){
+            Route::get('', [CustomerController::class, 'index'])->name('index');
+            Route::post('', [CustomerController::class, 'store'])->name('store');
+            Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
+            Route::post('/{customer}', [CustomerController::class, 'update'])->name('update');
+            Route::delete('/{customer}',[CustomerController::class, 'destroy'])->name('destroy');
         });
 
+        // Sale
         Route::prefix('/sale')->name('sale.')->group(function(){
             Route::get('/', [SaleController::class, 'index'])   ->name('index');
             Route::post('/', [SaleController::class, 'store'])   ->name('store');
@@ -52,9 +58,19 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/{sale}', [SaleController::class, 'destroy']) ->name('destroy');
         });
 
+        // Report
         Route::get('/report', [ReportController::class, 'index'])->name('report.index');
+
+        // User
+        Route::prefix('/user')->name('user.')->group(function(){
+            Route::get('/', [UserController::class, 'index'])   ->name('index');
+            Route::post('/', [UserController::class, 'store'])   ->name('store');
+            Route::post('/{user}', [UserController::class, 'update'])  ->name('update');
+            Route::delete('/{user}', [UserController::class, 'destroy']) ->name('destroy');
+        });
     });
 
+    // ==== CASHIER ==== //
     Route::prefix('cashier')->name('cashier.')->group(function () {
         Route::get('/',    [CashierController::class, 'index'])->name('index');
         Route::post('/',   [CashierController::class, 'store'])->name('sale.store');
