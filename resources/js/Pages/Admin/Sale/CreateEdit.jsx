@@ -10,6 +10,7 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import OperationSuccess from '@/Components/OperationSuccess';
 import Table from '@/Components/Table';
+import SelectInput from '@/Components/Select';
 
 import ItemAddEdit from './Item/AddEdit';
 import ItemRemove from './Item/Remove';
@@ -26,7 +27,7 @@ function computeTotal(items) {
     }, 0);
 }
 
-export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
+export default function CreateEdit({ mode, isOpen, onClose, sale, products, customers }) {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
@@ -42,12 +43,31 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
     const [itemPopup, setItemPopup] = useState(null);
     // shape: { type: 'Sell'|'Return', mode: 'Create'|'Edit'|'Remove', item?: object }
 
+    // Build customer options for the creatable select
+    const customerOptions = (customers ?? []).map(c => ({
+        value: c.name,
+        label: c.name,
+        customer: c,
+    }));
+
+    // Resolve the initial select value when editing an existing sale
+    const initialCustomerOption = sale?.customer_name
+        ? { value: sale.customer_name, label: sale.customer_name }
+        : null;
+
+    const [customerOption, setCustomerOption] = useState(initialCustomerOption);
+
     const { data, setData, errors, setError } = useForm({
         date:          sale?.date          ?? new Date().toISOString().slice(0, 10),
         time:          sale?.time          ?? new Date().toTimeString().slice(0, 5),
         customer_name: sale?.customer_name ?? '',
-        status:        sale?.status        ?? 'Draft',
+        status:        sale?.status        ?? 'draft',
     });
+
+    function handleCustomerChange(option) {
+        setCustomerOption(option);
+        setData('customer_name', option?.value ?? '');
+    }
 
     function handleItemSave(type, item) {
         const setter = type === 'Sell' ? setSoldItems : setReturnItems;
@@ -139,11 +159,22 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products }) {
                         </div>
 
                         <div className="grid gap-1">
-                            <InputLabel htmlFor="customer_name" value="Nama Pelanggan" />
-                            <TextInput
-                                id="customer_name" value={data.customer_name}
-                                className="block w-full" placeholder="Opsional"
-                                onChange={(e) => setData('customer_name', e.target.value)}
+                            <InputLabel value="Nama Pelanggan" />
+                            <SelectInput
+                                creatable
+                                options={customerOptions}
+                                value={customerOption}
+                                onChange={handleCustomerChange}
+                                onInputChange={(val, { action }) => {
+                                    if (action === 'input-change') {
+                                        setCustomerOption({ value: val, label: val });
+                                        setData('customer_name', val);
+                                    }
+                                }}
+                                isClearable
+                                placeholder="Pilih pelanggan atau ketik nama..."
+                                formatCreateLabel={(val) => `Gunakan nama: "${val}"`}
+                                noOptionsMessage={() => 'Tidak ada pelanggan terdaftar'}
                             />
                             <InputError message={errors.customer_name} />
                         </div>

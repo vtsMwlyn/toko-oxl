@@ -60,7 +60,7 @@ export default function Popup({
                             </div>
                             <SeparatorLine className="mt-2 mb-4" />
                         </DialogTitle>
-                        <div className='max-h-[60vh] overflow-y-auto'>
+                        <div className='max-h-[60vh] overflow-y-auto px-1'>
                             {children}
                         </div>
                     </DialogPanel>

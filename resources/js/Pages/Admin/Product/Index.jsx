@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, X, FileDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, FileDown, Eye } from 'lucide-react';
 import { useState } from 'react';
 
 import Table from '@/Components/Table';
@@ -8,8 +8,9 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 
 import CreateEdit from './CreateEdit';
+import Show from './Show';
 import Delete from './Delete';
-import PrintBarcodes from './PrintBarcodes';
+import PrintAllBarcode from './PrintAllBarcode';
 
 import formatPrice from '@/Helpers/formatPrice';
 
@@ -62,6 +63,7 @@ function ProductImage({ src, name, onClick }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Index({ products }) {
     const [isCreating, setIsCreating] = useState(false);
+    const [isShowing, setIsShowing] = useState(null);
     const [isEditing, setIsEditing] = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
@@ -80,7 +82,7 @@ export default function Index({ products }) {
                     <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                         Tambah Produk
                     </PrimaryButton>
-                    <PrintBarcodes products={products} formatPrice={formatPrice} />
+                    <PrintAllBarcode products={products} formatPrice={formatPrice} />
                     <a href={route('admin.product.export')}>
                         <PrimaryButton icon={<FileDown className="size-4" />} type="button">
                             Export Excel
@@ -114,6 +116,13 @@ export default function Index({ products }) {
                                 <PrimaryButton
                                     styled={false}
                                     className="text-emerald-600"
+                                    icon={<Eye className="size-4" />}
+                                    type="button"
+                                    onClick={() => setIsShowing(product.id)}
+                                />
+                                <PrimaryButton
+                                    styled={false}
+                                    className="text-emerald-600"
                                     icon={<Pencil className="size-4" />}
                                     type="button"
                                     onClick={() => setIsEditing(product)}
@@ -133,6 +142,12 @@ export default function Index({ products }) {
 
             {isCreating && (
                 <CreateEdit mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)} />
+            )}
+            {isShowing && (
+                <Show
+                    isOpen={!!isShowing} onClose={() => setIsShowing(false)}
+                    product={products.find(p => p.id === isShowing)}
+                />
             )}
             {isEditing && (
                 <CreateEdit mode="Edit" isOpen={!!isEditing} onClose={() => setIsEditing(null)} product={isEditing} />

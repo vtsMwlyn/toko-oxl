@@ -112,13 +112,13 @@ export default function Index({ from, to, omzet_per_day, summary, product_stats 
                     label="Jumlah Transaksi"
                     value={summary.total_sales}
                     icon={BarChart2}
-                    color="blue"
+                    color="emerald"
                 />
                 <SummaryCard
                     label="Rata-rata per Transaksi"
                     value={formatPrice(summary.average_omzet)}
                     icon={TrendingUp}
-                    color="amber"
+                    color="emerald"
                 />
             </div>
 

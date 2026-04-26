@@ -10,10 +10,9 @@ export default function PrintAllBarcode({ products, formatPrice }) {
         // Build one <svg> placeholder per product — JsBarcode will fill them
         const labels = products.map((p, i) => `
             <div class="label">
-                <svg class="barcode" id="bc-${i}" data-code="${p.code}"></svg>
-                <p class="code">${p.code}</p>
+                <svg class="barcode" id="bc-${i}" data-barcode="${p.barcode}"></svg>
                 <p class="name">${p.name}${p.variant ? ` — ${p.variant}` : ''}</p>
-                <p class="price">${formatPrice(p.normal_price ?? p.price ?? 0)}</p>
+                <p class="price">${formatPrice(p.normal_price ?? 0)}</p>
             </div>
         `).join('');
 
@@ -102,11 +101,11 @@ export default function PrintAllBarcode({ products, formatPrice }) {
                     // Generate barcodes after DOM is ready
                     document.querySelectorAll('.barcode').forEach(function(svg) {
                         try {
-                            JsBarcode(svg, svg.dataset.code, {
-                                format:      'CODE128',
+                            JsBarcode(svg, svg.dataset.barcode, {
+                                format:      'EAN13',
                                 width:       1.5,
                                 height:      40,
-                                displayValue: false,
+                                displayValue: true,
                                 margin:      2,
                             });
                         } catch(e) {

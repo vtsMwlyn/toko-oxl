@@ -12,15 +12,13 @@ import CreateEdit from './CreateEdit';
 import Delete from './Delete';
 
 import formatPrice from '@/Helpers/formatPrice';
-import formatDate from '@/Helpers/formatDate';
-import formatTime from '@/Helpers/formatTime';
 
 const statusBadge = {
-    Draft: 'bg-amber-100 text-amber-700',
-    Fixed: 'bg-emerald-100 text-emerald-700',
+    draft: 'bg-amber-100 text-amber-700',
+    fixed: 'bg-emerald-100 text-emerald-700',
 };
 
-export default function Index({ sales, products }) {
+export default function Index({ sales, products, customers }) {
     const [isViewing,  setIsViewing]  = useState(null);
     const [isCreating, setIsCreating] = useState(false);
     const [isEditing,  setIsEditing]  = useState(null);
@@ -44,11 +42,11 @@ export default function Index({ sales, products }) {
             >
                 {sales.map((sale, index) => (
                     <tr key={index} className="hover:bg-slate-200">
-                        <td>{formatDate(sale.date)}</td>
-                        <td>{formatTime(sale.time)}</td>
+                        <td>{sale.date}</td>
+                        <td>{sale.time}</td>
                         <td>{sale.customer_name || <span className="text-slate-400 italic">—</span>}</td>
                         <td>
-                            <span className={`px-2 py-0.5 rounded-md text-sm font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.draft}`}>
+                            <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.draft}`}>
                                 {sale.status}
                             </span>
                         </td>
@@ -80,10 +78,10 @@ export default function Index({ sales, products }) {
                 <Show isOpen={!!isViewing} onClose={() => setIsViewing(null)} sale={isViewing} products={products} />
             )}
             {isCreating && (
-                <CreateEdit mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)} products={products} />
+                <CreateEdit mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)} products={products} customers={customers} />
             )}
             {isEditing && (
-                <CreateEdit mode="Edit" isOpen={!!isEditing} onClose={() => setIsEditing(null)} sale={isEditing} products={products} />
+                <CreateEdit mode="Edit" isOpen={!!isEditing} onClose={() => setIsEditing(null)} sale={isEditing} products={products} customers={customers} />
             )}
             {isDeleting && (
                 <Delete isOpen={!!isDeleting} onClose={() => setIsDeleting(null)} sale={isDeleting} />

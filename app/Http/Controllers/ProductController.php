@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Helpers\BarcodeHelper;
 use App\Models\Discount;
 use App\Models\Product;
-use GuzzleHttp\Handler\Proxy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductExport;
 
 class ProductController extends Controller
 {
@@ -84,6 +85,12 @@ class ProductController extends Controller
         $product->delete();
 
         return back();
+    }
+
+    public function export(){
+        $filename = 'produk_' . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(new ProductExport, $filename);
     }
 
     public function store_discount(Request $request, Product $product){

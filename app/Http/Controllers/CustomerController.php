@@ -11,8 +11,29 @@ class CustomerController extends Controller
 {
     public function index()
     {
+        $customers = Customer::orderBy('name')->get()->map(function ($customer) {
+            $sales = Sale::where('customer_name', $customer->name)
+                ->where('status', 'Fixed')
+                ->with('items')
+                ->orderByDesc('date')
+                ->orderByDesc('time')
+                ->get()
+                ->map(fn($sale) => array_merge($sale->toArray(), [
+                    'total' => $sale->items->reduce(function ($carry, $item) {
+                        $subtotal = ($item->price - ($item->discount ?? 0)) * $item->qty;
+                        return $carry + ($item->type === 'Sell' ? $subtotal : -$subtotal);
+                    }, 0),
+                ]));
+
+            return array_merge($customer->toArray(), [
+                'sales'       => $sales,
+                'total_sales' => $sales->count(),
+                'total_omzet' => $sales->sum('total'),
+            ]);
+        });
+
         return Inertia::render('Admin/Customer/Index', [
-            'customers' => Customer::orderBy('name')->get(),
+            'customers' => $customers,
         ]);
     }
 

@@ -1,13 +1,13 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Phone, MapPin, FileText, ShoppingBag, TrendingUp } from 'lucide-react';
+import { Phone, MapPin, FileText, ShoppingBag } from 'lucide-react';
 
+import Popup from '@/Components/Popup';
 import Table from '@/Components/Table';
+import SectionTitle from '@/Components/SectionTitle';
 import formatPrice from '@/Helpers/formatPrice';
 
 const statusBadge = {
-    draft: 'bg-amber-100 text-amber-700',
-    fixed: 'bg-emerald-100 text-emerald-700',
+    Draft: 'bg-amber-100 text-amber-700',
+    Fixed: 'bg-emerald-100 text-emerald-700',
 };
 
 function InfoItem({ icon: Icon, label, value }) {
@@ -34,84 +34,60 @@ function StatCard({ label, value }) {
     );
 }
 
-export default function Show({ customer, sales, total_omzet, total_sales }) {
+export default function Show({ isOpen, onClose, customer, sales, totalOmzet, totalSales }) {
+    if (!customer) return null;
+
     return (
-        <AuthenticatedLayout title="Detail Pelanggan">
-            <Head title={customer.name} />
+        <Popup title="Detail Pelanggan" isOpen={isOpen} onClose={onClose} className="max-w-2xl">
 
-            {/* ── Back link ── */}
-            <Link
-                href={route('admin.customer.index')}
-                className="inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:underline mb-4"
-            >
-                <ArrowLeft size={15} /> Kembali ke daftar pelanggan
-            </Link>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-                {/* ── Customer info card ── */}
-                <div className="bg-white rounded-2xl border border-emerald-100 p-6 flex flex-col gap-4">
-                    {/* Avatar + name */}
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xl font-bold shrink-0">
-                            {customer.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()}
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-bold text-emerald-900">{customer.name}</h2>
-                            <p className="text-xs text-emerald-500">Pelanggan Tetap</p>
-                        </div>
-                    </div>
-
-                    <div className="h-px bg-emerald-50" />
-
-                    {/* Info items */}
-                    <div className="flex flex-col gap-3">
-                        <InfoItem icon={Phone}    label="No. Telepon" value={customer.phone} />
-                        <InfoItem icon={MapPin}    label="Alamat"      value={customer.address} />
-                        <InfoItem icon={FileText}  label="Catatan"     value={customer.notes} />
-                    </div>
-
-                    {/* Stats */}
-                    <div className="h-px bg-emerald-50" />
-                    <div className="grid grid-cols-2 gap-3">
-                        <StatCard label="Total Transaksi" value={total_sales} />
-                        <StatCard label="Total Belanja"   value={formatPrice(total_omzet)} />
-                    </div>
+            {/* ── Customer info ── */}
+            <div className="flex items-center gap-4 mb-4">
+                <div className="w-14 h-14 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xl font-bold shrink-0">
+                    {customer.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
-
-                {/* ── Purchase history ── */}
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-emerald-100 p-6">
-                    <h3 className="text-sm font-bold text-emerald-900 mb-4 flex items-center gap-2">
-                        <ShoppingBag size={16} className="text-emerald-500" />
-                        Riwayat Pembelian
-                    </h3>
-
-                    <Table
-                        isEmpty={sales.length === 0}
-                        headers={['Tanggal', 'Waktu', 'Status', 'Total']}
-                        disableHeight={true}
-                    >
-                        {sales.map((sale, index) => (
-                            <tr key={index} className="hover:bg-slate-50">
-                                <td>{sale.date}</td>
-                                <td>{sale.time}</td>
-                                <td>
-                                    <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.draft}`}>
-                                        {sale.status}
-                                    </span>
-                                </td>
-                                <td className="font-semibold text-emerald-700">{formatPrice(sale.total)}</td>
-                            </tr>
-                        ))}
-                    </Table>
-
-                    {sales.length === 0 && (
-                        <p className="text-sm text-slate-400 italic text-center py-6">
-                            Belum ada riwayat pembelian untuk pelanggan ini.
-                        </p>
-                    )}
+                <div>
+                    <h2 className="text-lg font-bold text-emerald-900">{customer.name}</h2>
+                    <p className="text-xs text-emerald-500">Pelanggan Tetap</p>
                 </div>
             </div>
-        </AuthenticatedLayout>
+
+            <div className="flex flex-col gap-3 mb-4">
+                <InfoItem icon={Phone}   label="No. Telepon" value={customer.phone} />
+                <InfoItem icon={MapPin}  label="Alamat"      value={customer.address} />
+                <InfoItem icon={FileText} label="Catatan"    value={customer.notes} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-2">
+                <StatCard label="Total Transaksi" value={totalSales} />
+                <StatCard label="Total Belanja"   value={formatPrice(totalOmzet)} />
+            </div>
+
+            {/* ── Purchase history ── */}
+            <SectionTitle>
+                <span className="flex items-center gap-2">
+                    <ShoppingBag size={15} className="text-emerald-500" />
+                    Riwayat Pembelian
+                </span>
+            </SectionTitle>
+
+            <Table
+                isEmpty={sales.length === 0}
+                headers={['Tanggal', 'Waktu', 'Status', 'Total']}
+                disableHeight={true}
+            >
+                {sales.map((sale, index) => (
+                    <tr key={index} className="hover:bg-slate-50">
+                        <td>{sale.date}</td>
+                        <td>{sale.time}</td>
+                        <td>
+                            <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${statusBadge[sale.status] ?? statusBadge.Fixed}`}>
+                                {sale.status}
+                            </span>
+                        </td>
+                        <td className="font-semibold text-emerald-700">{formatPrice(sale.total)}</td>
+                    </tr>
+                ))}
+            </Table>
+        </Popup>
     );
 }

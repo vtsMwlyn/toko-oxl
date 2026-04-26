@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Sale;
 use App\Models\Product;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -19,7 +20,8 @@ class SaleController extends Controller
                         return $carry + ($item->type === 'Sell' ? $subtotal : -$subtotal);
                     }, 0),
                 ])),
-            'products' => Product::with(['discounts'])->orderBy('name', 'asc')->get(),
+            'products'  => Product::with('discounts')->orderBy('name')->get(),
+            'customers' => Customer::orderBy('name')->get(['id', 'name', 'phone']),
         ]);
     }
 

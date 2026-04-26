@@ -71,7 +71,7 @@ export default function CreateEdit({ mode, isOpen, onClose, customer }) {
 
                     {/* ── Phone ── */}
                     <div className="w-full grid mb-4 gap-1">
-                        <InputLabel htmlFor="phone" value="No. Telepon" />
+                        <InputLabel htmlFor="phone" value="No. Telepon" required={false} />
                         <TextInput
                             id="phone"
                             value={data.phone}
@@ -84,7 +84,7 @@ export default function CreateEdit({ mode, isOpen, onClose, customer }) {
 
                     {/* ── Address ── */}
                     <div className="w-full grid mb-4 gap-1">
-                        <InputLabel htmlFor="address" value="Alamat" />
+                        <InputLabel htmlFor="address" value="Alamat" required={false} />
                         <TextInput
                             id="address"
                             value={data.address}
@@ -97,7 +97,7 @@ export default function CreateEdit({ mode, isOpen, onClose, customer }) {
 
                     {/* ── Notes ── */}
                     <div className="w-full grid mb-4 gap-1">
-                        <InputLabel htmlFor="notes" value="Catatan" />
+                        <InputLabel htmlFor="notes" value="Catatan" required={false} />
                         <textarea
                             id="notes"
                             value={data.notes}

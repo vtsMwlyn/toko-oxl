@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
 import { useState } from 'react';
 
@@ -7,10 +7,12 @@ import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 
+import Show from './Show';
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
 
 export default function Index({ customers }) {
+    const [isViewing,  setIsViewing]  = useState(null);
     const [isCreating, setIsCreating] = useState(false);
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
@@ -49,14 +51,13 @@ export default function Index({ customers }) {
                         <td className="max-w-xs truncate">{customer.notes || <span className="text-slate-400">—</span>}</td>
                         <td>
                             <div className="flex gap-2 items-center">
-                                <Link href={route('admin.customer.show', { customer: customer.id })}>
-                                    <PrimaryButton
-                                        styled={false}
-                                        className="text-emerald-600"
-                                        icon={<Eye className="size-4" />}
-                                        type="button"
-                                    />
-                                </Link>
+                                <PrimaryButton
+                                    styled={false}
+                                    className="text-emerald-600"
+                                    icon={<Eye className="size-4" />}
+                                    type="button"
+                                    onClick={() => setIsViewing(customer)}
+                                />
                                 <PrimaryButton
                                     styled={false}
                                     className="text-emerald-600"
@@ -77,6 +78,16 @@ export default function Index({ customers }) {
                 ))}
             </Table>
 
+            {isViewing && (
+                <Show
+                    isOpen={!!isViewing}
+                    onClose={() => setIsViewing(null)}
+                    customer={isViewing}
+                    sales={isViewing.sales ?? []}
+                    totalOmzet={isViewing.total_omzet ?? 0}
+                    totalSales={isViewing.total_sales ?? 0}
+                />
+            )}
             {isCreating && (
                 <CreateEdit mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)} />
             )}
