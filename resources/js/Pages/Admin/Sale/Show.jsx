@@ -2,7 +2,7 @@ import { Eye } from 'lucide-react';
 
 import Popup from '@/Components/Popup';
 import Table from '@/Components/Table';
-import Receipt from './Receipt';
+import Receipt from '../../PrintReceipt';
 
 import formatPrice from '@/Helpers/formatPrice';
 import formatDate from '@/Helpers/formatDate';

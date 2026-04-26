@@ -42,7 +42,7 @@ function ReceiptContent({ sale, products }) {
     };
 
     return (
-        <div style={{ ...base, width: '72mm', padding: '4mm 0', margin: '0 auto' }}>
+        <div style={{ ...base, width: '100%', marginLeft: '-15px', marginTop: '-20px' }}>
 
             {/* ── Store header ── */}
             <div style={{ textAlign: 'center', marginBottom: '6px' }}>
@@ -134,20 +134,24 @@ function ReceiptContent({ sale, products }) {
             <p style={{ textAlign: 'center', fontSize: '10px' }}>
                 Barang yang sudah dibeli tidak dapat dikembalikan.
             </p>
+
+            <p style={{ textAlign: 'center', fontSize: '10px' }}>
+                --oOOo--
+            </p>
         </div>
     );
 }
 
 // ── Public component ──────────────────────────────────────────────────────────
 
-export default function Receipt({ sale, products }) {
+export default function PrintReceipt({ sale, products }) {
     const printRef = useRef(null);
 
     function handlePrint() {
         const content = printRef.current?.innerHTML;
         if (!content) return;
 
-        const win = window.open('', '_blank', 'width=400,height=600');
+        const win = window.open('', '_blank', 'width=900,height=700');
         win.document.write(`
             <!DOCTYPE html>
             <html>
@@ -157,12 +161,12 @@ export default function Receipt({ sale, products }) {
                 <style>
                     @page {
                         size: 80mm auto;
-                        margin: 4mm 4mm;
+                        margin: 0;
                     }
                     * { box-sizing: border-box; }
                     body {
                         margin: 0;
-                        padding: 0;
+                        padding: 4mm;
                         font-family: 'Courier New', Courier, monospace;
                         font-size: 11px;
                         color: #000;

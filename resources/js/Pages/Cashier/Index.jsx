@@ -11,7 +11,7 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import Select from '@/Components/Select';
 import Table from '@/Components/Table';
-import Receipt from '@/Pages/Admin/Sale/Receipt';
+import Receipt from '@/Pages/PrintReceipt';
 
 import formatPrice from '@/Helpers/formatPrice';
 

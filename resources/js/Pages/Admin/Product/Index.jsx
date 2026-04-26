@@ -110,7 +110,7 @@ export default function Index({ products }) {
                         <td>{product.name}</td>
                         <td>{product.variant}</td>
                         <td>{product.stock}</td>
-                        <td>{formatPrice(product.price)}</td>
+                        <td>{formatPrice(product.normal_price)}</td>
                         <td>
                             <div className="flex gap-2 items-center">
                                 <PrimaryButton
