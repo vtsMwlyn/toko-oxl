@@ -9,8 +9,8 @@ import formatDate from '@/Helpers/formatDate';
 import formatTime from '@/Helpers/formatTime';
 
 const statusBadge = {
-    draft: 'bg-amber-100 text-amber-700',
-    fixed: 'bg-emerald-100 text-emerald-700',
+    Draft: 'bg-amber-100 text-amber-700',
+    Fixed: 'bg-emerald-100 text-emerald-700',
 };
 
 function InfoRow({ label, value }) {
@@ -92,8 +92,8 @@ export default function Show({ isOpen, onClose, sale, products }) {
         >
             {/* ── Sale header info ── */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-4 border-b border-slate-100">
-                <InfoRow label="Tanggal" value={sale.date} />
-                <InfoRow label="Waktu"   value={sale.time} />
+                <InfoRow label="Tanggal" value={formatDate(sale.date)} />
+                <InfoRow label="Waktu"   value={formatTime(sale.time)} />
                 <InfoRow label="Pelanggan" value={sale.customer_name} />
                 <InfoRow
                     label="Status"

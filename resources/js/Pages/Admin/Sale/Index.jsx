@@ -12,10 +12,12 @@ import CreateEdit from './CreateEdit';
 import Delete from './Delete';
 
 import formatPrice from '@/Helpers/formatPrice';
+import formatDate from '@/Helpers/formatDate';
+import formatTime from '@/Helpers/formatTime';
 
 const statusBadge = {
-    draft: 'bg-amber-100 text-amber-700',
-    fixed: 'bg-emerald-100 text-emerald-700',
+    Draft: 'bg-amber-100 text-amber-700',
+    Fixed: 'bg-emerald-100 text-emerald-700',
 };
 
 export default function Index({ sales, products, customers }) {
@@ -42,8 +44,8 @@ export default function Index({ sales, products, customers }) {
             >
                 {sales.map((sale, index) => (
                     <tr key={index} className="hover:bg-slate-200">
-                        <td>{sale.date}</td>
-                        <td>{sale.time}</td>
+                        <td>{formatDate(sale.date)}</td>
+                        <td>{formatTime(sale.time)}</td>
                         <td>{sale.customer_name || <span className="text-slate-400 italic">—</span>}</td>
                         <td>
                             <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.draft}`}>
