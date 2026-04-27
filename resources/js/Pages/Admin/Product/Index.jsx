@@ -82,7 +82,7 @@ export default function Index({ products }) {
                     <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                         Tambah Produk
                     </PrimaryButton>
-                    <PrintAllBarcode products={products} formatPrice={formatPrice} />
+                    {/* <PrintAllBarcode products={products} formatPrice={formatPrice} /> */}
                     <a href={route('admin.product.export')}>
                         <PrimaryButton icon={<FileDown className="size-4" />} type="button">
                             Export Excel

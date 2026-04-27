@@ -8,7 +8,7 @@ import SectionTitle from "@/Components/SectionTitle"
 
 import AddEdit from "./Discount/AddEdit"
 import Remove from "./Discount/Remove"
-import BarcodeDownload from "./BarcodeDownload"
+import BarcodeAction from "./BarcodeAction"
 
 import formatPrice from "@/Helpers/formatPrice"
 
@@ -61,7 +61,7 @@ export default function Show({ isOpen, onClose, product }){
 
             <SectionTitle>Barcode</SectionTitle>
 
-            <BarcodeDownload barcode={product.barcode} />
+            <BarcodeAction product={product} />
 
             <SectionTitle>Harga Spesial Pembelian dengan Jumlah Tertentu</SectionTitle>
 
