@@ -2,7 +2,7 @@
 
 namespace App\Helpers;
 
-use App\Models\Product;
+use App\Models\Variant;
 
 class BarcodeHelper
 {
@@ -17,7 +17,7 @@ class BarcodeHelper
 
             $barcode = $base . $checksum;
 
-        } while (Product::where('barcode', $barcode)->exists());
+        } while (Variant::where('barcode', $barcode)->exists());
 
         return $barcode;
     }

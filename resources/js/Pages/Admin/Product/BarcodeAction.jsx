@@ -2,28 +2,28 @@ import { useEffect, useRef, useState } from "react";
 import JsBarcode from "jsbarcode";
 import PrimaryButton from "@/Components/PrimaryButton";
 import Popup from "@/Components/Popup";
+import TextInput from "@/Components/TextInput";
 import { Download, Printer } from "lucide-react";
 import formatPrice from "@/Helpers/formatPrice";
 
-export default function BarcodeDownload({ product }) {
+export default function BarcodeDownload({ variant }) {
     const svgRef = useRef(null);
-    const [code, setCode] = useState(product.barcode);
+    const [code, setCode] = useState(variant.barcode);
 
-    // State untuk mengontrol visibilitas Modal Print Settings
     const [showPrintModal, setShowPrintModal] = useState(false);
 
-    // State untuk menyimpan input user
     const [printSettings, setPrintSettings] = useState({
         qty: 1,
         widthCm: 4,
-        heightCm: 1.5
+        heightCm: 1.5,
+        gapMm: 4,
     });
 
     useEffect(() => {
         JsBarcode(svgRef.current, code, {
             format: "EAN13",
             width: 2,
-            height: 100,
+            height: 60,
             displayValue: true,
         });
     }, [code]);
@@ -65,20 +65,22 @@ export default function BarcodeDownload({ product }) {
         const qty = parseInt(printSettings.qty, 10);
         const widthCm = parseFloat(printSettings.widthCm);
         const heightCm = parseFloat(printSettings.heightCm);
+        const gapMm = parseFloat(printSettings.gapMm);
 
         if (isNaN(qty) || qty <= 0) return alert("Jumlah copy tidak valid.");
         if (isNaN(widthCm) || widthCm <= 0) return alert("Ukuran lebar tidak valid.");
         if (isNaN(heightCm) || heightCm <= 0) return alert("Ukuran tinggi tidak valid.");
+        if (isNaN(gapMm) || gapMm < 0) return alert("Ukuran gap tidak valid.");
 
         setShowPrintModal(false);
 
-        const products = Array(qty).fill(product);
+        const variants = Array(qty).fill(variant);
 
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
 
-        const labels = products.map((p, i) => `
+        const labels = variants.map((p, i) => `
             <div class="label">
                 <svg class="barcode" id="bc-${i}" data-barcode="${p.barcode}"></svg>
                 <p class="name">${p.name}${p.variant ? ` — ${p.variant}` : ''}</p>
@@ -98,7 +100,7 @@ export default function BarcodeDownload({ product }) {
                     * { box-sizing: border-box; margin: 0; padding: 0; }
                     body { font-family: Arial, sans-serif; background: #fff; }
 
-                    .grid { display: flex; flex-wrap: wrap; gap: 4mm; }
+                    .grid { display: flex; flex-wrap: wrap; gap: ${gapMm}mm; }
                     .label {
                         border: 1px solid #ccc;
                         border-radius: 4px;
@@ -159,7 +161,7 @@ export default function BarcodeDownload({ product }) {
 
     return (
         <div>
-            <svg className="w-48" ref={svgRef}></svg>
+            <svg className="w-40" ref={svgRef}></svg>
 
             <div className="flex items-center gap-3 mt-2">
                 <PrimaryButton icon={<Download className="size-4" />} type="button" onClick={downloadPNG}>
@@ -171,7 +173,6 @@ export default function BarcodeDownload({ product }) {
                 </PrimaryButton>
             </div>
 
-            {/* Menggunakan komponen Popup dari sistem Anda */}
             <Popup
                 title="Pengaturan Cetak"
                 isOpen={showPrintModal}
@@ -181,42 +182,53 @@ export default function BarcodeDownload({ product }) {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Jumlah Copy</label>
-                        <input
+                        <TextInput
                             type="number"
                             name="qty"
                             value={printSettings.qty}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            className=" w-full"
                             min="1"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Lebar (cm)</label>
-                            <input
+                            <TextInput
                                 type="number"
                                 name="widthCm"
                                 value={printSettings.widthCm}
                                 onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                className=" w-full"
                                 step="0.1"
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Tinggi (cm)</label>
-                            <input
+                            <TextInput
                                 type="number"
                                 name="heightCm"
                                 value={printSettings.heightCm}
                                 onChange={handleInputChange}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                className=" w-full"
                                 step="0.1"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Gap (mm)</label>
+                            <TextInput
+                                type="number"
+                                name="gapMm"
+                                value={printSettings.gapMm}
+                                onChange={handleInputChange}
+                                className=" w-full"
+                                step="0.5"
+                                min="0"
                             />
                         </div>
                     </div>
                 </div>
 
-                {/* Footer Buttons diletakkan di bawah form */}
                 <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
                     <button
                         type="button"

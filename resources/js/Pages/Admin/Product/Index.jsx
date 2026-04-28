@@ -40,26 +40,6 @@ function ImagePreview({ src, onClose }) {
     );
 }
 
-// ── Product image thumbnail ───────────────────────────────────────────────────
-function ProductImage({ src, name, onClick }) {
-    if (!src) {
-        return (
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-300 text-[10px] font-medium select-none">
-                –
-            </div>
-        );
-    }
-
-    return (
-        <img
-            src={src}
-            alt={name}
-            onClick={onClick}
-            className="w-10 h-10 rounded-lg object-cover border border-emerald-100 cursor-zoom-in hover:opacity-80 hover:scale-105 transition-all duration-150"
-        />
-    );
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Index({ products }) {
     const [isCreating, setIsCreating] = useState(false);
@@ -94,50 +74,47 @@ export default function Index({ products }) {
 
             <Table
                 isEmpty={products.length === 0}
-                headers={['Foto', 'Kode', 'Nama', 'Varian', 'Stok', 'Harga Jual', 'Aksi']}
+                headers={['Nama', 'Total Varian', 'Total Stok', 'Harga Jual', 'Harga Langganan', 'Aksi']}
                 className="mt-4"
             >
-                {products.map((product, index) => (
-                    <tr key={index} className="hover:bg-slate-200">
-                        <td>
-                            <ProductImage
-                                src={product.image_url}
-                                name={product.name}
-                                onClick={() => product.image_url && setPreviewImage(product.image_url)}
-                            />
-                        </td>
-                        <td>{product.code}</td>
-                        <td>{product.name}</td>
-                        <td>{product.variant}</td>
-                        <td>{product.stock}</td>
-                        <td>{formatPrice(product.normal_price)}</td>
-                        <td>
-                            <div className="flex gap-2 items-center">
-                                <PrimaryButton
-                                    styled={false}
-                                    className="text-emerald-600"
-                                    icon={<Eye className="size-4" />}
-                                    type="button"
-                                    onClick={() => setIsShowing(product.id)}
-                                />
-                                <PrimaryButton
-                                    styled={false}
-                                    className="text-emerald-600"
-                                    icon={<Pencil className="size-4" />}
-                                    type="button"
-                                    onClick={() => setIsEditing(product)}
-                                />
-                                <PrimaryButton
-                                    styled={false}
-                                    className="text-emerald-600"
-                                    icon={<Trash2 className="size-4" />}
-                                    type="button"
-                                    onClick={() => setIsDeleting(product)}
-                                />
-                            </div>
-                        </td>
-                    </tr>
-                ))}
+                {products.map((product, index) => {
+                    let totalStock = 0;
+                    product.variants.forEach(v => totalStock += v.stock);
+                    return (
+                        <tr key={index} className="hover:bg-slate-200">
+                            <td>{product.name}</td>
+                            <td>{product.variants.length}</td>
+                            <td>{totalStock}</td>
+                            <td>{formatPrice(product.normal_price)}</td>
+                            <td>{formatPrice(product.customer_price)}</td>
+                            <td>
+                                <div className="flex gap-2 items-center">
+                                    <PrimaryButton
+                                        styled={false}
+                                        className="text-emerald-600"
+                                        icon={<Eye className="size-4" />}
+                                        type="button"
+                                        onClick={() => setIsShowing(product.id)}
+                                    />
+                                    <PrimaryButton
+                                        styled={false}
+                                        className="text-emerald-600"
+                                        icon={<Pencil className="size-4" />}
+                                        type="button"
+                                        onClick={() => setIsEditing(product)}
+                                    />
+                                    <PrimaryButton
+                                        styled={false}
+                                        className="text-emerald-600"
+                                        icon={<Trash2 className="size-4" />}
+                                        type="button"
+                                        onClick={() => setIsDeleting(product)}
+                                    />
+                                </div>
+                            </td>
+                        </tr>
+                    )
+                })}
             </Table>
 
             {isCreating && (

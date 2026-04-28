@@ -1,7 +1,5 @@
-import { router } from "@inertiajs/react"
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { useForm } from "@inertiajs/react"
-import { ImagePlus } from "lucide-react"
 
 import Popup from "@/Components/Popup"
 import InputLabel from "@/Components/InputLabel"
@@ -11,46 +9,16 @@ import PrimaryButton from "@/Components/PrimaryButton"
 import OperationSuccess from "@/Components/OperationSuccess"
 
 export default function CreateEdit({ mode, isOpen, onClose, product }) {
-    const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [preview, setPreview] = useState(product?.image_url || null);
-    const fileInputRef = useRef(null);
 
-    const { data, setData, errors, setError } = useForm({
+    const { data, setData, post, processing, errors, setError } = useForm({
         name: product?.name || '',
-        variant: product?.variant || '',
-        code: product?.code || '',
         normal_price: product?.normal_price || '',
         customer_price: product?.customer_price || '',
-        stock: product?.stock || '',
-        image: null,
     });
-
-    function handleImageChange(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        setData('image', file);
-        setPreview(URL.createObjectURL(file));
-    }
-
-    function clearImage() {
-        setData('image', null);
-        setPreview(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    }
 
     const submit = (e) => {
         e.preventDefault();
-        setLoading(true);
-
-        const payload = new FormData();
-        payload.append('name', data.name);
-        payload.append('variant', data.variant);
-        payload.append('code', data.code);
-        payload.append('normal_price', data.normal_price);
-        payload.append('customer_price', data.customer_price);
-        payload.append('stock', data.stock);
-        if (data.image) payload.append('image', data.image);
 
         const afterSubmission = {
             onSuccess: () => {
@@ -65,15 +33,12 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
                     setError(key, message);
                 });
             },
-            onFinish: () => setLoading(false),
-            // Required so Laravel receives multipart/form-data correctly
-            forceFormData: true,
         };
 
         if (mode === 'Create') {
-            router.post(route('admin.product.store'), payload, afterSubmission);
+            post(route('admin.product.store'), afterSubmission);
         } else {
-            router.post(route('admin.product.update', { product: product?.id }), payload, afterSubmission);
+            post(route('admin.product.update', { product: product?.id }), afterSubmission);
         }
     };
 
@@ -88,58 +53,6 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
                 <OperationSuccess type={mode} message={mode === 'Create' ? 'Berhasil menambahkan produk baru ke sistem.' : 'Berhasil memperbaharui data produk!'} />
             ) : (
                 <form onSubmit={submit} className="w-full flex flex-col">
-
-                    {/* ── Image upload ── */}
-                    <div className="w-full grid mb-4 gap-1">
-                        <InputLabel value="Foto Produk" />
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleImageChange}
-                        />
-
-                        {preview ? (
-                            <div className="relative w-full h-48 rounded-xl overflow-hidden border border-emerald-100 group">
-                                <img
-                                    src={preview}
-                                    alt="Preview"
-                                    className="w-full h-full object-cover"
-                                />
-                                {/* Overlay on hover */}
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="px-3 py-1.5 rounded-lg bg-white text-emerald-700 text-xs font-semibold hover:bg-emerald-50 transition-colors"
-                                    >
-                                        Ganti Foto
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={clearImage}
-                                        className="px-3 py-1.5 rounded-lg bg-white text-red-500 text-xs font-semibold hover:bg-red-50 transition-colors"
-                                    >
-                                        Hapus
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="w-full h-36 rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-400 transition-colors flex flex-col items-center justify-center gap-2 text-emerald-500"
-                            >
-                                <ImagePlus size={28} />
-                                <span className="text-xs font-medium">Klik untuk unggah foto</span>
-                                <span className="text-[11px] text-emerald-400">PNG, JPG, WEBP hingga 2MB</span>
-                            </button>
-                        )}
-
-                        <InputError message={errors.image} className="mt-1" />
-                    </div>
-
                     {/* ── Name ── */}
                     <div className="w-full grid mb-4 gap-1">
                         <InputLabel htmlFor="name" value="Nama" />
@@ -151,32 +64,6 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
                             onChange={(e) => setData('name', e.target.value)}
                         />
                         <InputError message={errors.name} className="mt-2" />
-                    </div>
-
-                    {/* ── Variant ── */}
-                    <div className="w-full grid mb-4 gap-1">
-                        <InputLabel htmlFor="variant" value="Varian" />
-                        <TextInput
-                            id="variant"
-                            name="variant"
-                            value={data.variant}
-                            className="mt-1 block w-full"
-                            onChange={(e) => setData('variant', e.target.value)}
-                        />
-                        <InputError message={errors.variant} className="mt-2" />
-                    </div>
-
-                    {/* ── Code ── */}
-                    <div className="w-full grid mb-4 gap-1">
-                        <InputLabel htmlFor="code" value="Kode" />
-                        <TextInput
-                            id="code"
-                            name="code"
-                            value={data.code}
-                            className="mt-1 block w-full"
-                            onChange={(e) => setData('code', e.target.value)}
-                        />
-                        <InputError message={errors.code} className="mt-2" />
                     </div>
 
                     <div className="w-full grid grid-cols-2 mb-4 gap-4">
@@ -207,29 +94,16 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
                         </div>
                     </div>
 
-                    {/* ── Stock ── */}
-                    <div className="w-full grid mb-4 gap-1">
-                        <InputLabel htmlFor="stock" value="Stok" />
-                        <TextInput
-                            id="stock"
-                            name="stock"
-                            value={data.stock}
-                            className="mt-1 block w-full"
-                            onChange={(e) => setData('stock', e.target.value)}
-                        />
-                        <InputError message={errors.stock} className="mt-2" />
-                    </div>
-
                     <div className="w-full flex justify-center mt-4">
                         <PrimaryButton
                             type="submit"
-                            disabled={loading}
-                            loading={loading}
+                            disabled={processing}
+                            loading={processing}
                             className="w-40"
                         >
                             {mode === 'Create'
-                                ? (!loading ? 'Tambah' : 'Menambahkan...')
-                                : (!loading ? 'Simpan' : 'Menyimpan...')
+                                ? (!processing ? 'Tambah' : 'Menambahkan...')
+                                : (!processing ? 'Simpan' : 'Menyimpan...')
                             }
                         </PrimaryButton>
                     </div>

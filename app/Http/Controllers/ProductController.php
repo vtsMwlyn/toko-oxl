@@ -17,7 +17,7 @@ class ProductController extends Controller
     {
         return Inertia::render('Admin/Product/Index', [
             // Append a public URL so the frontend can display the image
-            'products' => Product::with(['discounts'])->orderBy('name', 'asc')->get()->map(function ($product) {
+            'products' => Product::with(['variants', 'discounts'])->orderBy('name', 'asc')->get()->map(function ($product) {
                 $product->image_url = $product->image
                     ? Storage::url($product->image)
                     : null;
