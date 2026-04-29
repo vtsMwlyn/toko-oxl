@@ -10,7 +10,6 @@ import TextInput from '@/Components/TextInput';
 import CreateEdit from './CreateEdit';
 import Show from './Show';
 import Delete from './Delete';
-import PrintAllBarcode from './PrintAllBarcode';
 
 import formatPrice from '@/Helpers/formatPrice';
 
@@ -62,7 +61,6 @@ export default function Index({ products }) {
                     <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                         Tambah Produk
                     </PrimaryButton>
-                    {/* <PrintAllBarcode products={products} formatPrice={formatPrice} /> */}
                     <a href={route('admin.product.export')}>
                         <PrimaryButton icon={<FileDown className="size-4" />} type="button">
                             Export Excel

@@ -2,25 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProductExport;
 use App\Helpers\BarcodeHelper;
 use App\Models\Discount;
 use App\Models\Product;
+use App\Models\Variant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ProductExport;
 
 class ProductController extends Controller
 {
     public function index()
     {
         return Inertia::render('Admin/Product/Index', [
-            // Append a public URL so the frontend can display the image
             'products' => Product::with(['variants', 'discounts'])->orderBy('name', 'asc')->get()->map(function ($product) {
-                $product->image_url = $product->image
-                    ? Storage::url($product->image)
-                    : null;
+                $product->variants->each(function ($variant) {
+                    $variant->image_url = $variant->image
+                        ? Storage::url($variant->image)
+                        : null;
+                });
                 return $product;
             }),
         ]);
@@ -30,20 +32,9 @@ class ProductController extends Controller
     {
         $validatedData = $request->validate([
             'name'    => 'required',
-            'variant' => 'required',
-            'code'    => 'nullable|string',
             'normal_price'   => 'required|numeric|min:0',
             'customer_price'   => 'required|numeric|min:0',
-            'stock'   => 'required|numeric|min:0',
-            'image'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
-
-        if ($request->hasFile('image')) {
-            // Stores to storage/app/public/products/ and symlinked via php artisan storage:link
-            $validatedData['image'] = $request->file('image')->store('products', 'public');
-        }
-
-        $validatedData['barcode'] = BarcodeHelper::generate();
 
         Product::create($validatedData);
 
@@ -54,21 +45,9 @@ class ProductController extends Controller
     {
         $validatedData = $request->validate([
             'name'    => 'required',
-            'variant' => 'required',
-            'code'    => 'nullable|string',
             'normal_price'   => 'required|numeric|min:0',
             'customer_price'   => 'required|numeric|min:0',
-            'stock'   => 'required|numeric|min:0',
-            'image'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
-
-        if ($request->hasFile('image')) {
-            // Delete old image if it exists
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
-            }
-            $validatedData['image'] = $request->file('image')->store('products', 'public');
-        }
 
         $product->update($validatedData);
 
@@ -78,8 +57,10 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         // Clean up stored image when product is deleted
-        if ($product->image) {
-            Storage::disk('public')->delete($product->image);
+        foreach($product->variants as $variant){
+            if ($variant->image) {
+                Storage::disk('public')->delete($variant->image);
+            }
         }
 
         $product->delete();
@@ -93,6 +74,66 @@ class ProductController extends Controller
         return Excel::download(new ProductExport, $filename);
     }
 
+
+    // Variant
+    public function store_variant(Request $request, Product $product)
+    {
+        $validatedData = $request->validate([
+            'name'    => 'required',
+            'code'    => 'nullable|string',
+            'stock'   => 'required|numeric|min:0',
+            'image'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        if ($request->hasFile('image')) {
+            // Stores to storage/app/public/products/ and symlinked via php artisan storage:link
+            $validatedData['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        $validatedData['barcode'] = BarcodeHelper::generate();
+        $validatedData['product_id'] = $product->id;
+
+        Variant::create($validatedData);
+
+        return back();
+    }
+
+    public function update_variant(Request $request, Variant $variant)
+    {
+        $validatedData = $request->validate([
+            'name'    => 'required',
+            'code'    => 'nullable|string',
+            'stock'   => 'required|numeric|min:0',
+            'image'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        if ($request->hasFile('image')) {
+            // Delete old image if it exists
+            if ($variant->image) {
+                Storage::disk('public')->delete($variant->image);
+            }
+            $validatedData['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        $variant->update($validatedData);
+
+        return back();
+    }
+
+    public function destroy_variant(Variant $variant)
+    {
+        // Clean up stored image when product is deleted
+        if ($variant->image) {
+            Storage::disk('public')->delete($variant->image);
+        }
+
+        $variant->delete();
+
+        return back();
+    }
+
+
+    // Special Price (Discount)
     public function store_discount(Request $request, Product $product){
         $validatedData = $request->validate([
             'min_qty' => 'required|numeric|min:0',

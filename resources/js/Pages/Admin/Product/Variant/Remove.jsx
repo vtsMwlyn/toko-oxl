@@ -5,7 +5,7 @@ import Popup from "@/Components/Popup"
 import PrimaryButton from "@/Components/PrimaryButton"
 import OperationSuccess from "@/Components/OperationSuccess"
 
-export default function Del({ isOpen, onClose, product }){
+export default function Remove({ isOpen, onClose, product, variant }){
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
@@ -13,7 +13,7 @@ export default function Del({ isOpen, onClose, product }){
         e.preventDefault();
         setLoading(true);
 
-        router.delete(route('admin.product.destroy', { product: product.id }), {
+        router.delete(route('admin.product.variant.destroy', { variant: variant.id }), {
             preserveState: true,
             onSuccess: () => {
                 setSuccess(true);
@@ -27,12 +27,12 @@ export default function Del({ isOpen, onClose, product }){
     };
 
     return (
-        <Popup title="Hapus Data Produk" isOpen={isOpen} onClose={onClose} className="max-w-lg">
+        <Popup title="Hapus Varian Produk" isOpen={isOpen} onClose={onClose} className="max-w-lg">
             {success ? (
                 <OperationSuccess type="Delete" message="Data produk telah dihapus dari sistem." />
             ) : (
                 <form onSubmit={submit} className="w-full flex flex-col">
-                    <p>Apakah Anda yakin ingin <strong>menghapus</strong> produk {product?.name} {product?.variant}?</p>
+                    <p>Apakah Anda yakin ingin <strong>menghapus</strong> varian {variant?.name} dari produk {product?.name}?</p>
 
                     <div className="w-full flex justify-center mt-4">
                         <PrimaryButton type="submit" disabled={loading} loading={loading} className="w-40">{!loading ? 'Konfirmasi' : 'Menghapus...'}</PrimaryButton>

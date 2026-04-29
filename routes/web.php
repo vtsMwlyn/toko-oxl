@@ -33,6 +33,13 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/{product}/delete', [ProductController::class, 'destroy'])->name('destroy');
             Route::get('/export', [ProductController::class, 'export'])->name('export');
 
+            // Variant
+            Route::prefix('/variant')->name('variant.')->group(function(){
+                Route::post('/{product}/store', [ProductController::class, 'store_variant'])->name('store');
+                Route::post('/{variant}/edit', [ProductController::class, 'update_variant'])->name('update');
+                Route::delete('/{variant}/delete', [ProductController::class, 'destroy_variant'])->name('destroy');
+            });
+
             // Discount
             Route::prefix('/discount')->name('discount.')->group(function(){
                 Route::post('/{product}/store', [ProductController::class, 'store_discount'])->name('store');

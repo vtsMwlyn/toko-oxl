@@ -10,19 +10,16 @@ import InputError from "@/Components/InputError"
 import PrimaryButton from "@/Components/PrimaryButton"
 import OperationSuccess from "@/Components/OperationSuccess"
 
-export default function CreateEdit({ mode, isOpen, onClose, product }) {
+export default function AddEdit({ mode, isOpen, onClose, product, variant }) {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [preview, setPreview] = useState(product?.image_url || null);
+    const [preview, setPreview] = useState(variant?.image_url || null);
     const fileInputRef = useRef(null);
 
     const { data, setData, errors, setError } = useForm({
-        name: product?.name || '',
-        variant: product?.variant || '',
-        code: product?.code || '',
-        normal_price: product?.normal_price || '',
-        customer_price: product?.customer_price || '',
-        stock: product?.stock || '',
+        name: variant?.name || '',
+        code: variant?.code || '',
+        stock: variant?.stock || '',
         image: null,
     });
 
@@ -45,10 +42,7 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
 
         const payload = new FormData();
         payload.append('name', data.name);
-        payload.append('variant', data.variant);
         payload.append('code', data.code);
-        payload.append('normal_price', data.normal_price);
-        payload.append('customer_price', data.customer_price);
         payload.append('stock', data.stock);
         if (data.image) payload.append('image', data.image);
 
@@ -71,9 +65,9 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
         };
 
         if (mode === 'Create') {
-            router.post(route('admin.product.store'), payload, afterSubmission);
+            router.post(route('admin.product.variant.store', { product: product?.id }), payload, afterSubmission);
         } else {
-            router.post(route('admin.product.update', { product: product?.id }), payload, afterSubmission);
+            router.post(route('admin.product.variant.update', { variant: variant?.id }), payload, afterSubmission);
         }
     };
 
@@ -153,19 +147,6 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
                         <InputError message={errors.name} className="mt-2" />
                     </div>
 
-                    {/* ── Variant ── */}
-                    <div className="w-full grid mb-4 gap-1">
-                        <InputLabel htmlFor="variant" value="Varian" />
-                        <TextInput
-                            id="variant"
-                            name="variant"
-                            value={data.variant}
-                            className="mt-1 block w-full"
-                            onChange={(e) => setData('variant', e.target.value)}
-                        />
-                        <InputError message={errors.variant} className="mt-2" />
-                    </div>
-
                     {/* ── Code ── */}
                     <div className="w-full grid mb-4 gap-1">
                         <InputLabel htmlFor="code" value="Kode" />
@@ -177,34 +158,6 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
                             onChange={(e) => setData('code', e.target.value)}
                         />
                         <InputError message={errors.code} className="mt-2" />
-                    </div>
-
-                    <div className="w-full grid grid-cols-2 mb-4 gap-4">
-                        {/* ── Normal Price ── */}
-                        <div className="w-full grid gap-1">
-                            <InputLabel htmlFor="normal_price" value="Harga Normal" />
-                            <TextInput
-                                id="normal_price"
-                                name="normal_price"
-                                value={data.normal_price}
-                                className="mt-1 block w-full"
-                                onChange={(e) => setData('normal_price', e.target.value)}
-                            />
-                            <InputError message={errors.normal_price} className="mt-2" />
-                        </div>
-
-                        {/* ── Customer Price ── */}
-                        <div className="w-full grid gap-1">
-                            <InputLabel htmlFor="customer_price" value="Harga Khusus Langganan" />
-                            <TextInput
-                                id="customer_price"
-                                name="customer_price"
-                                value={data.customer_price}
-                                className="mt-1 block w-full"
-                                onChange={(e) => setData('customer_price', e.target.value)}
-                            />
-                            <InputError message={errors.customer_price} className="mt-2" />
-                        </div>
                     </div>
 
                     {/* ── Stock ── */}
