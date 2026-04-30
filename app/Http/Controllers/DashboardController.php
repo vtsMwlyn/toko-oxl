@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $totalProducts = Product::count();
         $totalUsers    = User::count();
 
-        $salesToday = Sale::where('status', 'fixed')
+        $salesToday = Sale::where('status', 'Fixed')
             ->whereDate('date', $today)
             ->with('items')
             ->get();
@@ -32,7 +32,7 @@ class DashboardController extends Controller
             , 0)
         );
 
-        $omzetThisMonth = Sale::where('status', 'fixed')
+        $omzetThisMonth = Sale::where('status', 'Fixed')
             ->where('date', '>=', $thisMonth)
             ->with('items')
             ->get()
@@ -46,7 +46,7 @@ class DashboardController extends Controller
         // ── Last 7 days omzet (for sparkline/bar chart) ───────────────────────
         $last7Days = collect(range(6, 0))->map(fn($d) => today()->subDays($d)->toDateString());
 
-        $salesLast7 = Sale::where('status', 'fixed')
+        $salesLast7 = Sale::where('status', 'Fixed')
             ->whereBetween('date', [$last7Days->first(), $last7Days->last()])
             ->with('items')
             ->get()
@@ -64,7 +64,7 @@ class DashboardController extends Controller
         ])->values();
 
         // ── Recent fixed sales ────────────────────────────────────────────────
-        $recentSales = Sale::where('status', 'fixed')
+        $recentSales = Sale::where('status', 'Fixed')
             ->orderByDesc('date')->orderByDesc('time')
             ->limit(5)
             ->with('items')

@@ -55,7 +55,7 @@ class CustomerController extends Controller
     {
         // Load sales where customer_name matches this customer's name
         $sales = Sale::where('customer_name', $customer->name)
-            ->where('status', 'fixed')
+            ->where('status', 'Fixed')
             ->with('items')
             ->orderByDesc('date')
             ->orderByDesc('time')

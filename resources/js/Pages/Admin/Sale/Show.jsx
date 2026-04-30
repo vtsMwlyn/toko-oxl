@@ -29,7 +29,7 @@ function ItemsTable({ items, products, emptyText }) {
         );
     }
 
-    const sellTotal   = items.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
+    const sellTotal = items.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
 
     return (
         <div>
@@ -39,14 +39,15 @@ function ItemsTable({ items, products, emptyText }) {
                 disableHeight={true}
             >
                 {items.map((item, index) => {
-                    const product  = products.find(p => p.id === item.product_id);
+                    const variant  = products.flatMap(p => p.variants).find(v => v.id === item.variant_id);
+                    const product  = products.find(p => p.id === variant?.product_id);
                     const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
                     return (
                         <tr key={index} className="hover:bg-slate-50">
                             <td>
                                 <div>
                                     <p className="font-medium text-slate-700">{product?.name ?? '—'}</p>
-                                    <p className="text-xs text-slate-400">{product?.code}{product?.variant ? ` · ${product.variant}` : ''}</p>
+                                    <p className="text-xs text-slate-400">{variant?.code}{variant?.name ? ` · ${variant.name}` : ''}</p>
                                 </div>
                             </td>
                             <td>{formatPrice(item.price)}</td>
@@ -63,7 +64,6 @@ function ItemsTable({ items, products, emptyText }) {
                 })}
             </Table>
 
-            {/* Section subtotal */}
             <div className="flex justify-end mt-1 pr-1">
                 <p className="text-xs text-slate-500">
                     Subtotal: <span className="font-semibold text-slate-700">{formatPrice(sellTotal)}</span>

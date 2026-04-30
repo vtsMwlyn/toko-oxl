@@ -15,28 +15,25 @@ import Receipt from '@/Pages/PrintReceipt';
 
 import formatPrice from '@/Helpers/formatPrice';
 
-// ── Discount / price resolution helpers ──────────────────────────────────────
 function resolveDiscount(discounts, qty) {
     if (!discounts?.length || !qty) return null;
     const sorted = [...discounts].sort((a, b) => b.min_qty - a.min_qty);
     return sorted.find(d => Number(qty) >= d.min_qty) ?? null;
 }
 
-function resolveAutoPrice(product, discountTier, customerName) {
-    if (!product) return '';
+function resolveAutoPrice(variant, discountTier, customerName) {
+    if (!variant) return '';
     const isCustomer = !!customerName?.trim();
     if (discountTier) {
         return isCustomer ? discountTier.customer_price : discountTier.normal_price;
     }
-    return isCustomer ? product.customer_price : product.normal_price;
+    return isCustomer ? variant.product.customer_price : variant.product.normal_price;
 }
 
-// ── Blank item input state ────────────────────────────────────────────────────
 function blankItem() {
     return { selectedOption: null, qty: 1, price: 0, discount: 0, priceTouched: false };
 }
 
-// ── Item input row (inline, no popup) ────────────────────────────────────────
 function ItemInputRow({ label, products, customerName, onAdd }) {
     const [field,      setField]      = useState(blankItem());
     const [errors,     setErrors]     = useState({});
@@ -46,16 +43,18 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
     const qtyRef     = useRef(null);
     const barcodeRef = useRef(null);
 
-    const productOptions = products.map(p => ({
-        value:   p.id,
-        label:   `${p.code} — ${p.name}${p.variant ? ` (${p.variant})` : ''}`,
-        product: p,
-    }));
+    // Flatten products -> variants, embedding parent product on each variant
+    const variantOptions = products.flatMap(product =>
+        product.variants.map(variant => ({
+            value:   variant.id,
+            label:   `${variant.code} — ${product.name}${variant.name ? ` (${variant.name})` : ''}`,
+            variant: { ...variant, product },
+        }))
+    );
 
-    const matched      = field.selectedOption?.product ?? null;
-    const discountTier = resolveDiscount(matched?.discounts, field.qty);
+    const matched      = field.selectedOption?.variant ?? null;
+    const discountTier = resolveDiscount(matched?.product?.discounts, field.qty);
 
-    // Auto-set price when product, qty, or customerName changes
     useEffect(() => {
         if (field.priceTouched) return;
         const auto = resolveAutoPrice(matched, discountTier, customerName);
@@ -71,10 +70,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
         return isCustomer ? 'Harga langganan' : 'Harga normal';
     })();
 
-    // ── Barcode scan handler ──────────────────────────────────────────────────
-    // Barcode readers act like a keyboard: type code + send Enter.
-    // On Enter we look up the product, populate the select, clear the barcode
-    // field, and move focus to qty so the cashier stays on keyboard flow.
     function handleBarcodeKeyDown(e) {
         if (e.key !== 'Enter') return;
         e.preventDefault();
@@ -82,46 +77,43 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
         const code = barcodeVal.trim();
         if (!code) return;
 
-        const found = products.find(p => p.barcode === code);
-        if (!found) {
+        // Search barcode across all variants
+        const foundOption = variantOptions.find(o => o.variant.barcode === code);
+        if (!foundOption) {
             setBarcodeErr(`Produk dengan kode "${code}" tidak ditemukan.`);
             setBarcodeVal('');
             return;
         }
 
-        const option = productOptions.find(o => o.value === found.id);
-        setField(f => ({ ...f, selectedOption: option, priceTouched: false }));
+        setField(f => ({ ...f, selectedOption: foundOption, priceTouched: false }));
         setBarcodeVal('');
         setBarcodeErr('');
         setTimeout(() => qtyRef.current?.focus(), 0);
     }
 
-    // Enter on qty moves focus to price field
     function handleQtyKeyDown(e) {
         if (e.key !== 'Enter') return;
         e.preventDefault();
         document.getElementById(`${label}-price`)?.focus();
     }
 
-    // Enter on discount triggers add (completes the row without clicking)
     function handleDiscountKeyDown(e) {
         if (e.key !== 'Enter') return;
         e.preventDefault();
         handleAdd();
     }
 
-    // ── Add item ──────────────────────────────────────────────────────────────
     function handleAdd() {
         const newErrors = {};
-        if (!matched)                             newErrors.product = 'Pilih produk.';
-        if (!field.qty || Number(field.qty) <= 0) newErrors.qty     = 'Qty > 0.';
-        if (field.price === '' || Number(field.price) < 0) newErrors.price = 'Harga tidak valid.';
+        if (!matched)                                      newErrors.product = 'Pilih produk.';
+        if (!field.qty || Number(field.qty) <= 0)          newErrors.qty     = 'Qty > 0.';
+        if (field.price === '' || Number(field.price) < 0) newErrors.price   = 'Harga tidak valid.';
         setErrors(newErrors);
         if (Object.keys(newErrors).length) return;
 
         onAdd({
             _localId:   Date.now(),
-            product_id: matched.id,
+            variant_id: matched.id,
             price:      Number(field.price),
             discount:   Number(field.discount) || 0,
             qty:        Number(field.qty),
@@ -129,7 +121,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
 
         setField(blankItem());
         setErrors({});
-        // Return focus to barcode field for the next scan
         setTimeout(() => barcodeRef.current?.focus(), 0);
     }
 
@@ -164,11 +155,11 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
                 {barcodeErr && <p className="text-xs text-red-500 mt-0.5">{barcodeErr}</p>}
             </div>
 
-            {/* ── Product select (manual fallback) ── */}
+            {/* ── Variant select (manual fallback) ── */}
             <div className="grid gap-1 mb-3">
                 <InputLabel value="Atau pilih manual" />
                 <Select
-                    options={productOptions}
+                    options={variantOptions}
                     value={field.selectedOption}
                     onChange={opt => setField(f => ({ ...f, selectedOption: opt, priceTouched: false }))}
                     placeholder="Cari kode atau nama produk..."
@@ -235,7 +226,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
     );
 }
 
-// ── Item list table ───────────────────────────────────────────────────────────
 function ItemTable({ items, products, onRemove }) {
     if (items.length === 0) return null;
 
@@ -246,13 +236,14 @@ function ItemTable({ items, products, onRemove }) {
             disableHeight={true}
         >
             {items.map((item, index) => {
-                const product  = products.find(p => p.id === item.product_id);
+                const variant  = products.flatMap(p => p.variants).find(v => v.id === item.variant_id);
+                const product  = products.find(p => p.id === variant?.product_id);
                 const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
                 return (
                     <tr key={item._localId ?? index} className="hover:bg-slate-50">
                         <td>
                             <p className="font-medium">{product?.name ?? '—'}</p>
-                            <p className="text-xs text-slate-400">{product?.code}{product?.variant ? ` · ${product.variant}` : ''}</p>
+                            <p className="text-xs text-slate-400">{variant?.code}{variant?.name ? ` · ${variant.name}` : ''}</p>
                         </td>
                         <td>{formatPrice(item.price)}</td>
                         <td>{item.discount ? formatPrice(item.discount) : <span className="text-slate-300">—</span>}</td>
@@ -274,7 +265,6 @@ function ItemTable({ items, products, onRemove }) {
     );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
 export default function Index({ products }) {
     const [loading,     setLoading]     = useState(false);
     const [success,     setSuccess]     = useState(false);
@@ -286,7 +276,7 @@ export default function Index({ products }) {
         date:          new Date().toISOString().slice(0, 10),
         time:          new Date().toTimeString().slice(0, 5),
         customer_name: '',
-        status:        'fixed',
+        status:        'Fixed',
     });
 
     function addItem(type, item) {
@@ -341,7 +331,6 @@ export default function Index({ products }) {
     const returnTotal = returnItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
     const grandTotal  = soldTotal - returnTotal;
 
-    // ── Success screen ────────────────────────────────────────────────────────
     if (success && savedSale) {
         return (
             <AuthenticatedLayout title="Kasir">
@@ -368,7 +357,6 @@ export default function Index({ products }) {
         );
     }
 
-    // ── Main form ─────────────────────────────────────────────────────────────
     return (
         <AuthenticatedLayout title="Kasir">
             <Head title="Kasir" />
@@ -413,21 +401,15 @@ export default function Index({ products }) {
                 {/* ── Sold items ── */}
                 <div className="bg-white rounded-2xl border border-emerald-100 p-5">
                     <h2 className="text-sm font-bold text-emerald-900 mb-4">Produk Terjual</h2>
-
                     <ItemInputRow
                         label="Tambah produk terjual"
                         products={products}
                         customerName={data.customer_name}
                         onAdd={item => addItem('Sell', item)}
                     />
-
                     {soldItems.length > 0 && (
                         <div className="mt-4">
-                            <ItemTable
-                                items={soldItems}
-                                products={products}
-                                onRemove={localId => removeItem('Sell', localId)}
-                            />
+                            <ItemTable items={soldItems} products={products} onRemove={localId => removeItem('Sell', localId)} />
                             <div className="flex justify-end mt-2">
                                 <p className="text-sm text-slate-500">
                                     Subtotal: <span className="font-semibold text-slate-700">{formatPrice(soldTotal)}</span>
@@ -440,21 +422,15 @@ export default function Index({ products }) {
                 {/* ── Return items ── */}
                 <div className="bg-white rounded-2xl border border-emerald-100 p-5">
                     <h2 className="text-sm font-bold text-emerald-900 mb-4">Produk Retur</h2>
-
                     <ItemInputRow
                         label="Tambah produk retur"
                         products={products}
                         customerName={data.customer_name}
                         onAdd={item => addItem('Return', item)}
                     />
-
                     {returnItems.length > 0 && (
                         <div className="mt-4">
-                            <ItemTable
-                                items={returnItems}
-                                products={products}
-                                onRemove={localId => removeItem('Return', localId)}
-                            />
+                            <ItemTable items={returnItems} products={products} onRemove={localId => removeItem('Return', localId)} />
                             <div className="flex justify-end mt-2">
                                 <p className="text-sm text-slate-500">
                                     Subtotal Retur: <span className="font-semibold text-slate-700">{formatPrice(returnTotal)}</span>
@@ -466,7 +442,6 @@ export default function Index({ products }) {
 
                 {/* ── Total + actions ── */}
                 <div className="bg-white rounded-2xl border border-emerald-100 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    {/* Total breakdown */}
                     <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-3">
                         {returnItems.length > 0 && (
                             <>
@@ -482,9 +457,7 @@ export default function Index({ products }) {
                         <p className="text-2xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
                     </div>
 
-                    {/* Action buttons */}
                     <div className="flex gap-3">
-                        {/* Preview receipt before saving — pass a "draft" sale object */}
                         <Receipt
                             sale={{
                                 ...data,
@@ -495,7 +468,6 @@ export default function Index({ products }) {
                             }}
                             products={products}
                         />
-
                         <PrimaryButton
                             type="submit"
                             disabled={loading || soldItems.length === 0}

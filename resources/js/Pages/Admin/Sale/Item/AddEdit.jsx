@@ -9,37 +9,36 @@ import Select from '@/Components/Select';
 
 import formatPrice from '@/Helpers/formatPrice';
 
-// Find the best matching discount tier for the given qty.
-// Tiers are sorted descending so the first match is the highest qualifying tier.
 function resolveDiscount(discounts, qty) {
     if (!discounts?.length || !qty) return null;
     const sorted = [...discounts].sort((a, b) => b.min_qty - a.min_qty);
     return sorted.find(d => Number(qty) >= d.min_qty) ?? null;
 }
 
-// Resolve the auto price from product base price or a matched discount tier.
-function resolvePrice(product, discountTier, customerName) {
+function resolvePrice(variant, discountTier, customerName) {
     if (discountTier) {
         return customerName?.trim()
             ? discountTier.customer_price
             : discountTier.normal_price;
     }
     return customerName?.trim()
-        ? product.customer_price
-        : product.normal_price;
+        ? variant.product.customer_price
+        : variant.product.normal_price;
 }
 
 export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, products, customerName }) {
     const [errors, setErrors] = useState({});
 
-    const productOptions = products.map(p => ({
-        value: p.id,
-        label: `${p.code} — ${p.name}${p.variant ? ` (${p.variant})` : ''}`,
-        product: p,
-    }));
+    const variantOptions = products.flatMap(product =>
+        product.variants.map(variant => ({
+            value: variant.id,
+            label: `${variant.code} — ${product.name}${variant.name ? ` (${variant.name})` : ''}`,
+            variant: { ...variant, product },
+        }))
+    );
 
     const initialOption = item
-        ? (productOptions.find(o => o.value === item.product_id) ?? null)
+        ? (variantOptions.find(o => o.value === item.variant_id) ?? null)
         : null;
 
     const [selectedOption, setSelectedOption] = useState(initialOption);
@@ -47,13 +46,11 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
     const [price,          setPrice]          = useState(item?.price    ?? '');
     const [discount,       setDiscount]       = useState(item?.discount ?? '');
 
-    // Start untouched so auto-price/tier logic fires immediately on open
     const [priceTouched, setPriceTouched] = useState(false);
 
-    const matched       = selectedOption?.product ?? null;
-    const discountTier  = resolveDiscount(matched?.discounts, qty);
+    const matched      = selectedOption?.variant ?? null;
+    const discountTier = resolveDiscount(matched?.product?.discounts, qty);
 
-    // ── Auto-set price when product, qty, or customerName changes ─────────────
     useEffect(() => {
         if (!matched) {
             if (!priceTouched) setPrice('');
@@ -64,16 +61,14 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
         }
     }, [matched, qty, customerName]);
 
-    function handleProductChange(option) {
+    function handleVariantChange(option) {
         setSelectedOption(option);
         setPriceTouched(false);
-        if (errors.product) setErrors(prev => ({ ...prev, product: null }));
+        if (errors.variant) setErrors(prev => ({ ...prev, variant: null }));
     }
 
     function handleQtyChange(e) {
         setQty(e.target.value);
-        // If price wasn't manually touched, let the effect re-apply the tier price
-        // (effect already depends on qty so no extra work needed here)
     }
 
     function handlePriceChange(e) {
@@ -83,7 +78,7 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
 
     function validate() {
         const newErrors = {};
-        if (!matched)                    newErrors.product  = 'Pilih produk terlebih dahulu.';
+        if (!matched)                    newErrors.variant  = 'Pilih produk terlebih dahulu.';
         if (!qty || Number(qty) <= 0)    newErrors.qty      = 'Qty harus lebih dari 0.';
         if (!price || Number(price) < 0) newErrors.price    = 'Harga tidak valid.';
         if (discount !== '' && Number(discount) < 0) newErrors.discount = 'Diskon tidak boleh negatif.';
@@ -97,7 +92,7 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
 
         onSave({
             ...(item?._localId ? { _localId: item._localId } : {}),
-            product_id: matched.id,
+            variant_id: matched.id,
             price:      Number(price),
             discount:   Number(discount) || 0,
             qty:        Number(qty),
@@ -109,7 +104,6 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
     const qtyNum      = Number(qty)      || 0;
     const subtotal    = (priceNum - discountNum) * qtyNum;
 
-    // Label shown below the price field explaining the source
     const priceHint = (() => {
         if (!matched || priceTouched) return null;
         const isCustomer = !!customerName?.trim();
@@ -132,20 +126,20 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
         >
             <form onSubmit={handleSave} className="flex flex-col gap-4">
 
-                {/* ── Product searchable select ── */}
+                {/* ── Variant searchable select ── */}
                 <div className="grid gap-1">
                     <InputLabel value="Produk" />
                     <Select
-                        options={productOptions}
+                        options={variantOptions}
                         value={selectedOption}
-                        onChange={handleProductChange}
+                        onChange={handleVariantChange}
                         placeholder="Cari kode atau nama produk..."
                         isClearable={true}
                     />
-                    <InputError message={errors.product} />
+                    <InputError message={errors.variant} />
                 </div>
 
-                {/* ── Qty — placed before price so discount tier resolves first ── */}
+                {/* ── Qty ── */}
                 <div className="grid gap-1">
                     <InputLabel htmlFor="item-qty" value="Qty" />
                     <TextInput

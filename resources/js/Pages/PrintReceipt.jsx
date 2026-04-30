@@ -58,7 +58,7 @@ function ReceiptContent({ sale, products }) {
             {sale.customer_name && (
                 <ReceiptRow label="Pelanggan" value={sale.customer_name} />
             )}
-            <ReceiptRow label="Status" value={sale.status === 'fixed' ? 'Lunas' : 'Draft'} />
+            <ReceiptRow label="Status" value={sale.status === 'Fixed' ? 'Lunas' : 'Draft'} />
 
             {/* ── Sold items ── */}
             {soldItems.length > 0 && (

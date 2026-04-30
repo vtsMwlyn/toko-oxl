@@ -17,7 +17,7 @@ class ReportController extends Controller
         $to   = $request->input('to',   now()->toDateString());
 
         // ── Omzet per day in range ────────────────────────────────────────────
-        $sales = Sale::where('status', 'fixed')
+        $sales = Sale::where('status', 'Fixed')
             ->whereBetween('date', [$from, $to])
             ->with('items')
             ->get();
@@ -39,7 +39,7 @@ class ReportController extends Controller
 
         // ── Per-product statistics in range ───────────────────────────────────
         $itemStats = SaleItem::whereHas('sale', fn($q) =>
-                $q->where('status', 'fixed')->whereBetween('date', [$from, $to])
+                $q->where('status', 'Fixed')->whereBetween('date', [$from, $to])
             )
             ->select(
                 'product_id',

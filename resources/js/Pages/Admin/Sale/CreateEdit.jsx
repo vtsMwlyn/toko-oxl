@@ -61,7 +61,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         date:          sale?.date          ?? new Date().toISOString().slice(0, 10),
         time:          sale?.time          ?? new Date().toTimeString().slice(0, 5),
         customer_name: sale?.customer_name ?? '',
-        status:        sale?.status        ?? 'draft',
+        status:        sale?.status        ?? 'Draft',
     });
 
     function handleCustomerChange(option) {
@@ -159,7 +159,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                         </div>
 
                         <div className="grid gap-1">
-                            <InputLabel value="Nama Pelanggan" />
+                            <InputLabel value="Nama Pelanggan" required={false}/>
                             <SelectInput
                                 creatable
                                 options={customerOptions}
@@ -293,12 +293,13 @@ function ItemsTable({ items, onEdit, onRemove, products }) {
             disableHeight={true}
         >
             {items.map((item, index) => {
-                const product  = products.find(p => p.id === item.product_id);
+                const variant  = products.flatMap(p => p.variants).find(v => v.id === item.variant_id);
+                const product  = products.find(p => p.id === variant?.product_id);
                 const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
                 return (
                     <tr key={item._localId ?? index} className="hover:bg-slate-100">
-                        <td>{product?.code ?? '—'}</td>
-                        <td>{product?.name ?? '—'}</td>
+                        <td>{variant?.code ?? '—'}</td>
+                        <td>{product ? `${product.name}${variant?.name ? ` (${variant.name})` : ''}` : '—'}</td>
                         <td>{formatPrice(item.price)}</td>
                         <td>{item.discount ? formatPrice(item.discount) : <span className="text-slate-400">—</span>}</td>
                         <td>{item.qty}</td>
