@@ -31,7 +31,6 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/store', [ProductController::class, 'store'])->name('store');
             Route::post('/{product}/edit', [ProductController::class, 'update'])->name('update');
             Route::delete('/{product}/delete', [ProductController::class, 'destroy'])->name('destroy');
-            Route::get('/export', [ProductController::class, 'export'])->name('export');
 
             // Variant
             Route::prefix('/variant')->name('variant.')->group(function(){
@@ -63,6 +62,9 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/', [SaleController::class, 'store'])   ->name('store');
             Route::post('/{sale}', [SaleController::class, 'update'])  ->name('update');
             Route::delete('/{sale}', [SaleController::class, 'destroy']) ->name('destroy');
+
+            Route::get('/sales/export/product', [SaleController::class, 'exportByProduct'])->name('export.product');
+            Route::get('/sales/export/sale',    [SaleController::class, 'exportBySale'])->name('export.sale');
         });
 
         // Report

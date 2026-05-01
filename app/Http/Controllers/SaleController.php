@@ -5,16 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
-use App\Models\Variant;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Exports\SaleByProductExport;
+use App\Exports\SaleBySaleExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SaleController extends Controller
 {
     public function index()
     {
         return Inertia::render('Admin/Sale/Index', [
-            'sales' => Sale::with('items.product')->orderByDesc('date')->orderByDesc('time')->get()
+            'sales' => Sale::with('items.variant.product')->orderByDesc('date')->orderByDesc('time')->get()
                 ->map(fn($sale) => array_merge($sale->toArray(), [
                     'total' => $sale->items->reduce(function ($carry, $item) {
                         $subtotal = ($item->price - ($item->discount ?? 0)) * $item->qty;
@@ -77,6 +79,16 @@ class SaleController extends Controller
         $sale->delete();
 
         return back();
+    }
+
+    public function exportByProduct() {
+        $filename = 'penjualan_per_produk_' . now()->format('Ymd_His') . '.xlsx';
+        return Excel::download(new SaleByProductExport, $filename);
+    }
+
+    public function exportBySale() {
+        $filename = 'penjualan_per_transaksi_' . now()->format('Ymd_His') . '.xlsx';
+        return Excel::download(new SaleBySaleExport, $filename);
     }
 
     // ── Private helper ────────────────────────────────────────────────────────

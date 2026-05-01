@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, FileDown } from 'lucide-react';
 import { useState } from 'react';
 
 import Table from '@/Components/Table';
@@ -31,9 +31,21 @@ export default function Index({ sales, products, customers }) {
             <Head title="Penjualan" />
 
             <div className="w-full flex justify-between items-center">
-                <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
-                    Tambah Penjualan
-                </PrimaryButton>
+                <div className="flex items-center gap-2">
+                    <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
+                        Tambah Penjualan
+                    </PrimaryButton>
+                    <a href={route('admin.sale.export.product')}>
+                        <PrimaryButton icon={<FileDown className="size-4" />} type="button">
+                            Export per Produk
+                        </PrimaryButton>
+                    </a>
+                    <a href={route('admin.sale.export.sale')}>
+                        <PrimaryButton icon={<FileDown className="size-4" />} type="button">
+                            Export per Transaksi
+                        </PrimaryButton>
+                    </a>
+                </div>
                 <TextInput placeholder="Cari penjualan..." />
             </div>
 

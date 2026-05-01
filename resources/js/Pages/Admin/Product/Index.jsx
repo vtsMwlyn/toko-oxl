@@ -57,16 +57,9 @@ export default function Index({ products }) {
             )}
 
             <div className="w-full flex justify-between items-center">
-                <div className="flex gap-2">
-                    <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
-                        Tambah Produk
-                    </PrimaryButton>
-                    <a href={route('admin.product.export')}>
-                        <PrimaryButton icon={<FileDown className="size-4" />} type="button">
-                            Export Excel
-                        </PrimaryButton>
-                    </a>
-                </div>
+                <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
+                    Tambah Produk
+                </PrimaryButton>
                 <TextInput placeholder="Cari produk..." />
             </div>
 

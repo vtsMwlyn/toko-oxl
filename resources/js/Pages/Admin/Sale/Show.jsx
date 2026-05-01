@@ -39,8 +39,8 @@ function ItemsTable({ items, products, emptyText }) {
                 disableHeight={true}
             >
                 {items.map((item, index) => {
-                    const variant  = products.flatMap(p => p.variants).find(v => v.id === item.variant_id);
-                    const product  = products.find(p => p.id === variant?.product_id);
+                    const variant  = item.variant;
+                    const product  = variant.product;
                     const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
                     return (
                         <tr key={index} className="hover:bg-slate-50">
