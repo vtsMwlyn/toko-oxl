@@ -32,11 +32,15 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{product}/edit', [ProductController::class, 'update'])->name('update');
             Route::delete('/{product}/delete', [ProductController::class, 'destroy'])->name('destroy');
 
+            Route::post('/stock-warning', [ProductController::class, 'set_stock_warning'])->name('stock_warning');
+
             // Variant
             Route::prefix('/variant')->name('variant.')->group(function(){
                 Route::post('/{product}/store', [ProductController::class, 'store_variant'])->name('store');
                 Route::post('/{variant}/edit', [ProductController::class, 'update_variant'])->name('update');
                 Route::delete('/{variant}/delete', [ProductController::class, 'destroy_variant'])->name('destroy');
+
+                Route::post('/{variant}/add-stock', [ProductController::class, 'add_stock'])->name('add-stock');
             });
 
             // Discount

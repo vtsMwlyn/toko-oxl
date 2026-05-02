@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use App\Models\Product;
+use App\Models\Setting;
 use App\Models\User;
+use App\Models\Variant;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -80,6 +82,8 @@ class DashboardController extends Controller
                 , 0),
             ]);
 
+        $threshold = (int) Setting::get('stock_warning_threshold', 0);
+
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
                 'total_products'   => $totalProducts,
@@ -90,6 +94,10 @@ class DashboardController extends Controller
             ],
             'omzet_per_day' => $omzetPerDay,
             'recent_sales'  => $recentSales,
+            'stock_warning_threshold' => $threshold,
+            'low_stock_variants'      => $threshold > 0
+                ? Variant::with('product')->where('stock', '<=', $threshold)->orderBy('stock')->get()
+                : [],
         ]);
     }
 }

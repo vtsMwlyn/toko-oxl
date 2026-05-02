@@ -1,4 +1,4 @@
-import { Plus, Pencil, Trash2, Download, Printer } from "lucide-react"
+import { Plus, Pencil, Trash2, PackagePlus, Printer } from "lucide-react"
 import { useState } from "react"
 
 import Popup from "@/Components/Popup"
@@ -10,6 +10,7 @@ import AddEditDiscount from "./Discount/AddEdit"
 import RemoveDiscount from "./Discount/Remove"
 import AddEditVariant from "./Variant/AddEdit"
 import RemoveVariant from "./Variant/Remove"
+import AddStock from "./AddStock"
 
 import Barcode from "@/Components/Barcode"
 import PrintBarcode from "./PrintBarcode"
@@ -44,33 +45,10 @@ export default function Show({ isOpen, onClose, product }) {
     const [isEditingDiscount, setIsEditingDiscount] = useState(null);
     const [isRemovingDiscount, setIsRemovingDiscount] = useState(null);
 
+    const [addingStockVariant, setAddingStockVariant] = useState(null);
+
     const [printingVariant, setPrintingVariant] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
-
-    const downloadPNG = (variant) => {
-        const svg = document.querySelector(`[data-barcode-id="${variant.id}"]`);
-        const svgData = new XMLSerializer().serializeToString(svg);
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-
-        const img = new Image();
-        img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-
-            const link = document.createElement("a");
-            link.download = `${variant.barcode}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        };
-
-        img.src =
-            "data:image/svg+xml;base64," +
-            btoa(unescape(encodeURIComponent(svgData)));
-    };
 
     return (
         <Popup title="Detail Data Produk" isOpen={isOpen} onClose={onClose} className="max-w-4xl">
@@ -119,9 +97,9 @@ export default function Show({ isOpen, onClose, product }) {
                                 <PrimaryButton
                                     styled={false}
                                     className="text-emerald-600"
-                                    icon={<Download className="size-4" />}
+                                    icon={<PackagePlus className="size-4" />}
                                     type="button"
-                                    onClick={() => downloadPNG(variant)}
+                                    onClick={() => setAddingStockVariant(variant)}
                                 />
                                 <PrimaryButton
                                     styled={false}
@@ -245,6 +223,15 @@ export default function Show({ isOpen, onClose, product }) {
                     isOpen={!!printingVariant}
                     onClose={() => setPrintingVariant(null)}
                     variant={printingVariant}
+                    product={product}
+                />
+            )}
+
+            {addingStockVariant && (
+                <AddStock
+                    isOpen={!!addingStockVariant}
+                    onClose={() => setAddingStockVariant(null)}
+                    variant={addingStockVariant}
                     product={product}
                 />
             )}

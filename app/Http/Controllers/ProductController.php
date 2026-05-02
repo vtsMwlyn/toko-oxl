@@ -6,6 +6,7 @@ use App\Exports\ProductExport;
 use App\Helpers\BarcodeHelper;
 use App\Models\Discount;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Models\Variant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -16,6 +17,8 @@ class ProductController extends Controller
 {
     public function index()
     {
+        $threshold = (int) Setting::get('stock_warning_threshold', 0);
+
         return Inertia::render('Admin/Product/Index', [
             'products' => Product::with(['variants', 'discounts'])->orderBy('name', 'asc')->get()->map(function ($product) {
                 $product->variants->each(function ($variant) {
@@ -25,6 +28,10 @@ class ProductController extends Controller
                 });
                 return $product;
             }),
+            'stock_warning_threshold' => $threshold,
+            'low_stock_variants'      => $threshold > 0
+                ? Variant::with('product')->where('stock', '<=', $threshold)->orderBy('stock')->get()
+                : [],
         ]);
     }
 
@@ -128,6 +135,28 @@ class ProductController extends Controller
         }
 
         $variant->delete();
+
+        return back();
+    }
+
+    public function add_stock(Request $request, Variant $variant)
+    {
+        $request->validate([
+            'amount' => 'required|integer|min:1',
+        ]);
+
+        $variant->increment('stock', $request->amount);
+
+        return back();
+    }
+
+    public function set_stock_warning(Request $request)
+    {
+        $request->validate([
+            'threshold' => 'required|integer|min:0',
+        ]);
+
+        Setting::set('stock_warning_threshold', $request->threshold);
 
         return back();
     }
