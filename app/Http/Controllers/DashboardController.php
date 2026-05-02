@@ -8,6 +8,7 @@ use App\Models\SaleItem;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Variant;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -15,6 +16,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        if(Auth::user()->role != 'Admin'){
+            return redirect()->route('cashier.index');
+        }
+
         $today     = today();
         $thisMonth = now()->startOfMonth();
 

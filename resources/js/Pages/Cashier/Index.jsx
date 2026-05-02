@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
-import { Plus, Trash2, ScanBarcode, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, ScanBarcode, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputLabel from '@/Components/InputLabel';
@@ -377,7 +377,24 @@ export default function Index({ products, customers }) {
 
                 {/* ── Transaction info ── */}
                 <div className="bg-white rounded-2xl border border-emerald-100 p-5">
-                    <h2 className="text-sm font-bold text-emerald-900 mb-4">Informasi Transaksi</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-sm font-bold text-emerald-900">Informasi Transaksi</h2>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const now = new Date();
+                                setData(prev => ({
+                                    ...prev,
+                                    date: now.toISOString().slice(0, 10),
+                                    time: now.toTimeString().slice(0, 5),
+                                }));
+                            }}
+                            className="flex items-center gap-1.5 text-xs text-emerald-600 border border-emerald-200 rounded-lg px-2.5 py-1.5 hover:bg-emerald-50 transition-colors"
+                        >
+                            <Clock size={12} />
+                            Sekarang
+                        </button>
+                    </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div className="grid gap-1">
                             <InputLabel htmlFor="date" value="Tanggal" />

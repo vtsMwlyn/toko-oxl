@@ -31,6 +31,11 @@ export default function Sidebar({ open, onClose }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef(null);
 
+    // Filter nav items: Admin sees all, others see ONLY 'Kasir'
+    const filteredNavItems = auth.user.role === 'Admin'
+        ? navItems
+        : navItems.filter(item => item.label === 'Kasir');
+
     // Close popover on outside click
     useEffect(() => {
         if (!menuOpen) return;
@@ -100,7 +105,8 @@ export default function Sidebar({ open, onClose }) {
 
                 {/* ── Navigation links ── */}
                 <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-                    {navItems.map(item => {
+                    {/* Render using the filtered array */}
+                    {filteredNavItems.map(item => {
                         const active = url.startsWith(item.urlPrefix);
                         const NavIcon = item.icon;
                         return (
