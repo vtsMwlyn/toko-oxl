@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\BarcodeHelper;
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Variant;
@@ -15,6 +16,7 @@ class CashierController extends Controller
     {
         return Inertia::render('Cashier/Index', [
             'products' => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
+            'customers' => Customer::orderBy('name')->get(['id', 'name', 'phone']),
         ]);
     }
 
@@ -35,13 +37,9 @@ class CashierController extends Controller
 
         $sale = Sale::create($request->only('date', 'time', 'customer_name', 'status'));
 
-        $variantIds = collect($request->items)->pluck('variant_id')->unique();
-        $variants   = Variant::whereIn('id', $variantIds)->get()->keyBy('id');
-
         foreach ($request->items as $item) {
-            $variant = $variants->get($item['variant_id']);
             $sale->items()->create([
-                'variant_id' => $variant->id,
+                'variant_id' => $item['variant_id'],
                 'price'      => $item['price'],
                 'discount'   => $item['discount'] ?? 0,
                 'qty'        => $item['qty'],
@@ -50,11 +48,5 @@ class CashierController extends Controller
         }
 
         return back();
-    }
-
-    public function barcode_scanner_test(){
-        return Inertia::render('Cashier/BarcodeScannerTest', [
-            'barcode' => BarcodeHelper::generate(),
-        ]);
     }
 }

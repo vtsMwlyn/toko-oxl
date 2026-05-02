@@ -7,7 +7,6 @@ import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import formatPrice from '@/Helpers/formatPrice';
 
-// ── Summary card ──────────────────────────────────────────────────────────────
 function SummaryCard({ label, value, icon: Icon, color = 'emerald' }) {
     const colors = {
         emerald: 'bg-emerald-50 text-emerald-600',
@@ -27,7 +26,6 @@ function SummaryCard({ label, value, icon: Icon, color = 'emerald' }) {
     );
 }
 
-// ── Bar chart ─────────────────────────────────────────────────────────────────
 function BarChart({ data }) {
     if (!data.length) return <p className="text-sm text-slate-400 italic py-8 text-center">Tidak ada data.</p>;
 
@@ -46,7 +44,9 @@ function BarChart({ data }) {
                             className="w-full rounded-t-md bg-emerald-400 group-hover:bg-emerald-600 transition-colors cursor-default"
                             style={{ height: `${pct}%`, minHeight: d.total > 0 ? '3px' : '0' }}
                         />
-                        <span className="text-[9px] text-slate-400 truncate w-full text-center leading-tight">{d.date?.slice(5)}</span>
+                        <span className="text-[9px] text-slate-400 truncate w-full text-center leading-tight">
+                            {d.date?.slice(5)}
+                        </span>
                     </div>
                 );
             })}
@@ -54,8 +54,7 @@ function BarChart({ data }) {
     );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-export default function Index({ from, to, omzet_per_day, summary, product_stats }) {
+export default function Index({ from, to, omzet_per_day, summary, variant_stats }) {
     const [dateFrom, setDateFrom] = useState(from);
     const [dateTo,   setDateTo]   = useState(to);
     const [search,   setSearch]   = useState('');
@@ -68,8 +67,9 @@ export default function Index({ from, to, omzet_per_day, summary, product_stats 
         });
     }
 
-    const filteredStats = product_stats.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
+    const filteredStats = variant_stats.filter(p =>
+        p.product_name.toLowerCase().includes(search.toLowerCase()) ||
+        p.variant_name.toLowerCase().includes(search.toLowerCase()) ||
         p.code.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -102,24 +102,9 @@ export default function Index({ from, to, omzet_per_day, summary, product_stats 
 
             {/* ── Summary cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                <SummaryCard
-                    label="Total Omzet"
-                    value={formatPrice(summary.total_omzet)}
-                    icon={TrendingUp}
-                    color="emerald"
-                />
-                <SummaryCard
-                    label="Jumlah Transaksi"
-                    value={summary.total_sales}
-                    icon={BarChart2}
-                    color="emerald"
-                />
-                <SummaryCard
-                    label="Rata-rata per Transaksi"
-                    value={formatPrice(summary.average_omzet)}
-                    icon={TrendingUp}
-                    color="emerald"
-                />
+                <SummaryCard label="Total Omzet"             value={formatPrice(summary.total_omzet)}   icon={TrendingUp} />
+                <SummaryCard label="Jumlah Transaksi"        value={summary.total_sales}                icon={BarChart2}  />
+                <SummaryCard label="Rata-rata per Transaksi" value={formatPrice(summary.average_omzet)} icon={TrendingUp} />
             </div>
 
             {/* ── Omzet chart ── */}
@@ -131,43 +116,41 @@ export default function Index({ from, to, omzet_per_day, summary, product_stats 
                 <BarChart data={omzet_per_day} />
             </div>
 
-            {/* ── Per-product stats ── */}
+            {/* ── Per-variant stats ── */}
             <div className="bg-white rounded-2xl border border-emerald-100 p-5">
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                    <h3 className="text-sm font-semibold text-emerald-900">Statistik Per Produk</h3>
+                    <h3 className="text-sm font-semibold text-emerald-900">Statistik Per Varian Produk</h3>
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
                         <Search size={13} className="text-slate-400 shrink-0" />
                         <input
                             type="text"
-                            placeholder="Cari produk..."
+                            placeholder="Cari produk atau varian..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="bg-transparent text-sm text-slate-600 placeholder:text-slate-400 outline-none w-40"
+                            className="bg-transparent text-sm text-slate-600 placeholder:text-slate-400 outline-none w-44"
                         />
                     </div>
                 </div>
 
                 <Table
                     isEmpty={filteredStats.length === 0}
-                    headers={['Kode', 'Nama', 'Varian', 'Terjual', 'Retur', 'Net Qty', 'Pendapatan']}
+                    headers={['Kode', 'Nama Produk', 'Varian', 'Terjual', 'Retur', 'Net Qty', 'Pendapatan']}
                     disableHeight={true}
                 >
                     {filteredStats.map((p, index) => (
                         <tr key={index} className="hover:bg-slate-50">
                             <td className="font-mono text-xs">{p.code}</td>
-                            <td className="font-medium">{p.name}</td>
-                            <td className="text-slate-400">{p.variant || '—'}</td>
+                            <td className="font-medium">{p.product_name}</td>
+                            <td className="text-slate-400 text-sm">{p.variant_name}</td>
                             <td>
                                 <span className="flex items-center gap-1 text-emerald-600">
-                                    <TrendingUp size={12} />
-                                    {p.sell_qty}
+                                    <TrendingUp size={12} /> {p.sell_qty}
                                 </span>
                             </td>
                             <td>
                                 {p.return_qty > 0 ? (
                                     <span className="flex items-center gap-1 text-red-400">
-                                        <TrendingDown size={12} />
-                                        {p.return_qty}
+                                        <TrendingDown size={12} /> {p.return_qty}
                                     </span>
                                 ) : (
                                     <span className="text-slate-300">—</span>

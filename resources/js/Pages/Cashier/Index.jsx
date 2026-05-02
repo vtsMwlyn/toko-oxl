@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
-import { Plus, Trash2, Printer, ScanBarcode } from 'lucide-react';
+import { Plus, Trash2, ScanBarcode, ChevronDown, ChevronUp } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputLabel from '@/Components/InputLabel';
@@ -12,6 +12,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import Select from '@/Components/Select';
 import Table from '@/Components/Table';
 import Receipt from '@/Pages/PrintReceipt';
+import SelectInput from '@/Components/Select';
 
 import formatPrice from '@/Helpers/formatPrice';
 
@@ -43,7 +44,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
     const qtyRef     = useRef(null);
     const barcodeRef = useRef(null);
 
-    // Flatten products -> variants, embedding parent product on each variant
     const variantOptions = products.flatMap(product =>
         product.variants.map(variant => ({
             value:   variant.id,
@@ -77,8 +77,7 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
         const code = barcodeVal.trim();
         if (!code) return;
 
-        // Search barcode across all variants
-        const foundOption = variantOptions.find(o => o.variant.barcode === code);
+        const foundOption = variantOptions.find(o => o.variant.barcode === code || o.variant.code === code);
         if (!foundOption) {
             setBarcodeErr(`Produk dengan kode "${code}" tidak ditemukan.`);
             setBarcodeVal('');
@@ -133,7 +132,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
         <div className="border border-emerald-100 rounded-xl p-4 bg-emerald-50/40">
             <p className="text-xs font-semibold text-emerald-700 mb-3">{label}</p>
 
-            {/* ── Barcode input ── */}
             <div className="grid gap-1 mb-3">
                 <InputLabel htmlFor={`${label}-barcode`} value="Scan Barcode / Kode Produk" />
                 <div className="relative">
@@ -155,7 +153,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
                 {barcodeErr && <p className="text-xs text-red-500 mt-0.5">{barcodeErr}</p>}
             </div>
 
-            {/* ── Variant select (manual fallback) ── */}
             <div className="grid gap-1 mb-3">
                 <InputLabel value="Atau pilih manual" />
                 <Select
@@ -168,7 +165,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
                 <InputError message={errors.product} />
             </div>
 
-            {/* ── Qty · price · discount ── */}
             <div className="grid grid-cols-3 items-start gap-3 mb-3">
                 <div className="grid gap-1">
                     <InputLabel htmlFor={`${label}-qty`} value="Qty" />
@@ -210,7 +206,6 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
                 </div>
             </div>
 
-            {/* ── Subtotal + add ── */}
             <div className="flex justify-between items-center">
                 <p className="text-xs text-slate-500">
                     {matched && qtyNum > 0
@@ -265,12 +260,13 @@ function ItemTable({ items, products, onRemove }) {
     );
 }
 
-export default function Index({ products }) {
-    const [loading,     setLoading]     = useState(false);
-    const [success,     setSuccess]     = useState(false);
-    const [savedSale,   setSavedSale]   = useState(null);
-    const [soldItems,   setSoldItems]   = useState([]);
-    const [returnItems, setReturnItems] = useState([]);
+export default function Index({ products, customers }) {
+    const [loading,          setLoading]          = useState(false);
+    const [success,          setSuccess]          = useState(false);
+    const [savedSale,        setSavedSale]        = useState(null);
+    const [soldItems,        setSoldItems]        = useState([]);
+    const [returnItems,      setReturnItems]      = useState([]);
+    const [showReturnSection, setShowReturnSection] = useState(false); // ← toggle
 
     const { data, setData, errors, setError, reset } = useForm({
         date:          new Date().toISOString().slice(0, 10),
@@ -278,6 +274,17 @@ export default function Index({ products }) {
         customer_name: '',
         status:        'Fixed',
     });
+
+    const customerOptions = (customers ?? []).map(c => ({
+        value: c.name, label: c.name, customer: c,
+    }));
+
+    const [customerOption, setCustomerOption] = useState(null);
+
+    function handleCustomerChange(option) {
+        setCustomerOption(option);
+        setData('customer_name', option?.value ?? '');
+    }
 
     function addItem(type, item) {
         const setter = type === 'Sell' ? setSoldItems : setReturnItems;
@@ -295,14 +302,16 @@ export default function Index({ products }) {
         setReturnItems([]);
         setSavedSale(null);
         setSuccess(false);
+        setShowReturnSection(false);
+        setCustomerOption(null);
     }
 
-    function submit(e) {
-        e.preventDefault();
+    function submit(status) {
         setLoading(true);
 
         const payload = {
             ...data,
+            status,
             items: [
                 ...soldItems.map(({ _localId, ...i })   => ({ ...i, type: 'Sell' })),
                 ...returnItems.map(({ _localId, ...i }) => ({ ...i, type: 'Return' })),
@@ -311,13 +320,7 @@ export default function Index({ products }) {
 
         router.post(route('cashier.sale.store'), payload, {
             onSuccess: () => {
-                setSavedSale({
-                    ...data,
-                    items: [
-                        ...soldItems.map(i => ({ ...i, type: 'Sell' })),
-                        ...returnItems.map(i => ({ ...i, type: 'Return' })),
-                    ],
-                });
+                setSavedSale({ ...data, status, items: payload.items });
                 setSuccess(true);
             },
             onError: serverErrors => {
@@ -331,6 +334,7 @@ export default function Index({ products }) {
     const returnTotal = returnItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
     const grandTotal  = soldTotal - returnTotal;
 
+    // ── Success screen ────────────────────────────────────────────────────────
     if (success && savedSale) {
         return (
             <AuthenticatedLayout title="Kasir">
@@ -343,13 +347,20 @@ export default function Index({ products }) {
                         </svg>
                     </div>
                     <div>
-                        <h2 className="text-lg font-bold text-emerald-900">Transaksi Berhasil!</h2>
+                        <h2 className="text-lg font-bold text-emerald-900">
+                            {savedSale.status === 'Fixed' ? 'Transaksi Berhasil!' : 'Draft Disimpan!'}
+                        </h2>
                         <p className="text-sm text-slate-400 mt-1">
                             Total: <span className="font-semibold text-emerald-700">{formatPrice(grandTotal)}</span>
                         </p>
+                        {savedSale.status === 'Draft' && (
+                            <p className="text-xs text-amber-500 mt-1">Transaksi tersimpan sebagai draft.</p>
+                        )}
                     </div>
                     <div className="flex gap-3">
-                        <Receipt sale={savedSale} products={products} />
+                        {savedSale.status === 'Fixed' && (
+                            <Receipt sale={savedSale} products={products} />
+                        )}
                         <PrimaryButton type="button" onClick={resetForm}>Transaksi Baru</PrimaryButton>
                     </div>
                 </div>
@@ -357,16 +368,17 @@ export default function Index({ products }) {
         );
     }
 
+    // ── Main form ─────────────────────────────────────────────────────────────
     return (
         <AuthenticatedLayout title="Kasir">
             <Head title="Kasir" />
 
-            <form onSubmit={submit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
 
                 {/* ── Transaction info ── */}
                 <div className="bg-white rounded-2xl border border-emerald-100 p-5">
                     <h2 className="text-sm font-bold text-emerald-900 mb-4">Informasi Transaksi</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div className="grid gap-1">
                             <InputLabel htmlFor="date" value="Tanggal" />
                             <TextInput
@@ -385,13 +397,23 @@ export default function Index({ products }) {
                             />
                             <InputError message={errors.time} />
                         </div>
-                        <div className="grid gap-1 md:col-span-2">
+                        <div className="grid gap-1">
                             <InputLabel htmlFor="customer_name" value="Nama Pelanggan" />
-                            <TextInput
-                                id="customer_name" value={data.customer_name}
-                                className="block w-full"
-                                placeholder="Opsional — isi untuk harga langganan"
-                                onChange={e => setData('customer_name', e.target.value)}
+                            <SelectInput
+                                creatable
+                                options={customerOptions}
+                                value={customerOption}
+                                onChange={handleCustomerChange}
+                                onInputChange={(val, { action }) => {
+                                    if (action === 'input-change') {
+                                        setCustomerOption({ value: val, label: val });
+                                        setData('customer_name', val);
+                                    }
+                                }}
+                                isClearable
+                                placeholder="Pilih pelanggan atau ketik nama..."
+                                formatCreateLabel={(val) => `Gunakan nama: "${val}"`}
+                                noOptionsMessage={() => 'Tidak ada pelanggan terdaftar'}
                             />
                             <InputError message={errors.customer_name} />
                         </div>
@@ -419,23 +441,42 @@ export default function Index({ products }) {
                     )}
                 </div>
 
-                {/* ── Return items ── */}
+                {/* ── Return items (collapsible) ── */}
                 <div className="bg-white rounded-2xl border border-emerald-100 p-5">
-                    <h2 className="text-sm font-bold text-emerald-900 mb-4">Produk Retur</h2>
-                    <ItemInputRow
-                        label="Tambah produk retur"
-                        products={products}
-                        customerName={data.customer_name}
-                        onAdd={item => addItem('Return', item)}
-                    />
-                    {returnItems.length > 0 && (
+                    <button
+                        type="button"
+                        onClick={() => setShowReturnSection(v => !v)}
+                        className="w-full flex items-center justify-between text-sm font-bold text-emerald-900"
+                    >
+                        <span>
+                            Produk Retur
+                            {returnItems.length > 0 && (
+                                <span className="ml-2 text-xs font-medium px-1.5 py-0.5 rounded-md bg-red-100 text-red-500">
+                                    {returnItems.length} item
+                                </span>
+                            )}
+                        </span>
+                        {showReturnSection ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+
+                    {showReturnSection && (
                         <div className="mt-4">
-                            <ItemTable items={returnItems} products={products} onRemove={localId => removeItem('Return', localId)} />
-                            <div className="flex justify-end mt-2">
-                                <p className="text-sm text-slate-500">
-                                    Subtotal Retur: <span className="font-semibold text-slate-700">{formatPrice(returnTotal)}</span>
-                                </p>
-                            </div>
+                            <ItemInputRow
+                                label="Tambah produk retur"
+                                products={products}
+                                customerName={data.customer_name}
+                                onAdd={item => addItem('Return', item)}
+                            />
+                            {returnItems.length > 0 && (
+                                <div className="mt-4">
+                                    <ItemTable items={returnItems} products={products} onRemove={localId => removeItem('Return', localId)} />
+                                    <div className="flex justify-end mt-2">
+                                        <p className="text-sm text-slate-500">
+                                            Subtotal Retur: <span className="font-semibold text-slate-700">{formatPrice(returnTotal)}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -468,18 +509,27 @@ export default function Index({ products }) {
                             }}
                             products={products}
                         />
+                        <button
+                            type="button"
+                            disabled={loading || soldItems.length === 0}
+                            onClick={() => submit('Draft')}
+                            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            {loading ? 'Memproses...' : 'Simpan Draft'}
+                        </button>
                         <PrimaryButton
-                            type="submit"
+                            type="button"
                             disabled={loading || soldItems.length === 0}
                             loading={loading}
                             className="px-8"
+                            onClick={() => submit('Fixed')}
                         >
                             {loading ? 'Memproses...' : 'Selesaikan Transaksi'}
                         </PrimaryButton>
                     </div>
                 </div>
 
-            </form>
+            </div>
         </AuthenticatedLayout>
     );
 }

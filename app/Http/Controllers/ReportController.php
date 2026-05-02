@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Sale;
 use App\Models\SaleItem;
-use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -22,12 +21,12 @@ class ReportController extends Controller
             ->with('items')
             ->get();
 
-        // Group by date and compute net total per day
         $omzetPerDay = $sales->groupBy('date')->map(function ($daySales, $date) {
             $total = $daySales->sum(fn($sale) =>
                 $sale->items->reduce(fn($c, $i) =>
-                    $c + ($i->type === 'Sell' ? ($i->price - $i->discount) * $i->qty
-                                              : -(($i->price - $i->discount) * $i->qty))
+                    $c + ($i->type === 'Sell'
+                        ?  ($i->price - $i->discount) * $i->qty
+                        : -(($i->price - $i->discount) * $i->qty))
                 , 0)
             );
             return ['date' => $date, 'total' => $total];
@@ -37,40 +36,41 @@ class ReportController extends Controller
         $totalSales   = $sales->count();
         $averageOmzet = $totalSales > 0 ? round($totalOmzet / $totalSales) : 0;
 
-        // ── Per-product statistics in range ───────────────────────────────────
+        // ── Per-variant statistics in range ───────────────────────────────────
         $itemStats = SaleItem::whereHas('sale', fn($q) =>
                 $q->where('status', 'Fixed')->whereBetween('date', [$from, $to])
             )
             ->select(
-                'product_id',
+                'variant_id',
                 'type',
                 DB::raw('SUM(qty) as total_qty'),
                 DB::raw('SUM((price - discount) * qty) as total_revenue')
             )
-            ->groupBy('product_id', 'type')
-            ->with('product:id,name,code,variant')
+            ->groupBy('variant_id', 'type')
+            ->with('variant.product')
             ->get();
 
-        // Merge Sell and Return rows into one entry per product
-        $productStats = $itemStats->groupBy('product_id')->map(function ($rows) {
-            $product = $rows->first()->product;
+        // Merge Sell and Return rows into one entry per variant
+        $variantStats = $itemStats->groupBy('variant_id')->map(function ($rows) {
+            $variant = $rows->first()->variant;
+            $product = $variant?->product;
             $sell    = $rows->firstWhere('type', 'Sell');
             $return  = $rows->firstWhere('type', 'Return');
 
-            $sellQty     = $sell?->total_qty     ?? 0;
-            $returnQty   = $return?->total_qty   ?? 0;
-            $sellRev     = $sell?->total_revenue  ?? 0;
-            $returnRev   = $return?->total_revenue ?? 0;
+            $sellQty   = $sell?->total_qty      ?? 0;
+            $returnQty = $return?->total_qty    ?? 0;
+            $sellRev   = $sell?->total_revenue  ?? 0;
+            $returnRev = $return?->total_revenue ?? 0;
 
             return [
-                'product_id'   => $product?->id,
-                'name'         => $product?->name  ?? '—',
-                'code'         => $product?->code  ?? '—',
-                'variant'      => $product?->variant,
-                'sell_qty'     => $sellQty,
-                'return_qty'   => $returnQty,
-                'net_qty'      => $sellQty - $returnQty,
-                'net_revenue'  => $sellRev - $returnRev,
+                'variant_id'  => $variant?->id,
+                'code'        => $variant?->code         ?? '—',
+                'variant_name'=> $variant?->name         ?? '—',
+                'product_name'=> $product?->name         ?? '—',
+                'sell_qty'    => $sellQty,
+                'return_qty'  => $returnQty,
+                'net_qty'     => $sellQty - $returnQty,
+                'net_revenue' => $sellRev - $returnRev,
             ];
         })
         ->sortByDesc('net_revenue')
@@ -85,7 +85,7 @@ class ReportController extends Controller
                 'total_sales'   => $totalSales,
                 'average_omzet' => $averageOmzet,
             ],
-            'product_stats' => $productStats,
+            'variant_stats' => $variantStats,
         ]);
     }
 }
