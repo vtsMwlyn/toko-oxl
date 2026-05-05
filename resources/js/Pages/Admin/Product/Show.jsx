@@ -1,4 +1,4 @@
-import { Plus, Pencil, Trash2, PackagePlus, Printer } from "lucide-react"
+import { Plus, Pencil, Trash2, Minus, Printer } from "lucide-react"
 import { useState } from "react"
 
 import Popup from "@/Components/Popup"
@@ -10,7 +10,9 @@ import AddEditDiscount from "./Discount/AddEdit"
 import RemoveDiscount from "./Discount/Remove"
 import AddEditVariant from "./Variant/AddEdit"
 import RemoveVariant from "./Variant/Remove"
+
 import AddStock from "./AddStock"
+import ReduceStock from "./ReduceStock"
 
 import Barcode from "@/Components/Barcode"
 import PrintBarcode from "./PrintBarcode"
@@ -45,7 +47,8 @@ export default function Show({ isOpen, onClose, product }) {
     const [isEditingDiscount, setIsEditingDiscount] = useState(null);
     const [isRemovingDiscount, setIsRemovingDiscount] = useState(null);
 
-    const [addingStockVariant, setAddingStockVariant] = useState(null);
+    const [isAddingStockVariant, setIsAddingStockVariant] = useState(null);
+    const [isReducingStockVariant, setIsReducingStockVariant] = useState(null);
 
     const [printingVariant, setPrintingVariant] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
@@ -97,9 +100,16 @@ export default function Show({ isOpen, onClose, product }) {
                                 <PrimaryButton
                                     styled={false}
                                     className="text-emerald-600"
-                                    icon={<PackagePlus className="size-4" />}
+                                    icon={<Plus className="size-4" />}
                                     type="button"
-                                    onClick={() => setAddingStockVariant(variant)}
+                                    onClick={() => setIsAddingStockVariant(variant)}
+                                />
+                                <PrimaryButton
+                                    styled={false}
+                                    className="text-emerald-600"
+                                    icon={<Minus className="size-4" />}
+                                    type="button"
+                                    onClick={() => setIsReducingStockVariant(variant)}
                                 />
                                 <PrimaryButton
                                     styled={false}
@@ -227,11 +237,20 @@ export default function Show({ isOpen, onClose, product }) {
                 />
             )}
 
-            {addingStockVariant && (
+            {isAddingStockVariant && (
                 <AddStock
-                    isOpen={!!addingStockVariant}
-                    onClose={() => setAddingStockVariant(null)}
-                    variant={addingStockVariant}
+                    isOpen={!!isAddingStockVariant}
+                    onClose={() => setIsAddingStockVariant(null)}
+                    variant={isAddingStockVariant}
+                    product={product}
+                />
+            )}
+
+            {isReducingStockVariant && (
+                <ReduceStock
+                    isOpen={!!isReducingStockVariant}
+                    onClose={() => setIsReducingStockVariant(null)}
+                    variant={isReducingStockVariant}
                     product={product}
                 />
             )}

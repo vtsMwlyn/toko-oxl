@@ -2,7 +2,7 @@ import { Eye } from 'lucide-react';
 
 import Popup from '@/Components/Popup';
 import Table from '@/Components/Table';
-import Receipt from '../../PrintReceipt';
+import PrintReceipt from '../../PrintReceipt';
 
 import formatPrice from '@/Helpers/formatPrice';
 import formatDate from '@/Helpers/formatDate';
@@ -123,7 +123,7 @@ export default function Show({ isOpen, onClose, sale, products }) {
 
             {/* ── Grand total + print ── */}
             <div className="mt-5 pt-4 border-t border-slate-100 flex justify-between items-end">
-                <Receipt sale={sale} products={products} />
+                <PrintReceipt sale={sale} products={products} />
 
                 <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
                     {returnItems.length > 0 && (

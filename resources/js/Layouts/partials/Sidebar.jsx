@@ -18,7 +18,7 @@ const navItems = [
     { label: 'Dashboard',  icon: LayoutDashboard, urlPrefix: '/dashboard',      href: route('dashboard') },
     { label: 'Kasir',      icon: ShoppingCart,    urlPrefix: '/cashier',        href: route('cashier.index') },
     { label: 'Produk',     icon: Landmark,        urlPrefix: '/admin/product',  href: route('admin.product.index') },
-    { label: 'Penjualan',  icon: ShoppingBag,     urlPrefix: '/admin/sale',     href: route('admin.sale.index') },
+    { label: 'Penjualan',  icon: ShoppingBag,     urlPrefix: '/sale',     href: route('sale.index') },
     { label: 'Pelanggan',  icon: Star,            urlPrefix: '/admin/customer', href: route('admin.customer.index') },
     { label: 'Laporan',    icon: BarChart2,       urlPrefix: '/admin/report',   href: route('admin.report.index') },
     { label: 'Pengguna',   icon: Users,           urlPrefix: '/admin/user',     href: route('admin.user.index') },
@@ -34,7 +34,7 @@ export default function Sidebar({ open, onClose }) {
     // Filter nav items: Admin sees all, others see ONLY 'Kasir'
     const filteredNavItems = auth.user.role === 'Admin'
         ? navItems
-        : navItems.filter(item => item.label === 'Kasir');
+        : navItems.filter(item => ['Kasir', 'Penjualan'].includes(item.label));
 
     // Close popover on outside click
     useEffect(() => {

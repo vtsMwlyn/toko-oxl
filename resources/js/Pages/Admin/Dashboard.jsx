@@ -148,7 +148,7 @@ export default function Dashboard({ stats, omzet_per_day, recent_sales, auth, st
                     <div className="flex items-center justify-between mb-3">
                         <h3 className="text-sm font-semibold text-emerald-900">Penjualan Terakhir</h3>
                         <Link
-                            href={route('admin.sale.index')}
+                            href={route('sale.index')}
                             className="text-xs text-emerald-500 hover:underline flex items-center gap-1"
                         >
                             Semua <ArrowRight size={12} />
@@ -167,7 +167,7 @@ export default function Dashboard({ stats, omzet_per_day, recent_sales, auth, st
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                 {[
                     { label: 'Kelola Produk',     href: route('admin.product.index'), icon: Package,     desc: 'Tambah, ubah, hapus produk' },
-                    { label: 'Kelola Penjualan',  href: route('admin.sale.index'),    icon: ShoppingBag, desc: 'Catat dan kelola transaksi' },
+                    { label: 'Kelola Penjualan',  href: route('sale.index'),    icon: ShoppingBag, desc: 'Catat dan kelola transaksi' },
                     { label: 'Laporan',           href: route('admin.report.index'),  icon: TrendingUp,  desc: 'Omzet dan statistik produk' },
                 ].map(({ label, href, icon: Icon, desc }) => (
                     <Link

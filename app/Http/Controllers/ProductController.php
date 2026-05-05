@@ -150,6 +150,24 @@ class ProductController extends Controller
         return back();
     }
 
+    public function reduce_stock(Request $request, Variant $variant)
+    {
+        $request->validate([
+            'amount' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:' . $variant->stock
+            ],
+        ], [
+            'amount.max' => "Jumlah pengurangan tidak boleh melebihi sisa stok saat ini ({$variant->stock})."
+        ]);
+
+        $variant->decrement('stock', $request->amount);
+
+        return back();
+    }
+
     public function set_stock_warning(Request $request)
     {
         $request->validate([

@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SaleByProductExport;
+use App\Exports\SaleBySaleExport;
+use App\Exports\SaleBySpecificProductExport;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Exports\SaleByProductExport;
-use App\Exports\SaleBySaleExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class SaleController extends Controller
@@ -81,9 +82,21 @@ class SaleController extends Controller
         return back();
     }
 
+    public function set_fixed(Sale $sale){
+        $sale->update(['status' => 'Fixed']);
+
+        return back();
+    }
+
     public function exportByProduct() {
         $filename = 'penjualan_per_produk_' . now()->format('Ymd_His') . '.xlsx';
         return Excel::download(new SaleByProductExport, $filename);
+    }
+
+    public function exportBySpecificProduct(Product $product)
+    {
+        $filename = 'penjualan_' . str($product->name)->slug('_') . '_' . now()->format('Ymd_His') . '.xlsx';
+        return Excel::download(new SaleBySpecificProductExport($product), $filename);
     }
 
     public function exportBySale() {

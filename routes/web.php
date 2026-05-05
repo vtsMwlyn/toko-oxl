@@ -24,6 +24,11 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Both Admin and Cashier Can Do
+    Route::get('/sale', [SaleController::class, 'index'])   ->name('sale.index');
+    Route::post('/sale/{sale}', [SaleController::class, 'update'])  ->name('sale.update');
+    Route::post('/sale/{sale}/set-fixed', [SaleController::class, 'set_fixed'])  ->name('sale.set-fixed');
+
     // ==== ADMIN ==== //
     Route::prefix('/admin')->middleware('admin')->name('admin.')->group(function(){
         // Product
@@ -42,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
                 Route::delete('/{variant}/delete', [ProductController::class, 'destroy_variant'])->name('destroy');
 
                 Route::post('/{variant}/add-stock', [ProductController::class, 'add_stock'])->name('add-stock');
+                Route::post('/{variant}/reduce-stock', [ProductController::class, 'reduce_stock'])->name('reduce-stock');
             });
 
             // Discount
@@ -63,12 +69,11 @@ Route::middleware(['auth'])->group(function () {
 
         // Sale
         Route::prefix('/sale')->name('sale.')->group(function(){
-            Route::get('/', [SaleController::class, 'index'])   ->name('index');
             Route::post('/', [SaleController::class, 'store'])   ->name('store');
-            Route::post('/{sale}', [SaleController::class, 'update'])  ->name('update');
             Route::delete('/{sale}', [SaleController::class, 'destroy']) ->name('destroy');
 
             Route::get('/sales/export/product', [SaleController::class, 'exportByProduct'])->name('export.product');
+            Route::get('/export/product/{product}', [SaleController::class, 'exportBySpecificProduct'])->name('export.product.specific');
             Route::get('/sales/export/sale',    [SaleController::class, 'exportBySale'])->name('export.sale');
         });
 

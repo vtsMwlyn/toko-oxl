@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Eye, FileDown } from 'lucide-react';
+import { Head, usePage } from '@inertiajs/react';
+import { Plus, Pencil, Trash2, Eye, FileDown, ClipboardCheck, Printer } from 'lucide-react';
 import { useState } from 'react';
 
 import Table from '@/Components/Table';
@@ -10,6 +10,10 @@ import TextInput from '@/Components/TextInput';
 import Show from './Show';
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
+
+import ExportSpecificProduct from './ExportSpecificProduct';
+import PrintReceipt from '@/Pages/PrintReceipt';
+import SetFixed from './SetFixed';
 
 import formatPrice from '@/Helpers/formatPrice';
 import formatDate from '@/Helpers/formatDate';
@@ -21,40 +25,60 @@ const statusBadge = {
 };
 
 export default function Index({ sales, products, customers }) {
+    const { auth } = usePage().props;
+
     const [isViewing,  setIsViewing]  = useState(null);
     const [isCreating, setIsCreating] = useState(false);
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
 
+    const [isExportingSpecificProduct, setIsExportingSpecificProduct] = useState(false);
+    const [isSettingFixed, setIsSettingFixed] = useState(false);
+
+    const [selectedTab, setSelectedTab] = useState(auth.user.role === 'Admin' ? 'All' : 'Draft');
+
     return (
         <AuthenticatedLayout title="Penjualan">
             <Head title="Penjualan" />
 
-            <div className="w-full flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
-                        Tambah Penjualan
-                    </PrimaryButton>
-                    <a href={route('admin.sale.export.product')}>
-                        <PrimaryButton icon={<FileDown className="size-4" />} type="button">
-                            Export per Produk
-                        </PrimaryButton>
-                    </a>
-                    <a href={route('admin.sale.export.sale')}>
-                        <PrimaryButton icon={<FileDown className="size-4" />} type="button">
-                            Export per Transaksi
-                        </PrimaryButton>
-                    </a>
-                </div>
-                <TextInput placeholder="Cari penjualan..." />
-            </div>
+            {auth.user.role === 'Admin' && (
+                <>
+                    <div className="w-full flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
+                                Tambah Penjualan
+                            </PrimaryButton>
+                            <a href={route('admin.sale.export.product')}>
+                                <PrimaryButton icon={<FileDown className="size-4" />} type="button">
+                                    Export per Produk
+                                </PrimaryButton>
+                            </a>
+                            <a href={route('admin.sale.export.sale')}>
+                                <PrimaryButton icon={<FileDown className="size-4" />} type="button">
+                                    Export per Transaksi
+                                </PrimaryButton>
+                            </a>
+                            <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setIsExportingSpecificProduct(true)}>
+                                Export Produk Spesifik
+                            </PrimaryButton>
+                        </div>
+                        <TextInput placeholder="Cari penjualan..." />
+                    </div>
+
+                    <div className="w-1/3 grid grid-cols-3 mt-6 gap-1">
+                        <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'All' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => setSelectedTab('All')}>Semua</button>
+                        <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Fixed' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => setSelectedTab('Fixed')}>Fixed</button>
+                        <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Draft' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => setSelectedTab('Draft')}>Draft</button>
+                    </div>
+                </>
+            )}
 
             <Table
                 isEmpty={sales.length === 0}
                 headers={['Tanggal', 'Waktu', 'Pelanggan', 'Status', 'Total', 'Aksi']}
-                className="mt-4"
+                className={auth.user.role === 'Admin' ? 'mt-4' : ''}
             >
-                {sales.map((sale, index) => (
+                {sales.filter(s => s.status.toLowerCase().includes(selectedTab === 'All' ? '' : selectedTab.toLocaleLowerCase())).map((sale, index) => (
                     <tr key={index} className="hover:bg-slate-200">
                         <td>{formatDate(sale.date)}</td>
                         <td>{formatTime(sale.time)}</td>
@@ -67,6 +91,16 @@ export default function Index({ sales, products, customers }) {
                         <td>{formatPrice(sale.total)}</td>
                         <td>
                             <div className="flex gap-2 items-center">
+                                {sale.status === 'Draft' && (
+                                    <PrimaryButton
+                                        styled={false} className="text-emerald-600"
+                                        icon={<ClipboardCheck className="size-4" />} type="button"
+                                        onClick={() => setIsSettingFixed(sale)}
+                                    />
+                                )}
+                                {sale.status === 'Fixed' && (
+                                    <PrintReceipt icon={true} sale={sale} products={products} />
+                                )}
                                 <PrimaryButton
                                     styled={false} className="text-emerald-600"
                                     icon={<Eye className="size-4" />} type="button"
@@ -77,11 +111,13 @@ export default function Index({ sales, products, customers }) {
                                     icon={<Pencil className="size-4" />} type="button"
                                     onClick={() => setIsEditing(sale)}
                                 />
-                                <PrimaryButton
-                                    styled={false} className="text-emerald-600"
-                                    icon={<Trash2 className="size-4" />} type="button"
-                                    onClick={() => setIsDeleting(sale)}
-                                />
+                                {auth.user.role === 'Admin' && (
+                                    <PrimaryButton
+                                        styled={false} className="text-emerald-600"
+                                        icon={<Trash2 className="size-4" />} type="button"
+                                        onClick={() => setIsDeleting(sale)}
+                                    />
+                                )}
                             </div>
                         </td>
                     </tr>
@@ -99,6 +135,12 @@ export default function Index({ sales, products, customers }) {
             )}
             {isDeleting && (
                 <Delete isOpen={!!isDeleting} onClose={() => setIsDeleting(null)} sale={isDeleting} />
+            )}
+            {isExportingSpecificProduct && (
+                <ExportSpecificProduct isOpen={isExportingSpecificProduct} onClose={() => setIsExportingSpecificProduct(false)} products={products} />
+            )}
+            {isSettingFixed && (
+                <SetFixed isOpen={isSettingFixed} onClose={() => setIsSettingFixed(false)} sale={isSettingFixed} />
             )}
         </AuthenticatedLayout>
     );

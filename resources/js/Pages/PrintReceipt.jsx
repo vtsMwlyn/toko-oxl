@@ -144,7 +144,7 @@ function ReceiptContent({ sale, products }) {
 
 // ── Public component ──────────────────────────────────────────────────────────
 
-export default function PrintReceipt({ sale, products }) {
+export default function PrintReceipt({ icon = false, sale, products }) {
     const printRef = useRef(null);
 
     function handlePrint() {
@@ -195,10 +195,11 @@ export default function PrintReceipt({ sale, products }) {
             {/* ── Print button ── */}
             <PrimaryButton
                 type="button"
-                icon={<Printer className="size-4" />}
+                styled={!icon}
+                icon={<Printer className={`size-4 ${icon ? 'stroke-emerald-600' : 'stroke-white'}`} />}
                 onClick={handlePrint}
             >
-                Cetak Struk
+                {icon ? '' : 'Cetak Struk'}
             </PrimaryButton>
 
             {/* ── Off-screen receipt (used as print source) ── */}
