@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Exports\SaleByProductExport;
 use App\Exports\SaleBySaleExport;
 use App\Exports\SaleBySpecificProductExport;
+use App\Helpers\ModelChangeLogger;
+use App\Models\ActionLog;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Helpers\SaleItemChangeLogger;
 
 class SaleController extends Controller
 {
@@ -31,12 +35,12 @@ class SaleController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'date'               => 'required|date',
             'time'               => 'required',
             'customer_name'      => 'nullable|string|max:255',
             'status'             => 'required|in:Draft,Fixed',
-            'items'              => 'array',
+            'items'              => 'required|array',
             'items.*.variant_id' => 'required|integer|exists:variants,id',
             'items.*.price'      => 'required|numeric|min:0',
             'items.*.qty'        => 'required|integer|min:1',
@@ -44,7 +48,15 @@ class SaleController extends Controller
             'items.*.type'       => 'required|in:Sell,Return',
         ]);
 
-        $sale = Sale::create($request->only('date', 'time', 'customer_name', 'status'));
+        $lastSale = Sale::where('date', $validatedData['date'])->orderBy('time', 'desc')->first();
+
+        $sale = Sale::create([
+            'date' => $validatedData['date'],
+            'time' => $validatedData['time'],
+            'customer_name' => $validatedData['customer_name'],
+            'status' => $validatedData['status'],
+            'queue_number' => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
+        ]);
 
         $this->syncItems($sale, $request->items ?? []);
 
@@ -53,7 +65,7 @@ class SaleController extends Controller
 
     public function update(Request $request, Sale $sale)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'date'               => 'required|date',
             'time'               => 'required',
             'customer_name'      => 'nullable|string|max:255',
@@ -66,10 +78,40 @@ class SaleController extends Controller
             'items.*.type'       => 'required|in:Sell,Return',
         ]);
 
-        $sale->update($request->only('date', 'time', 'customer_name', 'status'));
+        // 1. Track sale field changes
+        $changes = ModelChangeLogger::getChanges($sale, $validatedData);
+
+        // 2. Track item changes BEFORE DB mutation
+        $itemChanges = SaleItemChangeLogger::diff(
+            $sale->items,
+            collect($validatedData['items'] ?? [])
+        );
+
+        // Merge
+        $changes = array_merge($changes, $itemChanges);
+
+        // 3. Persist
+        $sale->update([
+            'date' => $validatedData['date'],
+            'time' => $validatedData['time'],
+            'customer_name' => $validatedData['customer_name'],
+            'status' => $validatedData['status'],
+        ]);
 
         $sale->items()->delete();
-        $this->syncItems($sale, $request->items ?? []);
+        $this->syncItems($sale, $validatedData['items'] ?? []);
+
+        // 4. Log
+        if (!empty($changes)) {
+            ActionLog::create([
+                'user_id' => Auth::id(),
+                'message' => 'Memperbaharui data penjualan '
+                    . $sale->date . ' '
+                    . $sale->time . ' antrian '
+                    . $sale->queue_number,
+                'changes' => $changes,
+            ]);
+        }
 
         return back();
     }
@@ -84,6 +126,11 @@ class SaleController extends Controller
 
     public function set_fixed(Sale $sale){
         $sale->update(['status' => 'Fixed']);
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Mengubah status penjualan ' . $sale->date . ' ' . $sale->time . ' antrian ' . $sale->queue_number . ' atas nama ' . $sale->customer_name . ' menjadi Fixed.',
+        ]);
 
         return back();
     }

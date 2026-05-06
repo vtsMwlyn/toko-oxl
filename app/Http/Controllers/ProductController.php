@@ -4,21 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Exports\ProductExport;
 use App\Helpers\BarcodeHelper;
+use App\Models\ActionLog;
 use App\Models\Discount;
 use App\Models\Product;
-use App\Models\Setting;
 use App\Models\Variant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Helpers\ModelChangeLogger;
 
 class ProductController extends Controller
 {
     public function index()
     {
-        $threshold = (int) Setting::get('stock_warning_threshold', 0);
-
         return Inertia::render('Admin/Product/Index', [
             'products' => Product::with(['variants', 'discounts'])->orderBy('name', 'asc')->get()->map(function ($product) {
                 $product->variants->each(function ($variant) {
@@ -28,10 +28,6 @@ class ProductController extends Controller
                 });
                 return $product;
             }),
-            'stock_warning_threshold' => $threshold,
-            'low_stock_variants'      => $threshold > 0
-                ? Variant::with('product')->where('stock', '<=', $threshold)->orderBy('stock')->get()
-                : [],
         ]);
     }
 
@@ -56,7 +52,17 @@ class ProductController extends Controller
             'customer_price'   => 'required|numeric|min:0',
         ]);
 
+        $changes = ModelChangeLogger::getChanges($product, $validatedData);
+
         $product->update($validatedData);
+
+        if (!empty($changes)) {
+            ActionLog::create([
+                'user_id' => Auth::id(),
+                'message' => 'Memperbaharui data ' . $product->name,
+                'changes' => $changes,
+            ]);
+        }
 
         return back();
     }
@@ -115,14 +121,29 @@ class ProductController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            // Delete old image if it exists
             if ($variant->image) {
                 Storage::disk('public')->delete($variant->image);
             }
             $validatedData['image'] = $request->file('image')->store('products', 'public');
         }
 
+        $changes = ModelChangeLogger::getChanges($variant, $validatedData, [
+            'special' => [
+                'image' => 'updated',
+            ],
+        ]);
+
         $variant->update($validatedData);
+
+        if (!empty($changes)) {
+            ActionLog::create([
+                'user_id' => Auth::id(),
+                'message' => 'Memperbaharui data '
+                    . $variant->product->name . ' '
+                    . $variant->name . ' (' . $variant->code . ')',
+                'changes' => $changes,
+            ]);
+        }
 
         return back();
     }
@@ -147,6 +168,11 @@ class ProductController extends Controller
 
         $variant->increment('stock', $request->amount);
 
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menambahkan stok ' . $variant->product->name . ' ' . $variant->name . ' (' . $variant->code . ') sebanyak ' . $request->amount . ' buah.',
+        ]);
+
         return back();
     }
 
@@ -165,16 +191,21 @@ class ProductController extends Controller
 
         $variant->decrement('stock', $request->amount);
 
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Mengurangi stok ' . $variant->product->name . ' ' . $variant->name . ' (' . $variant->code . ') sebanyak ' . $request->amount . ' buah.',
+        ]);
+
         return back();
     }
 
-    public function set_stock_warning(Request $request)
+    public function set_stock_warning(Request $request, Variant $variant)
     {
         $request->validate([
             'threshold' => 'required|integer|min:0',
         ]);
 
-        Setting::set('stock_warning_threshold', $request->threshold);
+        $variant->update(['low_stock_warning' => $request->threshold]);
 
         return back();
     }

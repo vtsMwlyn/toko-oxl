@@ -37,7 +37,7 @@ function ImagePreview({ src, onClose }) {
     );
 }
 
-export default function Index({ products, stock_warning_threshold, low_stock_variants }) {
+export default function Index({ products, stock_warning_threshold }) {
     const [isCreating, setIsCreating] = useState(false);
     const [isShowing, setIsShowing] = useState(null);
     const [isEditing, setIsEditing] = useState(null);
@@ -54,9 +54,9 @@ export default function Index({ products, stock_warning_threshold, low_stock_var
             )}
 
             {/* ── Low stock warning banner ── */}
-            <LowStockWarning variants={low_stock_variants} threshold={stock_warning_threshold} />
+            {/* <LowStockWarning variants={low_stock_variants} threshold={stock_warning_threshold} /> */}
 
-            <div className={`w-full flex justify-between items-center ${low_stock_variants.length > 0 ? 'mt-4' : ''}`}>
+            <div className={`w-full flex justify-between items-center`}>
                 <div className="flex gap-2">
                     <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                         Tambah Produk

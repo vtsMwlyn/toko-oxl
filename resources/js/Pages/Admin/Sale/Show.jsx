@@ -95,6 +95,7 @@ export default function Show({ isOpen, onClose, sale, products }) {
                 <InfoRow label="Tanggal" value={formatDate(sale.date)} />
                 <InfoRow label="Waktu"   value={formatTime(sale.time)} />
                 <InfoRow label="Pelanggan" value={sale.customer_name} />
+                <InfoRow label="Nomor Antrian" value={sale.queue_number} />
                 <InfoRow
                     label="Status"
                     value={

@@ -75,13 +75,14 @@ export default function Index({ sales, products, customers }) {
 
             <Table
                 isEmpty={sales.length === 0}
-                headers={['Tanggal', 'Waktu', 'Pelanggan', 'Status', 'Total', 'Aksi']}
+                headers={['Tanggal', 'Waktu', 'No. Antrian', 'Pelanggan', 'Status', 'Total', 'Aksi']}
                 className={auth.user.role === 'Admin' ? 'mt-4' : ''}
             >
                 {sales.filter(s => s.status.toLowerCase().includes(selectedTab === 'All' ? '' : selectedTab.toLocaleLowerCase())).map((sale, index) => (
                     <tr key={index} className="hover:bg-slate-200">
                         <td>{formatDate(sale.date)}</td>
                         <td>{formatTime(sale.time)}</td>
+                        <td>{sale.queue_number}</td>
                         <td>{sale.customer_name || <span className="text-slate-400 italic">—</span>}</td>
                         <td>
                             <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.draft}`}>

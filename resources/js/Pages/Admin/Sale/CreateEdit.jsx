@@ -113,7 +113,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         if (mode === 'Create') {
             router.post(route('admin.sale.store'), payload, afterSubmission);
         } else {
-            router.post(route('admin.sale.update', { sale: sale?.id }), payload, afterSubmission);
+            router.post(route('sale.update', { sale: sale?.id }), payload, afterSubmission);
         }
     };
 

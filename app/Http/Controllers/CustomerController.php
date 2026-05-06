@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ModelChangeLogger;
+use App\Models\ActionLog;
 use App\Models\Customer;
 use App\Models\Sale;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class CustomerController extends Controller
@@ -77,14 +80,24 @@ class CustomerController extends Controller
 
     public function update(Request $request, Customer $customer)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'name'    => 'required|string|max:255',
             'phone'   => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
             'notes'   => 'nullable|string|max:1000',
         ]);
 
-        $customer->update($request->only('name', 'phone', 'address', 'notes'));
+        $changes = ModelChangeLogger::getChanges($customer, $validatedData);
+
+        $customer->update($validatedData);
+
+        if (!empty($changes)) {
+            ActionLog::create([
+                'user_id' => Auth::id(),
+                'message' => 'Memperbaharui data ' . $customer->name,
+                'changes' => $changes,
+            ]);
+        }
 
         return back();
     }

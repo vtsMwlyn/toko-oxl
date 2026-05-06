@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Variant;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -22,12 +23,12 @@ class CashierController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'date'               => 'required|date',
             'time'               => 'required',
             'customer_name'      => 'nullable|string|max:255',
             'status'             => 'required|in:Draft,Fixed',
-            'items'              => 'required|array|min:1',
+            'items'              => 'array',
             'items.*.variant_id' => 'required|integer|exists:variants,id',
             'items.*.price'      => 'required|numeric|min:0',
             'items.*.qty'        => 'required|integer|min:1',
@@ -35,7 +36,15 @@ class CashierController extends Controller
             'items.*.type'       => 'required|in:Sell,Return',
         ]);
 
-        $sale = Sale::create($request->only('date', 'time', 'customer_name', 'status'));
+        $lastSale = Sale::where('date', Carbon::today()->format('Y-m-d'))->orderBy('time', 'desc')->first();
+
+        $sale = Sale::create([
+            'date' => $validatedData['date'],
+            'time' => $validatedData['time'],
+            'customer_name' => $validatedData['customer_name'],
+            'status' => $validatedData['status'],
+            'queue_number' => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
+        ]);
 
         foreach ($request->items as $item) {
             $sale->items()->create([

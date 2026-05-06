@@ -3,6 +3,7 @@
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LogController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
@@ -38,8 +39,6 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{product}/edit', [ProductController::class, 'update'])->name('update');
             Route::delete('/{product}/delete', [ProductController::class, 'destroy'])->name('destroy');
 
-            Route::post('/stock-warning', [ProductController::class, 'set_stock_warning'])->name('stock_warning');
-
             // Variant
             Route::prefix('/variant')->name('variant.')->group(function(){
                 Route::post('/{product}/store', [ProductController::class, 'store_variant'])->name('store');
@@ -48,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
 
                 Route::post('/{variant}/add-stock', [ProductController::class, 'add_stock'])->name('add-stock');
                 Route::post('/{variant}/reduce-stock', [ProductController::class, 'reduce_stock'])->name('reduce-stock');
+                Route::post('/{variant}/stock-warning', [ProductController::class, 'set_stock_warning'])->name('stock_warning');
             });
 
             // Discount
@@ -79,6 +79,9 @@ Route::middleware(['auth'])->group(function () {
 
         // Report
         Route::get('/report', [ReportController::class, 'index'])->name('report.index');
+
+        // Action Log
+        Route::get('/log', [LogController::class, 'index'])->name('log.index');
 
         // User
         Route::prefix('/user')->name('user.')->group(function(){
