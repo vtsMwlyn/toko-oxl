@@ -73,7 +73,7 @@ function SaleRow({ sale }) {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export default function Dashboard({ stats, omzet_per_day, recent_sales, auth, stock_warning_threshold }) {
+export default function Dashboard({ stats, omzet_per_day, recent_sales, auth, low_stock_variants }) {
     return (
         <AuthenticatedLayout title="Dashboard">
             <Head title="Dashboard" />
@@ -93,11 +93,11 @@ export default function Dashboard({ stats, omzet_per_day, recent_sales, auth, st
             </div>
 
             {/* ── Low stock warning ── */}
-            {/* {low_stock_variants.length > 0 && (
+            {low_stock_variants.length > 0 && (
                 <div className="mb-6">
-                    <LowStockWarning variants={low_stock_variants} threshold={stock_warning_threshold} />
+                    <LowStockWarning variants={low_stock_variants} />
                 </div>
-            )} */}
+            )}
 
             {/* ── Stat cards ── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

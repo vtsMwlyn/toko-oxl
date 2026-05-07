@@ -14,6 +14,7 @@ import Delete from './Delete';
 import ExportSpecificProduct from './ExportSpecificProduct';
 import PrintReceipt from '@/Pages/PrintReceipt';
 import SetFixed from './SetFixed';
+import ExportWithPercent from './ExportWithPercent';
 
 import formatPrice from '@/Helpers/formatPrice';
 import formatDate from '@/Helpers/formatDate';
@@ -32,6 +33,7 @@ export default function Index({ sales, products, customers }) {
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
 
+    const [exportType, setExportType] = useState(null);
     const [isExportingSpecificProduct, setIsExportingSpecificProduct] = useState(false);
     const [isSettingFixed, setIsSettingFixed] = useState(false);
 
@@ -48,16 +50,12 @@ export default function Index({ sales, products, customers }) {
                             <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                                 Tambah Penjualan
                             </PrimaryButton>
-                            <a href={route('admin.sale.export.product')}>
-                                <PrimaryButton icon={<FileDown className="size-4" />} type="button">
-                                    Export per Produk
-                                </PrimaryButton>
-                            </a>
-                            <a href={route('admin.sale.export.sale')}>
-                                <PrimaryButton icon={<FileDown className="size-4" />} type="button">
-                                    Export per Transaksi
-                                </PrimaryButton>
-                            </a>
+                            <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setExportType('product')}>
+                                Export per Produk
+                            </PrimaryButton>
+                            <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setExportType('sale')}>
+                                Export per Transaksi
+                            </PrimaryButton>
                             <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setIsExportingSpecificProduct(true)}>
                                 Export Produk Spesifik
                             </PrimaryButton>
@@ -139,6 +137,9 @@ export default function Index({ sales, products, customers }) {
             )}
             {isExportingSpecificProduct && (
                 <ExportSpecificProduct isOpen={isExportingSpecificProduct} onClose={() => setIsExportingSpecificProduct(false)} products={products} />
+            )}
+            {exportType && (
+                <ExportWithPercent type={exportType} onClose={() => setExportType(null)} />
             )}
             {isSettingFixed && (
                 <SetFixed isOpen={isSettingFixed} onClose={() => setIsSettingFixed(false)} sale={isSettingFixed} />

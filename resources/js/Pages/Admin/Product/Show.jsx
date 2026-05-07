@@ -54,7 +54,7 @@ export default function Show({ isOpen, onClose, product }) {
     const [previewImage, setPreviewImage] = useState(null);
 
     return (
-        <Popup title="Detail Data Produk" isOpen={isOpen} onClose={onClose} className="max-w-4xl">
+        <Popup title="Detail Data Produk" isOpen={isOpen} onClose={onClose} className="max-w-5xl">
             <div className="w-full flex items-start gap-10">
                 <div className="w-full">
                     <div className="w-5/6 grid grid-cols-3 gap-4">
@@ -78,10 +78,10 @@ export default function Show({ isOpen, onClose, product }) {
 
             <Table
                 isEmpty={product.variants.length === 0} disableHeight={true}
-                headers={['Foto', 'Nama Varian', 'Kode', 'Barcode', 'Stok', 'Aksi']}
+                headers={['Foto', 'Nama Varian', 'Kode', 'Barcode', 'Stok', 'Warning', 'Aksi']}
             >
                 {product.variants.map((variant, index) => (
-                    <tr key={index} className="hover:bg-slate-200">
+                    <tr key={index} className={variant.stock <= variant.low_stock_warning && 'bg-amber-100 text-amber-600'}>
                         <td>
                             <ProductImage
                                 src={variant.image_url}
@@ -95,6 +95,7 @@ export default function Show({ isOpen, onClose, product }) {
                             <Barcode variant={variant} />
                         </td>
                         <td>{variant.stock}</td>
+                        <td>{variant.low_stock_warning}</td>
                         <td>
                             <div className="flex gap-2 items-center">
                                 <PrimaryButton

@@ -19,7 +19,8 @@ export default function AddEdit({ mode, isOpen, onClose, product, variant }) {
     const { data, setData, errors, setError } = useForm({
         name: variant?.name || '',
         code: variant?.code || '',
-        stock: variant?.stock || '',
+        stock: variant?.stock || 0,
+        low_stock_warning: variant?.low_stock_warning || 0,
         image: null,
     });
 
@@ -44,6 +45,7 @@ export default function AddEdit({ mode, isOpen, onClose, product, variant }) {
         payload.append('name', data.name);
         payload.append('code', data.code);
         payload.append('stock', data.stock);
+        payload.append('low_stock_warning', data.low_stock_warning);
         if (data.image) payload.append('image', data.image);
 
         const afterSubmission = {
@@ -171,6 +173,19 @@ export default function AddEdit({ mode, isOpen, onClose, product, variant }) {
                             onChange={(e) => setData('stock', e.target.value)}
                         />
                         <InputError message={errors.stock} className="mt-2" />
+                    </div>
+
+                    {/* ── Low Stock Warning ── */}
+                    <div className="w-full grid mb-4 gap-1">
+                        <InputLabel htmlFor="low_stock_warning" value="Warning Low Stock" />
+                        <TextInput
+                            id="low_stock_warning"
+                            name="low_stock_warning"
+                            value={data.low_stock_warning}
+                            className="mt-1 block w-full"
+                            onChange={(e) => setData('low_stock_warning', e.target.value)}
+                        />
+                        <InputError message={errors.low_stock_warning} className="mt-2" />
                     </div>
 
                     <div className="w-full flex justify-center mt-4">

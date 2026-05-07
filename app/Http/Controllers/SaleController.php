@@ -135,20 +135,29 @@ class SaleController extends Controller
         return back();
     }
 
-    public function exportByProduct() {
+    public function exportByProduct(Request $request) {
+        $percent = (float) $request->input('qty_percent', 100);
+        $percent = max(1, min(100, $percent));
+
         $filename = 'penjualan_per_produk_' . now()->format('Ymd_His') . '.xlsx';
-        return Excel::download(new SaleByProductExport, $filename);
+        return Excel::download(new SaleByProductExport($percent), $filename);
     }
 
-    public function exportBySpecificProduct(Product $product)
+    public function exportBySpecificProduct(Request $request, Product $product)
     {
+        $percent = (float) $request->input('qty_percent', 100);
+        $percent = max(1, min(100, $percent));
+
         $filename = 'penjualan_' . str($product->name)->slug('_') . '_' . now()->format('Ymd_His') . '.xlsx';
-        return Excel::download(new SaleBySpecificProductExport($product), $filename);
+        return Excel::download(new SaleBySpecificProductExport($product, $percent), $filename);
     }
 
-    public function exportBySale() {
+    public function exportBySale(Request $request) {
+        $percent = (float) $request->input('qty_percent', 100);
+        $percent = max(1, min(100, $percent));
+
         $filename = 'penjualan_per_transaksi_' . now()->format('Ymd_His') . '.xlsx';
-        return Excel::download(new SaleBySaleExport, $filename);
+        return Excel::download(new SaleBySaleExport($percent), $filename);
     }
 
     // ── Private helper ────────────────────────────────────────────────────────

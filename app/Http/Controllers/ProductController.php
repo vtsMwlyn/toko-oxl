@@ -28,6 +28,7 @@ class ProductController extends Controller
                 });
                 return $product;
             }),
+            'low_stock_variants' => Variant::whereColumn('stock', '<=', 'low_stock_warning')->with('product')->get(),
         ]);
     }
 
@@ -81,21 +82,16 @@ class ProductController extends Controller
         return back();
     }
 
-    public function export(){
-        $filename = 'produk_' . now()->format('Ymd_His') . '.xlsx';
-
-        return Excel::download(new ProductExport, $filename);
-    }
-
 
     // Variant
     public function store_variant(Request $request, Product $product)
     {
         $validatedData = $request->validate([
-            'name'    => 'required',
-            'code'    => 'nullable|string',
-            'stock'   => 'required|numeric|min:0',
-            'image'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'name'                => 'required',
+            'code'                => 'nullable|string',
+            'stock'               => 'required|numeric|min:0',
+            'image'               => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'low_stock_warning'   => 'required|numeric|min:0',
         ]);
 
         if ($request->hasFile('image')) {
@@ -114,10 +110,11 @@ class ProductController extends Controller
     public function update_variant(Request $request, Variant $variant)
     {
         $validatedData = $request->validate([
-            'name'    => 'required',
-            'code'    => 'nullable|string',
-            'stock'   => 'required|numeric|min:0',
-            'image'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'name'                => 'required',
+            'code'                => 'nullable|string',
+            'stock'               => 'required|numeric|min:0',
+            'image'               => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'low_stock_warning'   => 'required|numeric|min:0',
         ]);
 
         if ($request->hasFile('image')) {

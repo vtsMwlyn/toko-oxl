@@ -26,9 +26,12 @@ class SaleBySpecificProductExport implements
 {
     protected Product $product;
 
-    public function __construct(Product $product)
+    protected float $qtyPercent;
+
+    public function __construct(Product $product, float $qtyPercent = 100)
     {
-        $this->product = $product;
+        $this->product    = $product;
+        $this->qtyPercent = $qtyPercent / 100;
     }
 
     // ── Data ──────────────────────────────────────────────────────────────────
@@ -78,7 +81,8 @@ class SaleBySpecificProductExport implements
     public function map($item): array
     {
         $net      = $item->price - ($item->discount ?? 0);
-        $subtotal = $item->type === 'Return' ? -($net * $item->qty) : $net * $item->qty;
+        $adjQty   = (int) floor($item->qty * $this->qtyPercent);                              // ← adjusted
+        $subtotal = $item->type === 'Return' ? -($net * $adjQty) : $net * $adjQty;
 
         return [
             $item->sale->date,
@@ -90,8 +94,8 @@ class SaleBySpecificProductExport implements
             $item->type,
             $item->price,
             $item->discount ?? 0,
-            $item->qty,
-            $subtotal,
+            $adjQty,        // ← adjusted
+            $subtotal,      // ← recalculated
         ];
     }
 

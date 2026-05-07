@@ -37,7 +37,7 @@ function ImagePreview({ src, onClose }) {
     );
 }
 
-export default function Index({ products, stock_warning_threshold }) {
+export default function Index({ products, low_stock_variants }) {
     const [isCreating, setIsCreating] = useState(false);
     const [isShowing, setIsShowing] = useState(null);
     const [isEditing, setIsEditing] = useState(null);
@@ -54,21 +54,12 @@ export default function Index({ products, stock_warning_threshold }) {
             )}
 
             {/* ── Low stock warning banner ── */}
-            {/* <LowStockWarning variants={low_stock_variants} threshold={stock_warning_threshold} /> */}
+            <LowStockWarning variants={low_stock_variants} />
 
-            <div className={`w-full flex justify-between items-center`}>
+            <div className="mt-4 w-full flex justify-between items-center">
                 <div className="flex gap-2">
                     <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                         Tambah Produk
-                    </PrimaryButton>
-                    <PrimaryButton
-                        icon={<Bell className="size-4" />}
-                        type="button"
-                        onClick={() => setIsSettingWarning(true)}
-                        styled={false}
-                        className="text-emerald-600 border border-emerald-200 rounded-lg px-3 py-1.5 hover:bg-emerald-50 transition-colors flex items-center gap-1.5 text-sm"
-                    >
-                        {stock_warning_threshold > 0 ? `Peringatan Stok ≤ ${stock_warning_threshold}` : 'Atur Peringatan Stok'}
                     </PrimaryButton>
                 </div>
                 <TextInput placeholder="Cari produk..." />
@@ -80,9 +71,15 @@ export default function Index({ products, stock_warning_threshold }) {
                 className="mt-4"
             >
                 {products.map((product, index) => {
-                    const totalStock    = product.variants.reduce((sum, v) => sum + v.stock, 0);
-                    const hasLowStock   = stock_warning_threshold > 0 &&
-                        product.variants.some(v => v.stock <= stock_warning_threshold);
+                    const totalStock = product.variants.reduce(
+                        (sum, v) => sum + v.stock,
+                        0
+                    );
+
+                    const hasLowStock = product.variants.some(
+                        v => v.low_stock_warning > 0 &&
+                            v.stock <= v.low_stock_warning
+                    );
 
                     return (
                         <tr key={index} className="hover:bg-slate-200">
@@ -97,9 +94,7 @@ export default function Index({ products, stock_warning_threshold }) {
                                 </div>
                             </td>
                             <td>{product.variants.length}</td>
-                            <td className={hasLowStock ? 'text-amber-500 font-semibold' : ''}>
-                                {totalStock}
-                            </td>
+                            <td>{totalStock}</td>
                             <td>{formatPrice(product.normal_price)}</td>
                             <td>{formatPrice(product.customer_price)}</td>
                             <td>

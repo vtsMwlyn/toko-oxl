@@ -23,6 +23,13 @@ class SaleByProductExport implements
     WithColumnWidths,
     WithTitle
 {
+    protected float $qtyPercent;
+
+    public function __construct(float $qtyPercent = 100)
+    {
+        $this->qtyPercent = $qtyPercent / 100;
+    }
+
     public function title(): string
     {
         return 'Penjualan per Produk';
@@ -55,7 +62,7 @@ class SaleByProductExport implements
             $item->variant->name          ?? '—',
             $item->sale->date,
             $item->sale->customer_name    ?? '',
-            $item->qty,
+            (int) floor($item->qty * $this->qtyPercent),   // ← adjusted
             $item->price,
         ]];
     }

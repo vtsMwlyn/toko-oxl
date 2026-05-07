@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\User;
+use App\Models\Variant;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -93,6 +94,7 @@ class DashboardController extends Controller
             ],
             'omzet_per_day' => $omzetPerDay,
             'recent_sales'  => $recentSales,
+            'low_stock_variants' => Variant::whereColumn('stock', '<=', 'low_stock_warning')->with('product')->get(),
         ]);
     }
 }
