@@ -7,7 +7,7 @@ const EXPORT_TYPES = [
     { key: 'sale',     label: 'Export per Transaksi',   routeName: 'admin.sale.export.sale'    },
 ];
 
-export default function ExportWithPercent({ type, onClose }) {
+export default function ExportWithPercent({ type, onClose, from, to }) {
     const [percent, setPercent] = useState(100);
 
     const exportType = EXPORT_TYPES.find(t => t.key === type);
@@ -18,7 +18,7 @@ export default function ExportWithPercent({ type, onClose }) {
     };
 
     const handleDownload = () => {
-        const url = route(exportType.routeName, { qty_percent: percent });
+        const url = route(exportType.routeName, { qty_percent: percent, from, to });
         window.location.href = url;
         onClose();
     };

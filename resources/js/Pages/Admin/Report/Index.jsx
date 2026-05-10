@@ -1,7 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, BarChart2, Search } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart2, Search, FileDown } from 'lucide-react';
+
+import ExportWithPercent from './ExportWithPercent';
+import ExportSpecificProduct from './ExportSpecificProduct';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -54,10 +57,13 @@ function BarChart({ data }) {
     );
 }
 
-export default function Index({ from, to, omzet_per_day, summary, variant_stats }) {
+export default function Index({ from, to, omzet_per_day, summary, variant_stats, products }) {
     const [dateFrom, setDateFrom] = useState(from);
     const [dateTo,   setDateTo]   = useState(to);
     const [search,   setSearch]   = useState('');
+
+    const [exportType, setExportType] = useState(null);
+    const [isExportingSpecificProduct, setIsExportingSpecificProduct] = useState(false);
 
     function handleFilter(e) {
         e.preventDefault();
@@ -78,27 +84,41 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats 
             <Head title="Laporan" />
 
             {/* ── Date range filter ── */}
-            <form onSubmit={handleFilter} className="flex flex-wrap items-end gap-3 mb-6">
-                <div className="grid gap-1">
-                    <label className="text-xs font-medium text-slate-500">Dari</label>
-                    <input
-                        type="date"
-                        value={dateFrom}
-                        onChange={e => setDateFrom(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-                    />
+            <div className="w-full flex items-center justify-between">
+                <form onSubmit={handleFilter} className="flex flex-wrap items-end gap-3 mb-6">
+                    <div className="grid gap-1">
+                        <label className="text-xs font-medium text-slate-500">Dari</label>
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={e => setDateFrom(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                    </div>
+                    <div className="grid gap-1">
+                        <label className="text-xs font-medium text-slate-500">Sampai</label>
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={e => setDateTo(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                        />
+                    </div>
+                    <PrimaryButton type="submit">Tampilkan</PrimaryButton>
+                </form>
+
+                <div className="flex items-center gap-2">
+                    <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setExportType('product')}>
+                        Export by Produk
+                    </PrimaryButton>
+                    <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setExportType('sale')}>
+                        Export by Transaksi
+                    </PrimaryButton>
+                    <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setIsExportingSpecificProduct(true)}>
+                        Export by Varian Spesifik
+                    </PrimaryButton>
                 </div>
-                <div className="grid gap-1">
-                    <label className="text-xs font-medium text-slate-500">Sampai</label>
-                    <input
-                        type="date"
-                        value={dateTo}
-                        onChange={e => setDateTo(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-                    />
-                </div>
-                <PrimaryButton type="submit">Tampilkan</PrimaryButton>
-            </form>
+            </div>
 
             {/* ── Summary cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -166,6 +186,13 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats 
                     ))}
                 </Table>
             </div>
+
+            {isExportingSpecificProduct && (
+                <ExportSpecificProduct isOpen={isExportingSpecificProduct} onClose={() => setIsExportingSpecificProduct(false)} products={products} from={dateFrom} to={dateTo} />
+            )}
+            {exportType && (
+                <ExportWithPercent type={exportType} onClose={() => setExportType(null)} from={dateFrom} to={dateTo} />
+            )}
         </AuthenticatedLayout>
     );
 }

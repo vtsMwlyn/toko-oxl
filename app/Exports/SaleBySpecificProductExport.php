@@ -4,16 +4,17 @@ namespace App\Exports;
 
 use App\Models\Product;
 use App\Models\SaleItem;
+use App\Models\Variant;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class SaleBySpecificProductExport implements
     FromCollection,
@@ -24,14 +25,17 @@ class SaleBySpecificProductExport implements
     WithColumnFormatting,
     ShouldAutoSize
 {
-    protected Product $product;
-
+    protected Variant $variant;
     protected float $qtyPercent;
+    protected ?string $from;
+    protected ?string $to;
 
-    public function __construct(Product $product, float $qtyPercent = 100)
+    public function __construct(Variant $variant, float $qtyPercent = 100, ?string $from = null, ?string $to = null)
     {
-        $this->product    = $product;
+        $this->variant    = $variant;
         $this->qtyPercent = $qtyPercent / 100;
+        $this->from = $from;
+        $this->to = $to;
     }
 
     // ── Data ──────────────────────────────────────────────────────────────────
@@ -39,8 +43,12 @@ class SaleBySpecificProductExport implements
     public function collection()
     {
         return SaleItem::with(['sale', 'variant'])
-            ->whereHas('sale', fn($q) => $q->where('status', 'Fixed'))
-            ->whereHas('variant', fn($q) => $q->where('product_id', $this->product->id))
+            ->whereHas('sale', fn($q) => $q
+                ->where('status', 'Fixed')
+                ->when($this->from, fn($q) => $q->whereDate('date', '>=', $this->from))
+                ->when($this->to,   fn($q) => $q->whereDate('date', '<=', $this->to))
+            )
+            ->where('variant_id', $this->variant->id)
             ->orderByDesc(
                 \App\Models\Sale::select('date')
                     ->whereColumn('sales.id', 'sale_items.sale_id')
@@ -54,7 +62,7 @@ class SaleBySpecificProductExport implements
     public function title(): string
     {
         // Sheet names are limited to 31 chars in Excel
-        return substr($this->product->name, 0, 31);
+        return substr($this->variant->product->name, 0, 31);
     }
 
     // ── Column headings ───────────────────────────────────────────────────────

@@ -24,10 +24,14 @@ class SaleByProductExport implements
     WithTitle
 {
     protected float $qtyPercent;
+    protected string $from;
+    protected string $to;
 
-    public function __construct(float $qtyPercent = 100)
+    public function __construct(float $qtyPercent = 100, string $from = null, string $to = null)
     {
         $this->qtyPercent = $qtyPercent / 100;
+        $this->from = $from;
+        $this->to = $to;
     }
 
     public function title(): string
@@ -38,7 +42,11 @@ class SaleByProductExport implements
     public function collection()
     {
         return SaleItem::with(['variant.product', 'sale'])
-            ->where('type', 'Sell')
+            ->whereHas('sale', fn($q) => $q
+                ->where('status', 'Fixed')
+                ->when($this->from, fn($q) => $q->whereDate('date', '>=', $this->from))
+                ->when($this->to,   fn($q) => $q->whereDate('date', '<=', $this->to))
+            )
             ->whereHas('sale', fn($q) => $q->where('status', 'Fixed'))
             ->get()
             ->sortBy([
@@ -62,7 +70,7 @@ class SaleByProductExport implements
             $item->variant->name          ?? '—',
             $item->sale->date,
             $item->sale->customer_name    ?? '',
-            (int) floor($item->qty * $this->qtyPercent),   // ← adjusted
+            (int) ceil($item->qty * $this->qtyPercent),
             $item->price,
         ]];
     }

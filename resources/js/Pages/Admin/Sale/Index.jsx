@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Eye, FileDown, ClipboardCheck, Printer } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, ClipboardCheck } from 'lucide-react';
 import { useState } from 'react';
 
 import Table from '@/Components/Table';
@@ -10,11 +10,10 @@ import TextInput from '@/Components/TextInput';
 import Show from './Show';
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
+import BatchDelete from './BatchDelete';
 
-import ExportSpecificProduct from './ExportSpecificProduct';
 import PrintReceipt from '@/Pages/PrintReceipt';
 import SetFixed from './SetFixed';
-import ExportWithPercent from './ExportWithPercent';
 
 import formatPrice from '@/Helpers/formatPrice';
 import formatDate from '@/Helpers/formatDate';
@@ -25,9 +24,28 @@ const statusBadge = {
     Fixed: 'bg-emerald-100 text-emerald-700',
 };
 
-// Modal that lists all transactions for a given date
-function DateSalesModal({ isOpen, onClose, date, sales, products, onView, onEdit, onDelete, onSetFixed, auth }) {
+// Modal that lists all transactions for a given date, with batch-select support
+function DateSalesModal({
+    isOpen, onClose, date, sales, products,
+    onView, onEdit, onDelete, onSetFixed,
+    onBatchDelete, auth,
+}) {
+    const [selectedIds, setSelectedIds] = useState([]);
+
     if (!isOpen) return null;
+
+    const allSelected = sales.length > 0 && sales.every(s => selectedIds.includes(s.id));
+
+    const toggleAll = () => {
+        setSelectedIds(allSelected ? [] : sales.map(s => s.id));
+    };
+
+    const toggleOne = (id) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[80vh] flex flex-col">
@@ -35,10 +53,22 @@ function DateSalesModal({ isOpen, onClose, date, sales, products, onView, onEdit
                     <h2 className="text-lg font-semibold">Transaksi — {formatDate(date)}</h2>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
                 </div>
+
                 <div className="overflow-auto flex-1">
                     <table className="w-full text-sm">
                         <thead className="bg-slate-50 text-slate-500 uppercase text-xs">
                             <tr>
+                                {auth.user.role === 'Admin' && (
+                                    <th className="px-4 py-3 text-left">
+                                        <input
+                                            type="checkbox"
+                                            checked={allSelected}
+                                            onChange={toggleAll}
+                                            className="accent-emerald-600 cursor-pointer"
+                                            title="Pilih semua"
+                                        />
+                                    </th>
+                                )}
                                 <th className="px-4 py-3 text-left">No. Antrian</th>
                                 <th className="px-4 py-3 text-left">Waktu</th>
                                 <th className="px-4 py-3 text-left">Pelanggan</th>
@@ -49,18 +79,28 @@ function DateSalesModal({ isOpen, onClose, date, sales, products, onView, onEdit
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {sales.map((sale, index) => (
-                                <tr key={index} className="hover:bg-slate-50">
+                                <tr
+                                    key={index}
+                                    className={`hover:bg-slate-50 ${selectedIds.includes(sale.id) ? 'bg-emerald-50' : ''}`}
+                                >
+                                    {auth.user.role === 'Admin' && (
+                                        <td className="px-4 py-3">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(sale.id)}
+                                                onChange={() => toggleOne(sale.id)}
+                                                className="accent-emerald-600 cursor-pointer"
+                                            />
+                                        </td>
+                                    )}
                                     <td className="px-4 py-3">{sale.queue_number}</td>
                                     <td className="px-4 py-3">{formatTime(sale.time)}</td>
                                     <td className="px-4 py-3">{sale.customer_name || <span className="text-slate-400 italic">—</span>}</td>
                                     <td className="px-4 py-3">
-                                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.Draft}`}>
-                                            {sale.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3">{formatPrice(sale.total)}</td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex gap-2 items-center">
+                                        <div className="w-full flex items-center gap-2">
+                                            <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.Draft}`}>
+                                                {sale.status}
+                                            </span>
                                             {sale.status === 'Draft' && (
                                                 <PrimaryButton
                                                     styled={false} className="text-emerald-600"
@@ -68,9 +108,12 @@ function DateSalesModal({ isOpen, onClose, date, sales, products, onView, onEdit
                                                     onClick={() => onSetFixed(sale)}
                                                 />
                                             )}
-                                            {sale.status === 'Fixed' && (
-                                                <PrintReceipt icon={true} sale={sale} products={products} />
-                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3">{formatPrice(sale.total)}</td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex gap-2 items-center">
+                                            <PrintReceipt icon={true} sale={sale} products={products} />
                                             <PrimaryButton
                                                 styled={false} className="text-emerald-600"
                                                 icon={<Eye className="size-4" />} type="button"
@@ -95,11 +138,24 @@ function DateSalesModal({ isOpen, onClose, date, sales, products, onView, onEdit
                         </tbody>
                     </table>
                 </div>
-                <div className="px-6 py-3 border-t text-sm text-slate-500 flex justify-between">
+
+                <div className="px-6 py-3 border-t text-sm text-slate-500 flex justify-between items-center">
                     <span>{sales.length} transaksi</span>
-                    <span className="font-medium text-slate-700">
-                        Total: {formatPrice(sales.reduce((sum, s) => sum + (s.total ?? 0), 0))}
-                    </span>
+                    <div className="flex items-center gap-4">
+                        {auth.user.role === 'Admin' && selectedIds.length > 0 && (
+                            <PrimaryButton
+                                icon={<Trash2 className="size-4" />}
+                                type="button"
+                                className="bg-red-600 hover:bg-red-700 text-white text-xs py-1 px-3"
+                                onClick={() => onBatchDelete(selectedIds)}
+                            >
+                                Hapus ({selectedIds.length})
+                            </PrimaryButton>
+                        )}
+                        <span className="font-medium text-slate-700">
+                            Total: {formatPrice(sales.reduce((sum, s) => sum + (s.total ?? 0), 0))}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -114,22 +170,21 @@ export default function Index({ sales, products, customers }) {
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
 
-    const [exportType, setExportType] = useState(null);
-    const [isExportingSpecificProduct, setIsExportingSpecificProduct] = useState(false);
     const [isSettingFixed, setIsSettingFixed] = useState(false);
 
     const [selectedTab, setSelectedTab] = useState(auth.user.role === 'Admin' ? 'All' : 'Draft');
 
     // Date group modal state
-    const [viewingDateGroup, setViewingDateGroup] = useState(null); // { date, sales }
+    const [viewingDateGroup, setViewingDateGroup] = useState(null);
 
-    // Today's date string in the same format as sale.date
+    // Batch delete state — batchIds is what gets passed to the popup
+    const [selectedIds,    setSelectedIds]    = useState([]);
+    const [batchIds,       setBatchIds]       = useState([]);
+    const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+
     const todayStr = new Date().toISOString().slice(0, 10);
-
-    // Sales filtered to today only (for Draft/Fixed tabs)
     const todaySales = sales.filter(s => s.date?.slice(0, 10) === todayStr);
 
-    // Sales grouped by date (for All tab), sorted newest first
     const salesByDate = sales.reduce((acc, sale) => {
         const dateKey = sale.date?.slice(0, 10) ?? 'Unknown';
         if (!acc[dateKey]) acc[dateKey] = [];
@@ -137,6 +192,62 @@ export default function Index({ sales, products, customers }) {
         return acc;
     }, {});
     const sortedDates = Object.keys(salesByDate).sort((a, b) => b.localeCompare(a));
+
+    const visibleSales = selectedTab === 'All'
+        ? []
+        : todaySales.filter(s => s.status === selectedTab);
+
+    const allVisibleIds = visibleSales.map(s => s.id);
+    const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.includes(id));
+
+    const toggleAll = () => {
+        if (allSelected) {
+            setSelectedIds(prev => prev.filter(id => !allVisibleIds.includes(id)));
+        } else {
+            setSelectedIds(prev => [...new Set([...prev, ...allVisibleIds])]);
+        }
+    };
+
+    const toggleOne = (id) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const handleTabChange = (tab) => {
+        setSelectedTab(tab);
+        setSelectedIds([]);
+        setSelectedDates([]);
+    };
+
+    // Batch delete at the date-group level (All tab)
+    const [selectedDates, setSelectedDates] = useState([]);
+
+    const allDatesSelected = sortedDates.length > 0 && sortedDates.every(d => selectedDates.includes(d));
+
+    const toggleAllDates = () => {
+        setSelectedDates(allDatesSelected ? [] : [...sortedDates]);
+    };
+
+    const toggleOneDate = (dateKey) => {
+        setSelectedDates(prev =>
+            prev.includes(dateKey) ? prev.filter(d => d !== dateKey) : [...prev, dateKey]
+        );
+    };
+
+    // IDs of every transaction inside the selected date groups
+    const selectedDateGroupIds = selectedDates.flatMap(d => (salesByDate[d] ?? []).map(s => s.id));
+
+    // Single entry point for opening the batch delete popup
+    const openBatchDelete = (ids) => {
+        setBatchIds(ids);
+        setIsBatchDeleting(true);
+    };
+
+    const closeBatchDelete = () => {
+        setIsBatchDeleting(false);
+        setBatchIds([]);
+    };
 
     return (
         <AuthenticatedLayout title="Penjualan">
@@ -149,23 +260,35 @@ export default function Index({ sales, products, customers }) {
                             <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                                 Tambah Penjualan
                             </PrimaryButton>
-                            <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setExportType('product')}>
-                                Export per Produk
-                            </PrimaryButton>
-                            <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setExportType('sale')}>
-                                Export per Transaksi
-                            </PrimaryButton>
-                            <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setIsExportingSpecificProduct(true)}>
-                                Export Produk Spesifik
-                            </PrimaryButton>
+
+                            {selectedIds.length > 0 && selectedTab !== 'All' && (
+                                <PrimaryButton
+                                    icon={<Trash2 className="size-4" />}
+                                    type="button"
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                    onClick={() => openBatchDelete(selectedIds)}
+                                >
+                                    Hapus ({selectedIds.length})
+                                </PrimaryButton>
+                            )}
+                            {selectedDates.length > 0 && selectedTab === 'All' && (
+                                <PrimaryButton
+                                    icon={<Trash2 className="size-4" />}
+                                    type="button"
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                    onClick={() => openBatchDelete(selectedDateGroupIds)}
+                                >
+                                    Hapus ({selectedDates.length} hari, {selectedDateGroupIds.length} transaksi)
+                                </PrimaryButton>
+                            )}
                         </div>
                         <TextInput placeholder="Cari penjualan..." />
                     </div>
 
                     <div className="w-1/3 grid grid-cols-3 mt-6 gap-1">
-                        <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Fixed' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => setSelectedTab('Fixed')}>Fixed</button>
-                        <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Draft' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => setSelectedTab('Draft')}>Draft</button>
-                        <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'All' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => setSelectedTab('All')}>Riwayat</button>
+                        <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Fixed' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('Fixed')}>Fixed</button>
+                        <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Draft' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('Draft')}>Draft</button>
+                        <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'All' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('All')}>Riwayat</button>
                     </div>
                 </>
             )}
@@ -174,15 +297,48 @@ export default function Index({ sales, products, customers }) {
             {selectedTab === 'All' ? (
                 <Table
                     isEmpty={sortedDates.length === 0}
-                    headers={['Tanggal', 'Jumlah Transaksi', 'Total', 'Aksi']}
+                    headers={[
+                        auth.user.role === 'Admin'
+                            ? (
+                                <input
+                                    type="checkbox"
+                                    checked={allDatesSelected}
+                                    onChange={toggleAllDates}
+                                    className="accent-emerald-600 cursor-pointer"
+                                    title="Pilih semua tanggal"
+                                />
+                            )
+                            : null,
+                        'Tanggal', 'Jumlah Transaksi', 'Total', 'Aksi',
+                    ].filter(h => h !== null)}
                     className="mt-4"
                 >
                     {sortedDates.map((dateKey) => {
                         const group = salesByDate[dateKey];
                         const groupTotal = group.reduce((sum, s) => sum + (s.total ?? 0), 0);
+                        const hasDraft = group.some(s => s.status === 'Draft');
                         return (
-                            <tr key={dateKey} className="hover:bg-slate-200">
-                                <td>{formatDate(dateKey)}</td>
+                            <tr key={dateKey} className={`hover:bg-slate-200 ${selectedDates.includes(dateKey) ? 'bg-emerald-50' : ''}`}>
+                                {auth.user.role === 'Admin' && (
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedDates.includes(dateKey)}
+                                            onChange={() => toggleOneDate(dateKey)}
+                                            className="accent-emerald-600 cursor-pointer"
+                                        />
+                                    </td>
+                                )}
+                                <td>
+                                    <div className="flex items-center gap-2">
+                                        {formatDate(dateKey)}
+                                        {hasDraft && (
+                                            <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-700">
+                                                Draft
+                                            </span>
+                                        )}
+                                    </div>
+                                </td>
                                 <td>{group.length} transaksi</td>
                                 <td>{formatPrice(groupTotal)}</td>
                                 <td>
@@ -197,14 +353,37 @@ export default function Index({ sales, products, customers }) {
                     })}
                 </Table>
             ) : (
-                /* DRAFT / FIXED TABS — today only */
+                /* DRAFT / FIXED TABS — today only, with checkboxes */
                 <Table
-                    isEmpty={todaySales.filter(s => s.status === selectedTab).length === 0}
-                    headers={['Tanggal', 'Waktu', 'No. Antrian', 'Pelanggan', 'Status', 'Total', 'Aksi']}
+                    isEmpty={visibleSales.length === 0}
+                    headers={[
+                        auth.user.role === 'Admin'
+                            ? (
+                                <input
+                                    type="checkbox"
+                                    checked={allSelected}
+                                    onChange={toggleAll}
+                                    className="accent-emerald-600 cursor-pointer"
+                                    title="Pilih semua"
+                                />
+                            )
+                            : null,
+                        'Tanggal', 'Waktu', 'No. Antrian', 'Pelanggan', 'Status', 'Total', 'Aksi',
+                    ].filter(h => h !== null)}
                     className={auth.user.role === 'Admin' ? 'mt-4' : ''}
                 >
-                    {todaySales.filter(s => s.status === selectedTab).map((sale, index) => (
-                        <tr key={index} className="hover:bg-slate-200">
+                    {visibleSales.map((sale, index) => (
+                        <tr key={index} className={`hover:bg-slate-200 ${selectedIds.includes(sale.id) ? 'bg-emerald-50' : ''}`}>
+                            {auth.user.role === 'Admin' && (
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedIds.includes(sale.id)}
+                                        onChange={() => toggleOne(sale.id)}
+                                        className="accent-emerald-600 cursor-pointer"
+                                    />
+                                </td>
+                            )}
                             <td>{formatDate(sale.date)}</td>
                             <td>{formatTime(sale.time)}</td>
                             <td>{sale.queue_number}</td>
@@ -251,7 +430,7 @@ export default function Index({ sales, products, customers }) {
                 </Table>
             )}
 
-            {/* Date group modal */}
+            {/* Date group modal — now with onBatchDelete */}
             {viewingDateGroup && (
                 <DateSalesModal
                     isOpen={!!viewingDateGroup}
@@ -264,6 +443,7 @@ export default function Index({ sales, products, customers }) {
                     onEdit={(sale) => { setViewingDateGroup(null); setIsEditing(sale); }}
                     onDelete={(sale) => { setViewingDateGroup(null); setIsDeleting(sale); }}
                     onSetFixed={(sale) => { setViewingDateGroup(null); setIsSettingFixed(sale); }}
+                    onBatchDelete={(ids) => { setViewingDateGroup(null); openBatchDelete(ids); }}
                 />
             )}
 
@@ -279,14 +459,17 @@ export default function Index({ sales, products, customers }) {
             {isDeleting && (
                 <Delete isOpen={!!isDeleting} onClose={() => setIsDeleting(null)} sale={isDeleting} />
             )}
-            {isExportingSpecificProduct && (
-                <ExportSpecificProduct isOpen={isExportingSpecificProduct} onClose={() => setIsExportingSpecificProduct(false)} products={products} />
-            )}
-            {exportType && (
-                <ExportWithPercent type={exportType} onClose={() => setExportType(null)} />
-            )}
             {isSettingFixed && (
                 <SetFixed isOpen={isSettingFixed} onClose={() => setIsSettingFixed(false)} sale={isSettingFixed} />
+            )}
+
+            {isBatchDeleting && (
+                <BatchDelete
+                    isOpen={isBatchDeleting}
+                    onClose={closeBatchDelete}
+                    saleIds={batchIds}
+                    onSuccess={() => { setSelectedIds([]); setSelectedDates([]); }}
+                />
             )}
         </AuthenticatedLayout>
     );

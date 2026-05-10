@@ -6,15 +6,16 @@ use App\Exports\SaleByProductExport;
 use App\Exports\SaleBySaleExport;
 use App\Exports\SaleBySpecificProductExport;
 use App\Helpers\ModelChangeLogger;
+use App\Helpers\SaleItemChangeLogger;
 use App\Models\ActionLog;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\Variant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Helpers\SaleItemChangeLogger;
 
 class SaleController extends Controller
 {
@@ -124,6 +125,23 @@ class SaleController extends Controller
         return back();
     }
 
+    public function destroyBatch(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:sales,id'],
+        ]);
+
+        $sales = Sale::whereIn('id', $validated['ids'])->get();
+
+        foreach ($sales as $sale) {
+            $sale->items()->delete();
+            $sale->delete();
+        }
+
+        return back();
+    }
+
     public function set_fixed(Sale $sale){
         $sale->update(['status' => 'Fixed']);
 
@@ -135,29 +153,37 @@ class SaleController extends Controller
         return back();
     }
 
-    public function exportByProduct(Request $request) {
-        $percent = (float) $request->input('qty_percent', 100);
-        $percent = max(1, min(100, $percent));
-
-        $filename = 'penjualan_per_produk_' . now()->format('Ymd_His') . '.xlsx';
-        return Excel::download(new SaleByProductExport($percent), $filename);
-    }
-
-    public function exportBySpecificProduct(Request $request, Product $product)
+    public function exportByProduct(Request $request)
     {
         $percent = (float) $request->input('qty_percent', 100);
         $percent = max(1, min(100, $percent));
+        $from    = $request->input('from');
+        $to      = $request->input('to');
 
-        $filename = 'penjualan_' . str($product->name)->slug('_') . '_' . now()->format('Ymd_His') . '.xlsx';
-        return Excel::download(new SaleBySpecificProductExport($product, $percent), $filename);
+        $filename = 'penjualan_per_produk_' . now()->format('Ymd_His') . '.xlsx';
+        return Excel::download(new SaleByProductExport($percent, $from, $to), $filename);
     }
 
-    public function exportBySale(Request $request) {
+    public function exportBySpecificProduct(Request $request, Variant $variant)
+    {
         $percent = (float) $request->input('qty_percent', 100);
         $percent = max(1, min(100, $percent));
+        $from    = $request->input('from');
+        $to      = $request->input('to');
+
+        $filename = 'penjualan_' . str($variant->product->name)->slug('_') . '_' . now()->format('Ymd_His') . '.xlsx';
+        return Excel::download(new SaleBySpecificProductExport($variant, $percent, $from, $to), $filename);
+    }
+
+    public function exportBySale(Request $request)
+    {
+        $percent = (float) $request->input('qty_percent', 100);
+        $percent = max(1, min(100, $percent));
+        $from    = $request->input('from');
+        $to      = $request->input('to');
 
         $filename = 'penjualan_per_transaksi_' . now()->format('Ymd_His') . '.xlsx';
-        return Excel::download(new SaleBySaleExport($percent), $filename);
+        return Excel::download(new SaleBySaleExport($percent, $from, $to), $filename);
     }
 
     // ── Private helper ────────────────────────────────────────────────────────

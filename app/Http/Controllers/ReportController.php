@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use Illuminate\Http\Request;
@@ -86,6 +87,7 @@ class ReportController extends Controller
                 'average_omzet' => $averageOmzet,
             ],
             'variant_stats' => $variantStats,
+            'products'  => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
         ]);
     }
 }

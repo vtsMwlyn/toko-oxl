@@ -5,7 +5,7 @@ import Select from '@/Components/Select';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 
-export default function ExportSpecificProduct({ isOpen, onClose, products }) {
+export default function ExportSpecificProduct({ isOpen, onClose, products, from, to }) {
     const [selected, setSelected] = useState(null);
     const [percent, setPercent] = useState(100);
 
@@ -16,9 +16,10 @@ export default function ExportSpecificProduct({ isOpen, onClose, products }) {
 
     function handleDownload() {
         if (!selected) return;
-        window.location.href = route('admin.sale.export.product.specific', {
-            product: selected.variant.product.id,
+        window.location.href = route('admin.sale.export.variant.specific', {
+            variant: selected.variant.id,
             qty_percent: percent,
+            from, to,
         });
     }
 

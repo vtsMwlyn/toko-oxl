@@ -23,8 +23,10 @@ class SaleBySaleExport implements
     WithTitle
 {
     protected float $qtyPercent;
+    protected string $from;
+    protected string $to;
 
-    public function __construct(float $qtyPercent = 100)
+    public function __construct(float $qtyPercent = 100, string $from = null, string $to = null)
     {
         $this->qtyPercent = $qtyPercent / 100;
     }
@@ -38,6 +40,8 @@ class SaleBySaleExport implements
     {
         return Sale::with(['items.variant.product'])
             ->where('status', 'Fixed')
+            ->when($this->from, fn($q) => $q->whereDate('date', '>=', $this->from))
+            ->when($this->to,   fn($q) => $q->whereDate('date', '<=', $this->to))
             ->orderByDesc('date')
             ->orderByDesc('time')
             ->get()
@@ -62,7 +66,7 @@ class SaleBySaleExport implements
             $row['sale']->customer_name          ?? '',
             $row['item']->variant->product->name ?? '—',
             $row['item']->variant->name          ?? '—',
-            (int) floor($row['item']->qty * $this->qtyPercent),
+            (int) ceil($row['item']->qty * $this->qtyPercent),
             $row['item']->price,
         ]];
     }
