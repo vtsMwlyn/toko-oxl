@@ -7,6 +7,7 @@ use App\Http\Controllers\LogController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +77,13 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/sales/export/product', [SaleController::class, 'exportByProduct'])->name('export.product');
             Route::get('/export/product/{variant}', [SaleController::class, 'exportBySpecificProduct'])->name('export.variant.specific');
             Route::get('/sales/export/sale',    [SaleController::class, 'exportBySale'])->name('export.sale');
+        });
+
+        Route::prefix('returns')->name('return.')->group(function () {
+            Route::get('/',              [ReturnController::class, 'index'])->name('index');
+            Route::post('/',             [ReturnController::class, 'store'])->name('store');
+            Route::put('/{return}',      [ReturnController::class, 'update'])->name('update');
+            Route::delete('/{return}',   [ReturnController::class, 'destroy'])->name('destroy');
         });
 
         // Report

@@ -32,16 +32,11 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
     const [success, setSuccess] = useState(false);
 
     const [soldItems, setSoldItems] = useState(() =>
-        (sale?.items?.filter(i => i.type === 'Sell') ?? [])
-            .map(i => ({ ...i, _localId: i._localId ?? i.id }))
-    );
-    const [returnItems, setReturnItems] = useState(() =>
-        (sale?.items?.filter(i => i.type === 'Return') ?? [])
-            .map(i => ({ ...i, _localId: i._localId ?? i.id }))
+        (sale?.items ?? []).map(i => ({ ...i, _localId: i._localId ?? i.id }))
     );
 
     const [itemPopup, setItemPopup] = useState(null);
-    // shape: { type: 'Sell'|'Return', mode: 'Create'|'Edit'|'Remove', item?: object }
+    // shape: { mode: 'Create'|'Edit'|'Remove', item?: object }
 
     // Build customer options for the creatable select
     const customerOptions = (customers ?? []).map(c => ({
@@ -69,22 +64,18 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         setData('customer_name', option?.value ?? '');
     }
 
-    function handleItemSave(type, item) {
-        const setter = type === 'Sell' ? setSoldItems : setReturnItems;
-        setter(prev => {
+    function handleItemSave(item) {
+        setSoldItems(prev => {
             const exists = prev.some(i => i._localId === item._localId);
             if (exists) {
-                // Replace the matching row in-place
                 return prev.map(i => i._localId === item._localId ? item : i);
             }
-            // Brand-new item — mint a fresh _localId
             return [...prev, { ...item, _localId: Date.now() }];
         });
     }
 
-    function handleItemRemove(type, localId) {
-        const setter = type === 'Sell' ? setSoldItems : setReturnItems;
-        setter(prev => prev.filter(i => i._localId !== localId));
+    function handleItemRemove(localId) {
+        setSoldItems(prev => prev.filter(i => i._localId !== localId));
     }
 
     const submit = (e) => {
@@ -93,10 +84,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
 
         const payload = {
             ...data,
-            items: [
-                ...soldItems.map(({ _localId, ...i })  => ({ ...i, type: 'Sell' })),
-                ...returnItems.map(({ _localId, ...i }) => ({ ...i, type: 'Return' })),
-            ],
+            items: soldItems.map(({ _localId, ...i }) => i),
         };
 
         const afterSubmission = {
@@ -117,9 +105,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         }
     };
 
-    const soldTotal   = computeTotal(soldItems);
-    const returnTotal = computeTotal(returnItems);
-    const grandTotal  = soldTotal - returnTotal;
+    const total = computeTotal(soldItems);
 
     return (
         <Popup
@@ -197,47 +183,27 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                     <SectionTitle>Daftar Produk Terjual</SectionTitle>
                     <ItemsTable
                         items={soldItems}
-                        onEdit={(item)   => setItemPopup({ type: 'Sell',   mode: 'Edit',   item })}
-                        onRemove={(item) => setItemPopup({ type: 'Sell',   mode: 'Remove', item })}
+                        onEdit={(item)   => setItemPopup({ mode: 'Edit',   item })}
+                        onRemove={(item) => setItemPopup({ mode: 'Remove', item })}
                         products={products}
                     />
                     <div className="flex justify-between items-center mt-2">
                         <PrimaryButton
                             icon={<Plus className="size-4" />} type="button"
-                            onClick={() => setItemPopup({ type: 'Sell', mode: 'Create' })}
+                            onClick={() => setItemPopup({ mode: 'Create' })}
                         >
                             Tambah Produk
                         </PrimaryButton>
                         <p className="text-sm text-slate-500">
-                            Subtotal: <span className="font-semibold text-slate-700">{formatPrice(soldTotal)}</span>
+                            Total: <span className="font-semibold text-slate-700">{formatPrice(total)}</span>
                         </p>
                     </div>
 
-                    {/* ── Return items ── */}
-                    <SectionTitle>Daftar Produk Retur</SectionTitle>
-                    <ItemsTable
-                        items={returnItems}
-                        onEdit={(item)   => setItemPopup({ type: 'Return', mode: 'Edit',   item })}
-                        onRemove={(item) => setItemPopup({ type: 'Return', mode: 'Remove', item })}
-                        products={products}
-                    />
-                    <div className="flex justify-between items-center mt-2">
-                        <PrimaryButton
-                            icon={<Plus className="size-4" />} type="button"
-                            onClick={() => setItemPopup({ type: 'Return', mode: 'Create' })}
-                        >
-                            Tambah Produk Retur
-                        </PrimaryButton>
-                        <p className="text-sm text-slate-500">
-                            Subtotal Retur: <span className="font-semibold text-slate-700">{formatPrice(returnTotal)}</span>
-                        </p>
-                    </div>
-
-                    {/* ── Grand total ── */}
+                    {/* ── Total ── */}
                     <div className="mt-6 flex justify-end">
                         <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
                             <p className="text-xs text-emerald-500 mb-0.5">Total Penjualan</p>
-                            <p className="text-xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
+                            <p className="text-xl font-bold text-emerald-700">{formatPrice(total)}</p>
                         </div>
                     </div>
 
@@ -256,14 +222,13 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
             {itemPopup && itemPopup.mode !== 'Remove' && (
                 <ItemAddEdit
                     mode={itemPopup.mode}
-                    type={itemPopup.type}
                     isOpen={!!itemPopup}
                     item={itemPopup.item}
                     products={products}
                     customerName={data.customer_name}
                     onClose={() => setItemPopup(null)}
                     onSave={(item) => {
-                        handleItemSave(itemPopup.type, item);
+                        handleItemSave(item);
                         setItemPopup(null);
                     }}
                 />
@@ -275,7 +240,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                     products={products}
                     onClose={() => setItemPopup(null)}
                     onConfirm={() => {
-                        handleItemRemove(itemPopup.type, itemPopup.item._localId);
+                        handleItemRemove(itemPopup.item._localId);
                         setItemPopup(null);
                     }}
                 />

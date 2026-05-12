@@ -12,18 +12,20 @@ import {
     Users,
     ShoppingCart,
     Star,
-    History
+    History,
+    Undo2,
 } from 'lucide-react';
 
 const navItems = [
-    { label: 'Dashboard',  icon: LayoutDashboard, urlPrefix: '/dashboard',      href: route('dashboard') },
-    { label: 'Kasir',      icon: ShoppingCart,    urlPrefix: '/cashier',        href: route('cashier.index') },
-    { label: 'Produk',     icon: Landmark,        urlPrefix: '/admin/product',  href: route('admin.product.index') },
-    { label: 'Penjualan',  icon: ShoppingBag,     urlPrefix: '/sale',           href: route('sale.index') },
-    { label: 'Pelanggan',  icon: Star,            urlPrefix: '/admin/customer', href: route('admin.customer.index') },
-    { label: 'Laporan',    icon: BarChart2,       urlPrefix: '/admin/report',   href: route('admin.report.index') },
-    { label: 'Log',        icon: History,         urlPrefix: '/admin/log',      href: route('admin.log.index') },
-    { label: 'Pengguna',   icon: Users,           urlPrefix: '/admin/user',     href: route('admin.user.index') },
+    { label: 'Dashboard',      icon: LayoutDashboard, urlPrefix: '/dashboard',      href: route('dashboard') },
+    { label: 'Kasir',          icon: ShoppingCart,    urlPrefix: '/cashier',        href: route('cashier.index') },
+    { label: 'Produk',         icon: Landmark,        urlPrefix: '/admin/product',  href: route('admin.product.index') },
+    { label: 'Penjualan',      icon: ShoppingBag,     urlPrefix: '/sale',           href: route('sale.index') },
+    { label: 'Retur Produk',   icon: Undo2,           urlPrefix: '/admin/return',   href: route('admin.return.index') },
+    { label: 'Pelanggan',      icon: Star,            urlPrefix: '/admin/customer', href: route('admin.customer.index') },
+    { label: 'Laporan',        icon: BarChart2,       urlPrefix: '/admin/report',   href: route('admin.report.index') },
+    { label: 'Log',            icon: History,         urlPrefix: '/admin/log',      href: route('admin.log.index') },
+    { label: 'Pengguna',       icon: Users,           urlPrefix: '/admin/user',     href: route('admin.user.index') },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -33,7 +35,7 @@ export default function Sidebar({ open, onClose }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef(null);
 
-    // Filter nav items: Admin sees all, others see ONLY 'Kasir'
+    // Filter nav items: Admin sees all, others see ONLY 'Kasir' and 'Penjualan'
     const filteredNavItems = auth.user.role === 'Admin'
         ? navItems
         : navItems.filter(item => ['Kasir', 'Penjualan'].includes(item.label));
@@ -107,7 +109,6 @@ export default function Sidebar({ open, onClose }) {
 
                 {/* ── Navigation links ── */}
                 <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-                    {/* Render using the filtered array */}
                     {filteredNavItems.map(item => {
                         const active = url.startsWith(item.urlPrefix);
                         const NavIcon = item.icon;

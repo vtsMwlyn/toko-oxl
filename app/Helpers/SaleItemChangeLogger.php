@@ -11,15 +11,13 @@ class SaleItemChangeLogger
     {
         $changes = [];
 
-        // Build lookup maps keyed by [variant_id, type] to support
-        // the same variant appearing as both Sell and Return.
+        // Build lookup maps keyed by variant_id only.
         $oldMap = self::toMap($oldItems, isEloquent: true);
         $newMap = self::toMap($newItems, isEloquent: false);
 
-        // Preload all variant+product names needed in one query
+        // Preload all variant+product names needed in one query.
         $allVariantIds = collect(array_keys($oldMap))
             ->merge(array_keys($newMap))
-            ->map(fn($k) => explode('|', $k)[0])
             ->unique()
             ->values()
             ->all();
@@ -30,9 +28,8 @@ class SaleItemChangeLogger
             ->keyBy('id');
 
         // ➕ Added (in new, not in old)
-        foreach ($newMap as $key => $newItem) {
-            if (!isset($oldMap[$key])) {
-                [$variantId] = explode('|', $key);
+        foreach ($newMap as $variantId => $newItem) {
+            if (!isset($oldMap[$variantId])) {
                 $variant = $variants[$variantId] ?? null;
 
                 $changes[] = [
@@ -46,9 +43,8 @@ class SaleItemChangeLogger
         }
 
         // ❌ Removed (in old, not in new)
-        foreach ($oldMap as $key => $oldItem) {
-            if (!isset($newMap[$key])) {
-                [$variantId] = explode('|', $key);
+        foreach ($oldMap as $variantId => $oldItem) {
+            if (!isset($newMap[$variantId])) {
                 $variant = $variants[$variantId] ?? null;
 
                 $changes[] = [
@@ -64,23 +60,22 @@ class SaleItemChangeLogger
         }
 
         // 🔄 Updated (in both, fields changed)
-        foreach ($newMap as $key => $newItem) {
-            if (!isset($oldMap[$key])) {
+        foreach ($newMap as $variantId => $newItem) {
+            if (!isset($oldMap[$variantId])) {
                 continue; // already handled as added
             }
 
-            [$variantId] = explode('|', $key);
-            $variant  = $variants[$variantId] ?? null;
-            $oldItem  = $oldMap[$key];
+            $variant = $variants[$variantId] ?? null;
+            $oldItem = $oldMap[$variantId];
 
-            foreach (['price', 'qty', 'discount', 'type'] as $field) {
+            foreach (['price', 'qty', 'discount'] as $field) {
                 $oldValue = $oldItem instanceof \Illuminate\Database\Eloquent\Model
                     ? $oldItem->$field
                     : ($oldItem[$field] ?? null);
 
                 $newValue = $newItem[$field] ?? null;
 
-                // Cast to same type before comparing to avoid "100" != 100 false positives
+                // Cast to same type before comparing to avoid "100" != 100 false positives.
                 if ((string) $oldValue !== (string) $newValue) {
                     $changes[] = [
                         'type'         => 'updated',
@@ -99,18 +94,15 @@ class SaleItemChangeLogger
     }
 
     /**
-     * Build a map keyed by "variant_id|type" so the same variant
-     * can appear as both Sell and Return without collision.
+     * Build a map keyed by variant_id.
      */
     private static function toMap(Collection $items, bool $isEloquent): array
     {
         $map = [];
 
         foreach ($items as $item) {
-            $variantId = $isEloquent ? $item->variant_id : $item['variant_id'];
-            $type      = $isEloquent ? $item->type       : $item['type'];
-            $key       = "{$variantId}|{$type}";
-            $map[$key] = $item;
+            $variantId       = $isEloquent ? $item->variant_id : $item['variant_id'];
+            $map[$variantId] = $item;
         }
 
         return $map;

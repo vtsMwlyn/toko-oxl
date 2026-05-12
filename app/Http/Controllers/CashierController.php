@@ -16,7 +16,7 @@ class CashierController extends Controller
     public function index()
     {
         return Inertia::render('Cashier/Index', [
-            'products' => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
+            'products'  => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'phone']),
         ]);
     }
@@ -33,26 +33,24 @@ class CashierController extends Controller
             'items.*.price'      => 'required|numeric|min:0',
             'items.*.qty'        => 'required|integer|min:1',
             'items.*.discount'   => 'nullable|numeric|min:0',
-            'items.*.type'       => 'required|in:Sell,Return',
         ]);
 
         $lastSale = Sale::where('date', Carbon::today()->format('Y-m-d'))->orderBy('time', 'desc')->first();
 
         $sale = Sale::create([
-            'date' => $validatedData['date'],
-            'time' => $validatedData['time'],
+            'date'          => $validatedData['date'],
+            'time'          => $validatedData['time'],
             'customer_name' => $validatedData['customer_name'],
-            'status' => $validatedData['status'],
-            'queue_number' => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
+            'status'        => $validatedData['status'],
+            'queue_number'  => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
         ]);
 
-        foreach ($request->items as $item) {
+        foreach ($validatedData['items'] as $item) {
             $sale->items()->create([
                 'variant_id' => $item['variant_id'],
                 'price'      => $item['price'],
                 'discount'   => $item['discount'] ?? 0,
                 'qty'        => $item['qty'],
-                'type'       => $item['type'],
             ]);
         }
 

@@ -1,5 +1,3 @@
-import { Eye } from 'lucide-react';
-
 import Popup from '@/Components/Popup';
 import Table from '@/Components/Table';
 import PrintReceipt from '../../PrintReceipt';
@@ -22,14 +20,14 @@ function InfoRow({ label, value }) {
     );
 }
 
-function ItemsTable({ items, products, emptyText }) {
+function ItemsTable({ items, emptyText }) {
     if (items.length === 0) {
         return (
             <p className="text-sm text-slate-400 italic py-2">{emptyText}</p>
         );
     }
 
-    const sellTotal = items.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
+    const total = items.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
 
     return (
         <div>
@@ -66,7 +64,7 @@ function ItemsTable({ items, products, emptyText }) {
 
             <div className="flex justify-end mt-1 pr-1">
                 <p className="text-xs text-slate-500">
-                    Subtotal: <span className="font-semibold text-slate-700">{formatPrice(sellTotal)}</span>
+                    Subtotal: <span className="font-semibold text-slate-700">{formatPrice(total)}</span>
                 </p>
             </div>
         </div>
@@ -76,12 +74,10 @@ function ItemsTable({ items, products, emptyText }) {
 export default function Show({ isOpen, onClose, sale, products }) {
     if (!sale) return null;
 
-    const soldItems   = sale.items?.filter(i => i.type === 'Sell')   ?? [];
-    const returnItems = sale.items?.filter(i => i.type === 'Return') ?? [];
-
-    const soldTotal   = soldItems.reduce((sum, i)   => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
-    const returnTotal = returnItems.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
-    const grandTotal  = soldTotal - returnTotal;
+    const total = (sale.items ?? []).reduce(
+        (sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty,
+        0
+    );
 
     return (
         <Popup
@@ -92,14 +88,14 @@ export default function Show({ isOpen, onClose, sale, products }) {
         >
             {/* ── Sale header info ── */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-4 border-b border-slate-100">
-                <InfoRow label="Tanggal" value={formatDate(sale.date)} />
-                <InfoRow label="Waktu"   value={formatTime(sale.time)} />
-                <InfoRow label="Pelanggan" value={sale.customer_name} />
+                <InfoRow label="Tanggal"       value={formatDate(sale.date)} />
+                <InfoRow label="Waktu"         value={formatTime(sale.time)} />
+                <InfoRow label="Pelanggan"     value={sale.customer_name} />
                 <InfoRow label="Nomor Antrian" value={sale.queue_number} />
                 <InfoRow
                     label="Status"
                     value={
-                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.draft}`}>
+                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.Draft}`}>
                             {sale.status}
                         </span>
                     }
@@ -109,38 +105,17 @@ export default function Show({ isOpen, onClose, sale, products }) {
             {/* ── Sold items ── */}
             <h2 className="font-bold text-emerald-700 mt-5 mb-2">Produk Terjual</h2>
             <ItemsTable
-                items={soldItems}
-                products={products}
+                items={sale.items ?? []}
                 emptyText="Tidak ada produk terjual."
             />
 
-            {/* ── Returned items ── */}
-            <h2 className="font-bold text-emerald-700 mt-5 mb-2">Produk Retur</h2>
-            <ItemsTable
-                items={returnItems}
-                products={products}
-                emptyText="Tidak ada produk retur."
-            />
-
-            {/* ── Grand total + print ── */}
+            {/* ── Total + print ── */}
             <div className="mt-5 pt-4 border-t border-slate-100 flex justify-between items-end">
                 <PrintReceipt sale={sale} products={products} />
 
                 <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
-                    {returnItems.length > 0 && (
-                        <div className="flex justify-between gap-8 text-xs text-slate-500 mb-1">
-                            <span>Penjualan</span>
-                            <span>{formatPrice(soldTotal)}</span>
-                        </div>
-                    )}
-                    {returnItems.length > 0 && (
-                        <div className="flex justify-between gap-8 text-xs text-red-400 mb-2">
-                            <span>Retur</span>
-                            <span>- {formatPrice(returnTotal)}</span>
-                        </div>
-                    )}
                     <p className="text-xs text-emerald-500 mb-0.5">Total</p>
-                    <p className="text-xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
+                    <p className="text-xl font-bold text-emerald-700">{formatPrice(total)}</p>
                 </div>
             </div>
         </Popup>

@@ -25,8 +25,7 @@ class SaleController extends Controller
             'sales' => Sale::with('items.variant.product')->orderByDesc('date')->orderByDesc('time')->get()
                 ->map(fn($sale) => array_merge($sale->toArray(), [
                     'total' => $sale->items->reduce(function ($carry, $item) {
-                        $subtotal = ($item->price - ($item->discount ?? 0)) * $item->qty;
-                        return $carry + ($item->type === 'Sell' ? $subtotal : -$subtotal);
+                        return $carry + ($item->price - ($item->discount ?? 0)) * $item->qty;
                     }, 0),
                 ])),
             'products'  => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
@@ -46,17 +45,16 @@ class SaleController extends Controller
             'items.*.price'      => 'required|numeric|min:0',
             'items.*.qty'        => 'required|integer|min:1',
             'items.*.discount'   => 'nullable|numeric|min:0',
-            'items.*.type'       => 'required|in:Sell,Return',
         ]);
 
         $lastSale = Sale::where('date', $validatedData['date'])->orderBy('time', 'desc')->first();
 
         $sale = Sale::create([
-            'date' => $validatedData['date'],
-            'time' => $validatedData['time'],
+            'date'          => $validatedData['date'],
+            'time'          => $validatedData['time'],
             'customer_name' => $validatedData['customer_name'],
-            'status' => $validatedData['status'],
-            'queue_number' => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
+            'status'        => $validatedData['status'],
+            'queue_number'  => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
         ]);
 
         $this->syncItems($sale, $request->items ?? []);
@@ -76,7 +74,6 @@ class SaleController extends Controller
             'items.*.price'      => 'required|numeric|min:0',
             'items.*.qty'        => 'required|integer|min:1',
             'items.*.discount'   => 'nullable|numeric|min:0',
-            'items.*.type'       => 'required|in:Sell,Return',
         ]);
 
         // 1. Track sale field changes
@@ -93,10 +90,10 @@ class SaleController extends Controller
 
         // 3. Persist
         $sale->update([
-            'date' => $validatedData['date'],
-            'time' => $validatedData['time'],
+            'date'          => $validatedData['date'],
+            'time'          => $validatedData['time'],
             'customer_name' => $validatedData['customer_name'],
-            'status' => $validatedData['status'],
+            'status'        => $validatedData['status'],
         ]);
 
         $sale->items()->delete();
@@ -128,7 +125,7 @@ class SaleController extends Controller
     public function destroyBatch(Request $request)
     {
         $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
+            'ids'   => ['required', 'array', 'min:1'],
             'ids.*' => ['integer', 'exists:sales,id'],
         ]);
 
@@ -142,7 +139,8 @@ class SaleController extends Controller
         return back();
     }
 
-    public function set_fixed(Sale $sale){
+    public function set_fixed(Sale $sale)
+    {
         $sale->update(['status' => 'Fixed']);
 
         ActionLog::create([
@@ -155,34 +153,34 @@ class SaleController extends Controller
 
     public function exportByProduct(Request $request)
     {
-        $percent = (float) $request->input('qty_percent', 100);
-        $percent = max(1, min(100, $percent));
-        $from    = $request->input('from');
-        $to      = $request->input('to');
-
+        $percent  = (float) $request->input('qty_percent', 100);
+        $percent  = max(1, min(100, $percent));
+        $from     = $request->input('from');
+        $to       = $request->input('to');
         $filename = 'penjualan_per_produk_' . now()->format('Ymd_His') . '.xlsx';
+
         return Excel::download(new SaleByProductExport($percent, $from, $to), $filename);
     }
 
     public function exportBySpecificProduct(Request $request, Variant $variant)
     {
-        $percent = (float) $request->input('qty_percent', 100);
-        $percent = max(1, min(100, $percent));
-        $from    = $request->input('from');
-        $to      = $request->input('to');
-
+        $percent  = (float) $request->input('qty_percent', 100);
+        $percent  = max(1, min(100, $percent));
+        $from     = $request->input('from');
+        $to       = $request->input('to');
         $filename = 'penjualan_' . str($variant->product->name)->slug('_') . '_' . now()->format('Ymd_His') . '.xlsx';
+
         return Excel::download(new SaleBySpecificProductExport($variant, $percent, $from, $to), $filename);
     }
 
     public function exportBySale(Request $request)
     {
-        $percent = (float) $request->input('qty_percent', 100);
-        $percent = max(1, min(100, $percent));
-        $from    = $request->input('from');
-        $to      = $request->input('to');
-
+        $percent  = (float) $request->input('qty_percent', 100);
+        $percent  = max(1, min(100, $percent));
+        $from     = $request->input('from');
+        $to       = $request->input('to');
         $filename = 'penjualan_per_transaksi_' . now()->format('Ymd_His') . '.xlsx';
+
         return Excel::download(new SaleBySaleExport($percent, $from, $to), $filename);
     }
 
@@ -196,7 +194,6 @@ class SaleController extends Controller
                 'price'      => $item['price'],
                 'discount'   => $item['discount'] ?? 0,
                 'qty'        => $item['qty'],
-                'type'       => $item['type'],
             ]);
         }
     }
