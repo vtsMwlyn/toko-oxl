@@ -25,6 +25,7 @@ class SaleController extends Controller
             'sales' => Sale::with('items.variant.product')->orderByDesc('date')->orderByDesc('time')->get()
                 ->map(fn($sale) => array_merge($sale->toArray(), [
                     'total' => $sale->items->reduce(function ($carry, $item) {
+                        if ($item->type !== 'Sell') return $carry;
                         return $carry + ($item->price - ($item->discount ?? 0)) * $item->qty;
                     }, 0),
                 ])),
@@ -45,6 +46,7 @@ class SaleController extends Controller
             'items.*.price'      => 'required|numeric|min:0',
             'items.*.qty'        => 'required|integer|min:1',
             'items.*.discount'   => 'nullable|numeric|min:0',
+            'items.*.type'       => 'required|in:Sell,Return',
         ]);
 
         $lastSale = Sale::where('date', $validatedData['date'])->orderBy('time', 'desc')->first();
@@ -68,12 +70,13 @@ class SaleController extends Controller
             'date'               => 'required|date',
             'time'               => 'required',
             'customer_name'      => 'nullable|string|max:255',
-            'status'             => 'required|in:Draft,Fixed',
+            'status'             => 'nullable|in:Draft,Fixed',
             'items'              => 'array',
             'items.*.variant_id' => 'required|integer|exists:variants,id',
             'items.*.price'      => 'required|numeric|min:0',
             'items.*.qty'        => 'required|integer|min:1',
             'items.*.discount'   => 'nullable|numeric|min:0',
+            'items.*.type'       => 'required|in:Sell,Return',
         ]);
 
         // 1. Track sale field changes
@@ -194,6 +197,7 @@ class SaleController extends Controller
                 'price'      => $item['price'],
                 'discount'   => $item['discount'] ?? 0,
                 'qty'        => $item['qty'],
+                'type'       => $item['type'],
             ]);
         }
     }

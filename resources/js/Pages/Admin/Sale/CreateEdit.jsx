@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
 
 import Popup from '@/Components/Popup';
 import InputLabel from '@/Components/InputLabel';
@@ -28,24 +29,29 @@ function computeTotal(items) {
 }
 
 export default function CreateEdit({ mode, isOpen, onClose, sale, products, customers }) {
+    const { auth } = usePage().props;
+
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
     const [soldItems, setSoldItems] = useState(() =>
-        (sale?.items ?? []).map(i => ({ ...i, _localId: i._localId ?? i.id }))
+        (sale?.items?.filter(i => i.type === 'Sell') ?? [])
+            .map(i => ({ ...i, _localId: i._localId ?? i.id }))
+    );
+    const [returnItems, setReturnItems] = useState(() =>
+        (sale?.items?.filter(i => i.type === 'Return') ?? [])
+            .map(i => ({ ...i, _localId: i._localId ?? i.id }))
     );
 
     const [itemPopup, setItemPopup] = useState(null);
-    // shape: { mode: 'Create'|'Edit'|'Remove', item?: object }
+    // shape: { type: 'Sell'|'Return', mode: 'Create'|'Edit'|'Remove', item?: object }
 
-    // Build customer options for the creatable select
     const customerOptions = (customers ?? []).map(c => ({
         value: c.name,
         label: c.name,
         customer: c,
     }));
 
-    // Resolve the initial select value when editing an existing sale
     const initialCustomerOption = sale?.customer_name
         ? { value: sale.customer_name, label: sale.customer_name }
         : null;
@@ -64,8 +70,9 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         setData('customer_name', option?.value ?? '');
     }
 
-    function handleItemSave(item) {
-        setSoldItems(prev => {
+    function handleItemSave(type, item) {
+        const setter = type === 'Sell' ? setSoldItems : setReturnItems;
+        setter(prev => {
             const exists = prev.some(i => i._localId === item._localId);
             if (exists) {
                 return prev.map(i => i._localId === item._localId ? item : i);
@@ -74,8 +81,9 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         });
     }
 
-    function handleItemRemove(localId) {
-        setSoldItems(prev => prev.filter(i => i._localId !== localId));
+    function handleItemRemove(type, localId) {
+        const setter = type === 'Sell' ? setSoldItems : setReturnItems;
+        setter(prev => prev.filter(i => i._localId !== localId));
     }
 
     const submit = (e) => {
@@ -84,7 +92,10 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
 
         const payload = {
             ...data,
-            items: soldItems.map(({ _localId, ...i }) => i),
+            items: [
+                ...soldItems.map(({ _localId, ...i })   => ({ ...i, type: 'Sell' })),
+                ...returnItems.map(({ _localId, ...i }) => ({ ...i, type: 'Return' })),
+            ],
         };
 
         const afterSubmission = {
@@ -105,7 +116,10 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         }
     };
 
-    const total = computeTotal(soldItems);
+    // Total is based on sold items only — return items do not affect the total
+    const soldTotal   = computeTotal(soldItems);
+    const returnTotal = computeTotal(returnItems);
+    const grandTotal  = soldTotal;
 
     return (
         <Popup
@@ -145,7 +159,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                         </div>
 
                         <div className="grid gap-1">
-                            <InputLabel value="Nama Pelanggan" required={false}/>
+                            <InputLabel value="Nama Pelanggan" required={false} />
                             <SelectInput
                                 creatable
                                 options={customerOptions}
@@ -165,45 +179,66 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                             <InputError message={errors.customer_name} />
                         </div>
 
-                        <div className="grid gap-1">
-                            <InputLabel htmlFor="status" value="Status" />
-                            <select
-                                id="status" value={data.status}
-                                onChange={(e) => setData('status', e.target.value)}
-                                className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-                            >
-                                <option value="Draft">Draft</option>
-                                <option value="Fixed">Fixed</option>
-                            </select>
-                            <InputError message={errors.status} />
-                        </div>
+                        {auth.user.role === 'Admin' && (
+                            <div className="grid gap-1">
+                                <InputLabel htmlFor="status" value="Status" />
+                                <select
+                                    id="status" value={data.status}
+                                    onChange={(e) => setData('status', e.target.value)}
+                                    className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                                >
+                                    <option value="Draft">Draft</option>
+                                    <option value="Fixed">Fixed</option>
+                                </select>
+                                <InputError message={errors.status} />
+                            </div>
+                        )}
+
                     </div>
 
                     {/* ── Sold items ── */}
                     <SectionTitle>Daftar Produk Terjual</SectionTitle>
                     <ItemsTable
                         items={soldItems}
-                        onEdit={(item)   => setItemPopup({ mode: 'Edit',   item })}
-                        onRemove={(item) => setItemPopup({ mode: 'Remove', item })}
+                        onEdit={(item)   => setItemPopup({ type: 'Sell',   mode: 'Edit',   item })}
+                        onRemove={(item) => setItemPopup({ type: 'Sell',   mode: 'Remove', item })}
                         products={products}
                     />
                     <div className="flex justify-between items-center mt-2">
                         <PrimaryButton
                             icon={<Plus className="size-4" />} type="button"
-                            onClick={() => setItemPopup({ mode: 'Create' })}
+                            onClick={() => setItemPopup({ type: 'Sell', mode: 'Create' })}
                         >
                             Tambah Produk
                         </PrimaryButton>
                         <p className="text-sm text-slate-500">
-                            Total: <span className="font-semibold text-slate-700">{formatPrice(total)}</span>
+                            Subtotal: <span className="font-semibold text-slate-700">{formatPrice(soldTotal)}</span>
                         </p>
                     </div>
 
-                    {/* ── Total ── */}
+                    {/* ── Return items ── */}
+                    <SectionTitle>Daftar Produk Retur</SectionTitle>
+                    <ItemsTable
+                        items={returnItems}
+                        onEdit={(item)   => setItemPopup({ type: 'Return', mode: 'Edit',   item })}
+                        onRemove={(item) => setItemPopup({ type: 'Return', mode: 'Remove', item })}
+                        products={products}
+                    />
+                    <div className="flex justify-between items-center mt-2">
+                        <PrimaryButton
+                            icon={<Plus className="size-4" />} type="button"
+                            onClick={() => setItemPopup({ type: 'Return', mode: 'Create' })}
+                        >
+                            Tambah Produk Retur
+                        </PrimaryButton>
+                        <div />
+                    </div>
+
+                    {/* ── Grand total ── */}
                     <div className="mt-6 flex justify-end">
                         <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
                             <p className="text-xs text-emerald-500 mb-0.5">Total Penjualan</p>
-                            <p className="text-xl font-bold text-emerald-700">{formatPrice(total)}</p>
+                            <p className="text-xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
                         </div>
                     </div>
 
@@ -222,13 +257,14 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
             {itemPopup && itemPopup.mode !== 'Remove' && (
                 <ItemAddEdit
                     mode={itemPopup.mode}
+                    type={itemPopup.type}
                     isOpen={!!itemPopup}
                     item={itemPopup.item}
                     products={products}
                     customerName={data.customer_name}
                     onClose={() => setItemPopup(null)}
                     onSave={(item) => {
-                        handleItemSave(item);
+                        handleItemSave(itemPopup.type, item);
                         setItemPopup(null);
                     }}
                 />
@@ -240,7 +276,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                     products={products}
                     onClose={() => setItemPopup(null)}
                     onConfirm={() => {
-                        handleItemRemove(itemPopup.item._localId);
+                        handleItemRemove(itemPopup.type, itemPopup.item._localId);
                         setItemPopup(null);
                     }}
                 />

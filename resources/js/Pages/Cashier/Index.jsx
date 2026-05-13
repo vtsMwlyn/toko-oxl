@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
-import { Plus, Trash2, ScanBarcode, Clock } from 'lucide-react';
+import { Plus, Trash2, ScanBarcode, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputLabel from '@/Components/InputLabel';
@@ -35,7 +35,7 @@ function blankItem() {
     return { selectedOption: null, qty: 1, price: 0, discount: 0, priceTouched: false };
 }
 
-function ItemInputRow({ products, customerName, onAdd }) {
+function ItemInputRow({ label, products, customerName, onAdd }) {
     const [field,      setField]      = useState(blankItem());
     const [errors,     setErrors]     = useState({});
     const [barcodeVal, setBarcodeVal] = useState('');
@@ -93,7 +93,7 @@ function ItemInputRow({ products, customerName, onAdd }) {
     function handleQtyKeyDown(e) {
         if (e.key !== 'Enter') return;
         e.preventDefault();
-        document.getElementById('item-price')?.focus();
+        document.getElementById(`${label}-price`)?.focus();
     }
 
     function handleDiscountKeyDown(e) {
@@ -130,15 +130,17 @@ function ItemInputRow({ products, customerName, onAdd }) {
 
     return (
         <div className="border border-emerald-100 rounded-xl p-4 bg-emerald-50/40">
+            <p className="text-xs font-semibold text-emerald-700 mb-3">{label}</p>
+
             <div className="grid gap-1 mb-3">
-                <InputLabel htmlFor="item-barcode" value="Scan Barcode / Kode Produk" />
+                <InputLabel htmlFor={`${label}-barcode`} value="Scan Barcode / Kode Produk" />
                 <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none">
                         <ScanBarcode size={16} />
                     </span>
                     <input
                         ref={barcodeRef}
-                        id="item-barcode"
+                        id={`${label}-barcode`}
                         type="text"
                         value={barcodeVal}
                         onChange={e => { setBarcodeVal(e.target.value); setBarcodeErr(''); }}
@@ -165,10 +167,10 @@ function ItemInputRow({ products, customerName, onAdd }) {
 
             <div className="grid grid-cols-3 items-start gap-3 mb-3">
                 <div className="grid gap-1">
-                    <InputLabel htmlFor="item-qty" value="Qty" />
+                    <InputLabel htmlFor={`${label}-qty`} value="Qty" />
                     <TextInput
                         ref={qtyRef}
-                        id="item-qty"
+                        id={`${label}-qty`}
                         type="number" min="1"
                         value={field.qty}
                         className="block w-full"
@@ -179,9 +181,9 @@ function ItemInputRow({ products, customerName, onAdd }) {
                 </div>
 
                 <div className="grid gap-1">
-                    <InputLabel htmlFor="item-price" value="Harga (Rp)" />
+                    <InputLabel htmlFor={`${label}-price`} value="Harga (Rp)" />
                     <TextInput
-                        id="item-price"
+                        id={`${label}-price`}
                         type="number" min="0"
                         value={field.price}
                         className="block w-full"
@@ -192,9 +194,9 @@ function ItemInputRow({ products, customerName, onAdd }) {
                 </div>
 
                 <div className="grid gap-1">
-                    <InputLabel htmlFor="item-discount" value="Diskon (Rp)" />
+                    <InputLabel htmlFor={`${label}-discount`} value="Diskon (Rp)" />
                     <TextInput
-                        id="item-discount"
+                        id={`${label}-discount`}
                         type="number" min="0"
                         value={field.discount}
                         className="block w-full"
@@ -259,10 +261,12 @@ function ItemTable({ items, products, onRemove }) {
 }
 
 export default function Index({ products, customers }) {
-    const [loading,   setLoading]   = useState(false);
-    const [success,   setSuccess]   = useState(false);
-    const [savedSale, setSavedSale] = useState(null);
-    const [soldItems, setSoldItems] = useState([]);
+    const [loading,           setLoading]           = useState(false);
+    const [success,           setSuccess]           = useState(false);
+    const [savedSale,         setSavedSale]         = useState(null);
+    const [soldItems,         setSoldItems]         = useState([]);
+    const [returnItems,       setReturnItems]       = useState([]);
+    const [showReturnSection, setShowReturnSection] = useState(false);
 
     const { data, setData, errors, setError, reset } = useForm({
         date:          new Date().toISOString().slice(0, 10),
@@ -282,20 +286,25 @@ export default function Index({ products, customers }) {
         setData('customer_name', option?.value ?? '');
     }
 
-    function addItem(item) {
-        setSoldItems(prev => [...prev, item]);
+    function addItem(type, item) {
+        const setter = type === 'Sell' ? setSoldItems : setReturnItems;
+        setter(prev => [...prev, item]);
     }
 
-    function removeItem(localId) {
-        setSoldItems(prev => prev.filter(i => i._localId !== localId));
+    function removeItem(type, localId) {
+        const setter = type === 'Sell' ? setSoldItems : setReturnItems;
+        setter(prev => prev.filter(i => i._localId !== localId));
     }
 
     function resetForm() {
         reset();
         setSoldItems([]);
+        setReturnItems([]);
         setSavedSale(null);
         setSuccess(false);
+        setShowReturnSection(false);
         setCustomerOption(null);
+        setHasPrinted(false);
     }
 
     function submit(status) {
@@ -304,7 +313,10 @@ export default function Index({ products, customers }) {
         const payload = {
             ...data,
             status,
-            items: soldItems.map(({ _localId, ...i }) => i),
+            items: [
+                ...soldItems.map(({ _localId, ...i })   => ({ ...i, type: 'Sell' })),
+                ...returnItems.map(({ _localId, ...i }) => ({ ...i, type: 'Return' })),
+            ],
         };
 
         router.post(route('cashier.sale.store'), payload, {
@@ -319,7 +331,12 @@ export default function Index({ products, customers }) {
         });
     }
 
-    const total = soldItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
+    const [hasPrinted, setHasPrinted] = useState(false);
+
+    // Total is based on sold items only — return items do not affect the total
+    const soldTotal   = soldItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
+    const returnTotal = returnItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
+    const grandTotal  = soldTotal;
 
     // ── Success screen ────────────────────────────────────────────────────────
     if (success && savedSale) {
@@ -338,17 +355,23 @@ export default function Index({ products, customers }) {
                             {savedSale.status === 'Fixed' ? 'Transaksi Berhasil!' : 'Draft Disimpan!'}
                         </h2>
                         <p className="text-sm text-slate-400 mt-1">
-                            Total: <span className="font-semibold text-emerald-700">{formatPrice(total)}</span>
+                            Total: <span className="font-semibold text-emerald-700">{formatPrice(grandTotal)}</span>
                         </p>
                         {savedSale.status === 'Draft' && (
                             <p className="text-xs text-amber-500 mt-1">Transaksi tersimpan sebagai draft.</p>
                         )}
                     </div>
-                    <div className="flex gap-3">
-                        {savedSale.status === 'Fixed' && (
-                            <Receipt sale={savedSale} products={products} />
+                    <div className="flex flex-col items-center gap-3">
+                        <Receipt
+                            sale={savedSale}
+                            products={products}
+                            onPrinted={() => setHasPrinted(true)}
+                        />
+                        {hasPrinted ? (
+                            <PrimaryButton type="button" onClick={resetForm}>Transaksi Baru</PrimaryButton>
+                        ) : (
+                            <p className="text-xs text-slate-400">Cetak struk terlebih dahulu</p>
                         )}
-                        <PrimaryButton type="button" onClick={resetForm}>Transaksi Baru</PrimaryButton>
                     </div>
                 </div>
             </AuthenticatedLayout>
@@ -428,18 +451,59 @@ export default function Index({ products, customers }) {
                 <div className="bg-white rounded-2xl border border-emerald-100 p-5">
                     <h2 className="text-sm font-bold text-emerald-900 mb-4">Produk Terjual</h2>
                     <ItemInputRow
+                        label="Tambah produk terjual"
                         products={products}
                         customerName={data.customer_name}
-                        onAdd={addItem}
+                        onAdd={item => addItem('Sell', item)}
                     />
                     {soldItems.length > 0 && (
                         <div className="mt-4">
-                            <ItemTable items={soldItems} products={products} onRemove={removeItem} />
+                            <ItemTable items={soldItems} products={products} onRemove={localId => removeItem('Sell', localId)} />
                             <div className="flex justify-end mt-2">
                                 <p className="text-sm text-slate-500">
-                                    Total: <span className="font-semibold text-slate-700">{formatPrice(total)}</span>
+                                    Subtotal: <span className="font-semibold text-slate-700">{formatPrice(soldTotal)}</span>
                                 </p>
                             </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Return items (collapsible) ── */}
+                <div className="bg-white rounded-2xl border border-emerald-100 p-5">
+                    <button
+                        type="button"
+                        onClick={() => setShowReturnSection(v => !v)}
+                        className="w-full flex items-center justify-between text-sm font-bold text-emerald-900"
+                    >
+                        <span>
+                            Produk Retur
+                            {returnItems.length > 0 && (
+                                <span className="ml-2 text-xs font-medium px-1.5 py-0.5 rounded-md bg-red-100 text-red-500">
+                                    {returnItems.length} item
+                                </span>
+                            )}
+                        </span>
+                        {showReturnSection ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+
+                    {showReturnSection && (
+                        <div className="mt-4">
+                            <ItemInputRow
+                                label="Tambah produk retur"
+                                products={products}
+                                customerName={data.customer_name}
+                                onAdd={item => addItem('Return', item)}
+                            />
+                            {returnItems.length > 0 && (
+                                <div className="mt-4">
+                                    <ItemTable items={returnItems} products={products} onRemove={localId => removeItem('Return', localId)} />
+                                    <div className="flex justify-end mt-2">
+                                        <p className="text-sm text-slate-500">
+                                            Subtotal Retur: <span className="font-semibold text-slate-700">{formatPrice(returnTotal)}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -448,11 +512,20 @@ export default function Index({ products, customers }) {
                 <div className="bg-white rounded-2xl border border-emerald-100 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-3">
                         <p className="text-xs text-emerald-500 mb-0.5">Total</p>
-                        <p className="text-2xl font-bold text-emerald-700">{formatPrice(total)}</p>
+                        <p className="text-2xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
                     </div>
 
                     <div className="flex gap-3">
-                        <Receipt sale={{ ...data, items: soldItems }} products={products} />
+                        <Receipt
+                            sale={{
+                                ...data,
+                                items: [
+                                    ...soldItems.map(i => ({ ...i, type: 'Sell' })),
+                                    ...returnItems.map(i => ({ ...i, type: 'Return' })),
+                                ],
+                            }}
+                            products={products}
+                        />
                         <button
                             type="button"
                             disabled={loading || soldItems.length === 0}

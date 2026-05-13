@@ -33,6 +33,7 @@ class CashierController extends Controller
             'items.*.price'      => 'required|numeric|min:0',
             'items.*.qty'        => 'required|integer|min:1',
             'items.*.discount'   => 'nullable|numeric|min:0',
+            'items.*.type'       => 'required|in:Sell,Return',
         ]);
 
         $lastSale = Sale::where('date', Carbon::today()->format('Y-m-d'))->orderBy('time', 'desc')->first();
@@ -51,6 +52,7 @@ class CashierController extends Controller
                 'price'      => $item['price'],
                 'discount'   => $item['discount'] ?? 0,
                 'qty'        => $item['qty'],
+                'type'       => $item['type'],
             ]);
         }
 

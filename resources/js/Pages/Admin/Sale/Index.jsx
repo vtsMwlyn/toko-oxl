@@ -460,7 +460,7 @@ export default function Index({ sales, products, customers }) {
                 <Delete isOpen={!!isDeleting} onClose={() => setIsDeleting(null)} sale={isDeleting} />
             )}
             {isSettingFixed && (
-                <SetFixed isOpen={isSettingFixed} onClose={() => setIsSettingFixed(false)} sale={isSettingFixed} />
+                <SetFixed isOpen={isSettingFixed} onClose={() => setIsSettingFixed(false)} sale={isSettingFixed} products={products} />
             )}
 
             {isBatchDeleting && (

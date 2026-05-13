@@ -1,3 +1,5 @@
+import { Eye } from 'lucide-react';
+
 import Popup from '@/Components/Popup';
 import Table from '@/Components/Table';
 import PrintReceipt from '../../PrintReceipt';
@@ -20,14 +22,14 @@ function InfoRow({ label, value }) {
     );
 }
 
-function ItemsTable({ items, emptyText }) {
+function ItemsTable({ items, products, emptyText }) {
     if (items.length === 0) {
         return (
             <p className="text-sm text-slate-400 italic py-2">{emptyText}</p>
         );
     }
 
-    const total = items.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
+    const subtotal = items.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
 
     return (
         <div>
@@ -39,7 +41,7 @@ function ItemsTable({ items, emptyText }) {
                 {items.map((item, index) => {
                     const variant  = item.variant;
                     const product  = variant.product;
-                    const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
+                    const itemTotal = (item.price - (item.discount ?? 0)) * item.qty;
                     return (
                         <tr key={index} className="hover:bg-slate-50">
                             <td>
@@ -56,7 +58,7 @@ function ItemsTable({ items, emptyText }) {
                                 }
                             </td>
                             <td>{item.qty}</td>
-                            <td className="font-medium">{formatPrice(subtotal)}</td>
+                            <td className="font-medium">{formatPrice(itemTotal)}</td>
                         </tr>
                     );
                 })}
@@ -64,7 +66,7 @@ function ItemsTable({ items, emptyText }) {
 
             <div className="flex justify-end mt-1 pr-1">
                 <p className="text-xs text-slate-500">
-                    Subtotal: <span className="font-semibold text-slate-700">{formatPrice(total)}</span>
+                    Subtotal: <span className="font-semibold text-slate-700">{formatPrice(subtotal)}</span>
                 </p>
             </div>
         </div>
@@ -74,10 +76,12 @@ function ItemsTable({ items, emptyText }) {
 export default function Show({ isOpen, onClose, sale, products }) {
     if (!sale) return null;
 
-    const total = (sale.items ?? []).reduce(
-        (sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty,
-        0
-    );
+    const soldItems   = sale.items?.filter(i => i.type === 'Sell')   ?? [];
+    const returnItems = sale.items?.filter(i => i.type === 'Return') ?? [];
+
+    // Total is based on sold items only — return items do not affect the total
+    const soldTotal  = soldItems.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
+    const grandTotal = soldTotal;
 
     return (
         <Popup
@@ -105,17 +109,26 @@ export default function Show({ isOpen, onClose, sale, products }) {
             {/* ── Sold items ── */}
             <h2 className="font-bold text-emerald-700 mt-5 mb-2">Produk Terjual</h2>
             <ItemsTable
-                items={sale.items ?? []}
+                items={soldItems}
+                products={products}
                 emptyText="Tidak ada produk terjual."
             />
 
-            {/* ── Total + print ── */}
+            {/* ── Return items ── */}
+            <h2 className="font-bold text-emerald-700 mt-5 mb-2">Produk Retur</h2>
+            <ItemsTable
+                items={returnItems}
+                products={products}
+                emptyText="Tidak ada produk retur."
+            />
+
+            {/* ── Grand total + print ── */}
             <div className="mt-5 pt-4 border-t border-slate-100 flex justify-between items-end">
                 <PrintReceipt sale={sale} products={products} />
 
                 <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
                     <p className="text-xs text-emerald-500 mb-0.5">Total</p>
-                    <p className="text-xl font-bold text-emerald-700">{formatPrice(total)}</p>
+                    <p className="text-xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
                 </div>
             </div>
         </Popup>

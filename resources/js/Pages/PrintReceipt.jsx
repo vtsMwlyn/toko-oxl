@@ -27,12 +27,10 @@ function ReceiptRow({ label, value, bold = false }) {
 // ── Receipt content (rendered off-screen, printed) ────────────────────────────
 
 function ReceiptContent({ sale, products }) {
-    const soldItems   = sale.items?.filter(i => i.type === 'Sell')   ?? [];
-    const returnItems = sale.items?.filter(i => i.type === 'Return') ?? [];
+    const soldItems = sale.items?.filter(i => i.type === 'Sell') ?? [];
 
-    const soldTotal   = soldItems.reduce((sum, i)   => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
-    const returnTotal = returnItems.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
-    const grandTotal  = soldTotal - returnTotal;
+    // Total is based on sold items only — return items do not affect the total
+    const grandTotal = soldItems.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
 
     const base = {
         fontFamily: "'Courier New', Courier, monospace",
@@ -47,7 +45,11 @@ function ReceiptContent({ sale, products }) {
             {/* ── Store header ── */}
             <div style={{ textAlign: 'center', marginBottom: '6px' }}>
                 <p style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 2px' }}>Toko OXL</p>
-                <p style={{ fontSize: '10px', margin: 0 }}>Toko Perlengkapan Alat Muslim</p>
+                <p style={{ fontSize: '10px', margin: '0 0 2px' }}>Toko Perlengkapan Alat Muslim</p>
+                <p style={{ fontSize: '9px', margin: 0, color: '#444' }}>
+                    Jl. Adi Sucipta No.6, Pamoyanan, Kec. Cianjur,{'\n'}
+                    Kabupaten Cianjur, Jawa Barat 43212
+                </p>
             </div>
 
             <ReceiptDivider />
@@ -64,14 +66,14 @@ function ReceiptContent({ sale, products }) {
             {soldItems.length > 0 && (
                 <>
                     <ReceiptDivider dashed />
-                    <p style={{ fontSize: '10px', fontWeight: '700', margin: '3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Produk Terjual</p>
                     {soldItems.map((item, index) => {
-                        const product  = products.find(p => p.id === item.product_id);
+                        const variant  = products.flatMap(p => p.variants).find(v => v.id === item.variant_id);
+                        const product  = products.find(p => p.id === variant?.product_id);
                         const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
                         return (
                             <div key={index} style={{ marginBottom: '4px' }}>
                                 <p style={{ margin: '0', fontWeight: '600', fontSize: '11px' }}>
-                                    {product?.name ?? '—'}{product?.variant ? ` (${product.variant})` : ''}
+                                    {product?.name ?? '—'}{variant?.name ? ` (${variant.name})` : ''}
                                 </p>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#333' }}>
                                     <span>
@@ -83,46 +85,12 @@ function ReceiptContent({ sale, products }) {
                             </div>
                         );
                     })}
-                    <ReceiptRow label="Subtotal" value={formatPrice(soldTotal)} />
-                </>
-            )}
-
-            {/* ── Return items ── */}
-            {returnItems.length > 0 && (
-                <>
-                    <ReceiptDivider dashed />
-                    <p style={{ fontSize: '10px', fontWeight: '700', margin: '3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Produk Retur</p>
-                    {returnItems.map((item, index) => {
-                        const product  = products.find(p => p.id === item.product_id);
-                        const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
-                        return (
-                            <div key={index} style={{ marginBottom: '4px' }}>
-                                <p style={{ margin: '0', fontWeight: '600', fontSize: '11px' }}>
-                                    {product?.name ?? '—'}{product?.variant ? ` (${product.variant})` : ''}
-                                </p>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#333' }}>
-                                    <span>
-                                        {item.qty} x {formatPrice(item.price)}
-                                        {item.discount > 0 ? ` - ${formatPrice(item.discount)}` : ''}
-                                    </span>
-                                    <span style={{ fontWeight: '600' }}>- {formatPrice(subtotal)}</span>
-                                </div>
-                            </div>
-                        );
-                    })}
-                    <ReceiptRow label="Subtotal Retur" value={`- ${formatPrice(returnTotal)}`} />
                 </>
             )}
 
             <ReceiptDivider />
 
             {/* ── Grand total ── */}
-            {returnItems.length > 0 && (
-                <>
-                    <ReceiptRow label="Total Penjualan" value={formatPrice(soldTotal)} />
-                    <ReceiptRow label="Total Retur"     value={`- ${formatPrice(returnTotal)}`} />
-                </>
-            )}
             <ReceiptRow label="TOTAL" value={formatPrice(grandTotal)} bold />
 
             <ReceiptDivider />
@@ -135,7 +103,19 @@ function ReceiptContent({ sale, products }) {
                 Barang yang sudah dibeli tidak dapat dikembalikan.
             </p>
 
-            <p style={{ textAlign: 'center', fontSize: '10px' }}>
+            <ReceiptDivider dashed />
+
+            {/* ── Queue number ── */}
+            {sale.queue_number && (
+                <div style={{ textAlign: 'center', marginTop: '8px' }}>
+                    <p style={{ fontSize: '10px', margin: '0 0 2px', color: '#555' }}>Nomor Antrian</p>
+                    <p style={{ fontSize: '48px', fontWeight: '700', margin: 0, lineHeight: '1' }}>
+                        {sale.queue_number}
+                    </p>
+                </div>
+            )}
+
+            <p style={{ textAlign: 'center', fontSize: '10px', marginTop: '8px' }}>
                 --oOOo--
             </p>
         </div>
@@ -144,7 +124,7 @@ function ReceiptContent({ sale, products }) {
 
 // ── Public component ──────────────────────────────────────────────────────────
 
-export default function PrintReceipt({ icon = false, sale, products }) {
+export default function PrintReceipt({ icon = false, sale, products, onPrinted }) {
     const printRef = useRef(null);
 
     function handlePrint() {
@@ -187,6 +167,7 @@ export default function PrintReceipt({ icon = false, sale, products }) {
         setTimeout(() => {
             win.print();
             win.close();
+            onPrinted?.();
         }, 250);
     }
 

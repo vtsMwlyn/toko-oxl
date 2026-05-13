@@ -26,7 +26,7 @@ function resolvePrice(variant, discountTier, customerName) {
         : variant.product.normal_price;
 }
 
-export default function AddEdit({ mode, isOpen, onClose, onSave, item, products, customerName }) {
+export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, products, customerName }) {
     const [errors, setErrors] = useState({});
 
     const variantOptions = products.flatMap(product =>
@@ -115,9 +115,11 @@ export default function AddEdit({ mode, isOpen, onClose, onSave, item, products,
         return isCustomer ? 'Harga langganan diterapkan' : 'Harga normal diterapkan';
     })();
 
+    const typeLabel = type === 'Sell' ? 'Produk Terjual' : 'Produk Retur';
+
     return (
         <Popup
-            title={mode === 'Create' ? 'Tambah Produk' : 'Ubah Produk'}
+            title={mode === 'Create' ? `Tambah ${typeLabel}` : `Ubah ${typeLabel}`}
             isOpen={isOpen}
             onClose={onClose}
             className="max-w-sm"
