@@ -6,8 +6,10 @@ use App\Helpers\ModelChangeLogger;
 use App\Models\ActionLog;
 use App\Models\Product;
 use App\Models\ProductReturn;
+use App\Models\Variant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class ReturnController extends Controller
@@ -31,16 +33,23 @@ class ReturnController extends Controller
             'qty'        => 'required|integer|min:1',
         ]);
 
-        $return = ProductReturn::create($validated);
-        $return->load('variant.product');
+        DB::transaction(function () use ($validated) {
+            $return = ProductReturn::create($validated);
+            $return->load('variant.product');
 
-        $productName = $return->variant->product->name ?? 'Unknown';
-        $variantName = $return->variant->name ? " ({$return->variant->name})" : '';
+            // Add returned qty to the variant
+            $variant = $return->variant;
+            $variant->stock += $return->qty;
+            $variant->save();
 
-        ActionLog::create([
-            'user_id' => Auth::id(),
-            'message' => "Menambahkan retur produk {$productName}{$variantName} tanggal {$return->date} sebanyak {$return->qty} pcs.",
-        ]);
+            $productName = $variant->product->name ?? 'Unknown';
+            $variantName = $variant->name ? " ({$variant->name})" : '';
+
+            ActionLog::create([
+                'user_id' => Auth::id(),
+                'message' => "Menambahkan retur produk {$productName}{$variantName} tanggal {$return->date} sebanyak {$return->qty} pcs.",
+            ]);
+        });
 
         return back();
     }
@@ -53,38 +62,73 @@ class ReturnController extends Controller
             'qty'        => 'required|integer|min:1',
         ]);
 
-        $return->load('variant.product');
-        $productName = $return->variant->product->name ?? 'Unknown';
-        $variantName = $return->variant->name ? " ({$return->variant->name})" : '';
+        DB::transaction(function () use ($request, $return, $validated) {
+            $return->load('variant.product');
 
-        $changes = ModelChangeLogger::getChanges($return, $validated);
+            $oldVariantId = $return->variant_id;
+            $oldQty = $return->qty;
 
-        $return->update($validated);
+            $productName = $return->variant->product->name ?? 'Unknown';
+            $variantName = $return->variant->name ? " ({$return->variant->name})" : '';
 
-        if (!empty($changes)) {
-            ActionLog::create([
-                'user_id' => Auth::id(),
-                'message' => "Memperbarui retur produk {$productName}{$variantName} tanggal {$return->date}.",
-                'changes' => $changes,
-            ]);
-        }
+            $changes = ModelChangeLogger::getChanges($return, $validated);
+
+            $return->update($validated);
+
+            // Handle Variant Quantity Adjustment
+            if ($oldVariantId == $validated['variant_id']) {
+                // If the variant remains the same, calculate the difference
+                $qtyDifference = $validated['qty'] - $oldQty;
+
+                if ($qtyDifference != 0) {
+                    $return->variant->stock += $qtyDifference;
+                    $return->variant->save();
+                }
+            } else {
+                // If the variant changed, subtract from the old one and add to the new one
+                $oldVariant = Variant::find($oldVariantId);
+                if ($oldVariant) {
+                    $oldVariant->qty -= $oldQty;
+                    $oldVariant->save();
+                }
+
+                $return->load('variant'); // Refresh relationship
+                $return->variant->stock += $validated['qty'];
+                $return->variant->save();
+            }
+
+            if (!empty($changes)) {
+                ActionLog::create([
+                    'user_id' => Auth::id(),
+                    'message' => "Memperbarui retur produk {$productName}{$variantName} tanggal {$return->date}.",
+                    'changes' => $changes,
+                ]);
+            }
+        });
 
         return back();
     }
 
     public function destroy(ProductReturn $return)
     {
-        $return->load('variant.product');
+        DB::transaction(function () use ($return) {
+            $return->load('variant.product');
 
-        $productName = $return->variant->product->name ?? 'Unknown';
-        $variantName = $return->variant->name ? " ({$return->variant->name})" : '';
+            // Subtract the returned qty back out of the variant before deleting
+            $variant = $return->variant;
+            $variant->stock -= $return->qty;
+            $variant->save();
 
-        ActionLog::create([
-            'user_id' => Auth::id(),
-            'message' => "Menghapus retur produk {$productName}{$variantName} tanggal {$return->date} sebanyak {$return->qty} pcs.",
-        ]);
+            $productName = $variant->product->name ?? 'Unknown';
+            $variantName = $variant->name ? " ({$variant->name})" : '';
 
-        $return->delete();
+            ActionLog::create([
+                'user_id' => Auth::id(),
+                'message' => "Menghapus retur produk {$productName}{$variantName} tanggal {$return->date} sebanyak {$return->qty} pcs.",
+            ]);
+
+            $return->delete();
+        });
 
         return back();
     }

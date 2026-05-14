@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, Eye, ClipboardCheck } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -181,6 +181,20 @@ export default function Index({ sales, products, customers }) {
     const [selectedIds,    setSelectedIds]    = useState([]);
     const [batchIds,       setBatchIds]       = useState([]);
     const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+
+    // Add this block to handle the auto-refresh
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['sales', 'products', 'customers'], // Optional: Limits the payload to just these props
+                preserveState: true,  // Keeps your modals open and checkboxes selected
+                preserveScroll: true, // Keeps the user's scroll position intact
+            });
+        }, 5000);
+
+        // Cleanup the interval when the component unmounts
+        return () => clearInterval(interval);
+    }, []);
 
     const todayStr = new Date().toISOString().slice(0, 10);
     const todaySales = sales.filter(s => s.date?.slice(0, 10) === todayStr);

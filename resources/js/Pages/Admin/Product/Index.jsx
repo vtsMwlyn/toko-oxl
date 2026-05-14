@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, X, FileDown, Eye, Bell } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -44,6 +44,19 @@ export default function Index({ products, low_stock_variants }) {
     const [isDeleting, setIsDeleting] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
     const [isSettingWarning, setIsSettingWarning] = useState(false);
+
+    // Add this useEffect for the 5-second auto-fetch
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['products', 'low_stock_variants', 'stock_warning_threshold'], // only fetch what's needed
+                preserveState: true,  // Keeps modals open
+                preserveScroll: true, // Keeps scroll position
+            });
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <AuthenticatedLayout title="Daftar Produk">
