@@ -79,9 +79,10 @@ export default function Show({ isOpen, onClose, sale, products }) {
     const soldItems   = sale.items?.filter(i => i.type === 'Sell')   ?? [];
     const returnItems = sale.items?.filter(i => i.type === 'Return') ?? [];
 
-    // Total is based on sold items only — return items do not affect the total
-    const soldTotal  = soldItems.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
-    const grandTotal = soldTotal;
+    // Total subtracts return items from sold items
+    const soldTotal   = soldItems.reduce((sum, i)   => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
+    const returnTotal = returnItems.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
+    const grandTotal  = soldTotal - returnTotal;
 
     return (
         <Popup
@@ -127,6 +128,18 @@ export default function Show({ isOpen, onClose, sale, products }) {
                 <PrintReceipt sale={sale} products={products} />
 
                 <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
+                    {returnItems.length > 0 && (
+                        <>
+                            <div className="flex justify-between gap-8 text-xs text-slate-500 mb-1">
+                                <span>Penjualan</span>
+                                <span>{formatPrice(soldTotal)}</span>
+                            </div>
+                            <div className="flex justify-between gap-8 text-xs text-red-400 mb-2">
+                                <span>Retur</span>
+                                <span>- {formatPrice(returnTotal)}</span>
+                            </div>
+                        </>
+                    )}
                     <p className="text-xs text-emerald-500 mb-0.5">Total</p>
                     <p className="text-xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
                 </div>

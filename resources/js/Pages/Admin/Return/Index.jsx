@@ -19,19 +19,14 @@ export default function Index({ returns, products }) {
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
 
-    const [search, setSearch] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo,   setDateTo]   = useState('');
 
     const filtered = returns.filter(r => {
-        const variant = r.variant;
-        const product = variant?.product;
-        const q       = search.toLowerCase();
-        return (
-            !q ||
-            product?.name?.toLowerCase().includes(q) ||
-            variant?.code?.toLowerCase().includes(q) ||
-            variant?.name?.toLowerCase().includes(q) ||
-            r.date?.includes(q)
-        );
+        const d = r.date?.slice(0, 10) ?? '';
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo   && d > dateTo)   return false;
+        return true;
     });
 
     return (
@@ -46,11 +41,32 @@ export default function Index({ returns, products }) {
                 ) : (
                     <div />
                 )}
-                <TextInput
-                    placeholder="Cari produk, kode, tanggal..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                />
+
+                {/* ── Date range filter ── */}
+                <div className="flex items-center gap-2">
+                    <TextInput
+                        type="date"
+                        value={dateFrom}
+                        onChange={e => setDateFrom(e.target.value)}
+                        className="w-40"
+                    />
+                    <span className="text-slate-400 text-sm">—</span>
+                    <TextInput
+                        type="date"
+                        value={dateTo}
+                        onChange={e => setDateTo(e.target.value)}
+                        className="w-40"
+                    />
+                    {(dateFrom || dateTo) && (
+                        <button
+                            type="button"
+                            onClick={() => { setDateFrom(''); setDateTo(''); }}
+                            className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                            Reset
+                        </button>
+                    )}
+                </div>
             </div>
 
             <Table

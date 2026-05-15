@@ -2,7 +2,6 @@ import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { usePage } from '@inertiajs/react';
 
 import Popup from '@/Components/Popup';
 import InputLabel from '@/Components/InputLabel';
@@ -29,8 +28,6 @@ function computeTotal(items) {
 }
 
 export default function CreateEdit({ mode, isOpen, onClose, sale, products, customers }) {
-    const { auth } = usePage().props;
-
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
@@ -119,7 +116,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
     // Total is based on sold items only — return items do not affect the total
     const soldTotal   = computeTotal(soldItems);
     const returnTotal = computeTotal(returnItems);
-    const grandTotal  = soldTotal;
+    const grandTotal  = soldTotal - returnTotal;
 
     return (
         <Popup
@@ -179,21 +176,18 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                             <InputError message={errors.customer_name} />
                         </div>
 
-                        {auth.user.role === 'Admin' && (
-                            <div className="grid gap-1">
-                                <InputLabel htmlFor="status" value="Status" />
-                                <select
-                                    id="status" value={data.status}
-                                    onChange={(e) => setData('status', e.target.value)}
-                                    className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
-                                >
-                                    <option value="Draft">Draft</option>
-                                    <option value="Fixed">Fixed</option>
-                                </select>
-                                <InputError message={errors.status} />
-                            </div>
-                        )}
-
+                        <div className="grid gap-1">
+                            <InputLabel htmlFor="status" value="Status" />
+                            <select
+                                id="status" value={data.status}
+                                onChange={(e) => setData('status', e.target.value)}
+                                className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                            >
+                                <option value="Draft">Draft</option>
+                                <option value="Fixed">Fixed</option>
+                            </select>
+                            <InputError message={errors.status} />
+                        </div>
                     </div>
 
                     {/* ── Sold items ── */}
@@ -231,7 +225,9 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                         >
                             Tambah Produk Retur
                         </PrimaryButton>
-                        <div />
+                        <p className="text-sm text-slate-500">
+                            Subtotal Retur: <span className="font-semibold text-slate-700">{formatPrice(returnTotal)}</span>
+                        </p>
                     </div>
 
                     {/* ── Grand total ── */}

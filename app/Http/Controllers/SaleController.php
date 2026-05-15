@@ -14,7 +14,6 @@ use App\Models\Sale;
 use App\Models\Variant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -26,8 +25,8 @@ class SaleController extends Controller
             'sales' => Sale::with('items.variant.product')->orderByDesc('date')->orderByDesc('time')->get()
                 ->map(fn($sale) => array_merge($sale->toArray(), [
                     'total' => $sale->items->reduce(function ($carry, $item) {
-                        if ($item->type !== 'Sell') return $carry;
-                        return $carry + ($item->price - ($item->discount ?? 0)) * $item->qty;
+                        $subtotal = ($item->price - ($item->discount ?? 0)) * $item->qty;
+                        return $carry + ($item->type === 'Sell' ? $subtotal : -$subtotal);
                     }, 0),
                 ])),
             'products'  => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
@@ -50,19 +49,17 @@ class SaleController extends Controller
             'items.*.type'       => 'required|in:Sell,Return',
         ]);
 
-        DB::transaction(function () use ($validatedData, $request) {
-            $lastSale = Sale::where('date', $validatedData['date'])->orderBy('time', 'desc')->first();
+        $lastSale = Sale::where('date', $validatedData['date'])->orderBy('time', 'desc')->first();
 
-            $sale = Sale::create([
-                'date'          => $validatedData['date'],
-                'time'          => $validatedData['time'],
-                'customer_name' => $validatedData['customer_name'],
-                'status'        => $validatedData['status'],
-                'queue_number'  => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
-            ]);
+        $sale = Sale::create([
+            'date'          => $validatedData['date'],
+            'time'          => $validatedData['time'],
+            'customer_name' => $validatedData['customer_name'],
+            'status'        => $validatedData['status'],
+            'queue_number'  => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
+        ]);
 
-            $this->syncItems($sale, $request->items ?? []);
-        });
+        $this->syncItems($sale, $request->items ?? []);
 
         return back();
     }
@@ -73,7 +70,7 @@ class SaleController extends Controller
             'date'               => 'required|date',
             'time'               => 'required',
             'customer_name'      => 'nullable|string|max:255',
-            'status'             => 'nullable|in:Draft,Fixed',
+            'status'             => 'required|in:Draft,Fixed',
             'items'              => 'array',
             'items.*.variant_id' => 'required|integer|exists:variants,id',
             'items.*.price'      => 'required|numeric|min:0',
@@ -95,45 +92,35 @@ class SaleController extends Controller
         $changes = array_merge($changes, $itemChanges);
 
         // 3. Persist
-        DB::transaction(function () use ($sale, $validatedData, $changes) {
-            $sale->update([
-                'date'          => $validatedData['date'],
-                'time'          => $validatedData['time'],
-                'customer_name' => $validatedData['customer_name'],
-                'status'        => $validatedData['status'],
+        $sale->update([
+            'date'          => $validatedData['date'],
+            'time'          => $validatedData['time'],
+            'customer_name' => $validatedData['customer_name'],
+            'status'        => $validatedData['status'],
+        ]);
+
+        $sale->items()->delete();
+        $this->syncItems($sale, $validatedData['items'] ?? []);
+
+        // 4. Log
+        if (!empty($changes)) {
+            ActionLog::create([
+                'user_id' => Auth::id(),
+                'message' => 'Memperbaharui data penjualan '
+                    . $sale->date . ' '
+                    . $sale->time . ' antrian '
+                    . $sale->queue_number,
+                'changes' => $changes,
             ]);
-
-            // Revert stock for existing items before deleting them
-            $this->revertItemsStock($sale);
-
-            $sale->items()->delete();
-
-            // Add the new items (which will correctly apply stock)
-            $this->syncItems($sale, $validatedData['items'] ?? []);
-
-            // 4. Log
-            if (!empty($changes)) {
-                ActionLog::create([
-                    'user_id' => Auth::id(),
-                    'message' => 'Memperbaharui data penjualan '
-                        . $sale->date . ' '
-                        . $sale->time . ' antrian '
-                        . $sale->queue_number,
-                    'changes' => $changes,
-                ]);
-            }
-        });
+        }
 
         return back();
     }
 
     public function destroy(Sale $sale)
     {
-        DB::transaction(function () use ($sale) {
-            $this->revertItemsStock($sale);
-            $sale->items()->delete();
-            $sale->delete();
-        });
+        $sale->items()->delete();
+        $sale->delete();
 
         return back();
     }
@@ -145,15 +132,12 @@ class SaleController extends Controller
             'ids.*' => ['integer', 'exists:sales,id'],
         ]);
 
-        DB::transaction(function () use ($validated) {
-            $sales = Sale::with('items')->whereIn('id', $validated['ids'])->get();
+        $sales = Sale::whereIn('id', $validated['ids'])->get();
 
-            foreach ($sales as $sale) {
-                $this->revertItemsStock($sale);
-                $sale->items()->delete();
-                $sale->delete();
-            }
-        });
+        foreach ($sales as $sale) {
+            $sale->items()->delete();
+            $sale->delete();
+        }
 
         return back();
     }
@@ -203,7 +187,7 @@ class SaleController extends Controller
         return Excel::download(new SaleBySaleExport($percent, $from, $to), $filename);
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // ── Private helper ────────────────────────────────────────────────────────
 
     private function syncItems(Sale $sale, array $items): void
     {
@@ -215,21 +199,6 @@ class SaleController extends Controller
                 'qty'        => $item['qty'],
                 'type'       => $item['type'],
             ]);
-
-            // Adjust variant stock when a Return item is created
-            if ($item['type'] === 'Return') {
-                Variant::where('id', $item['variant_id'])->increment('stock', $item['qty']);
-            }
-        }
-    }
-
-    private function revertItemsStock(Sale $sale): void
-    {
-        foreach ($sale->items as $item) {
-            // Reverse the stock increment that happened when the Return item was originally created
-            if ($item->type === 'Return') {
-                Variant::where('id', $item->variant_id)->decrement('stock', $item->qty);
-            }
         }
     }
 }

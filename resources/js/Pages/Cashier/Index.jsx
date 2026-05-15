@@ -320,8 +320,9 @@ export default function Index({ products, customers }) {
         };
 
         router.post(route('cashier.sale.store'), payload, {
-            onSuccess: () => {
-                setSavedSale({ ...data, status, items: payload.items });
+            onSuccess: (page) => {
+                const queueNumber = page.props.flash?.queue_number;
+                setSavedSale({ ...data, status, items: payload.items, queue_number: queueNumber });
                 setSuccess(true);
             },
             onError: serverErrors => {
@@ -333,10 +334,10 @@ export default function Index({ products, customers }) {
 
     const [hasPrinted, setHasPrinted] = useState(false);
 
-    // Total is based on sold items only — return items do not affect the total
+    // Total subtracts return items from sold items
     const soldTotal   = soldItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
     const returnTotal = returnItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
-    const grandTotal  = soldTotal;
+    const grandTotal  = soldTotal - returnTotal;
 
     // ── Success screen ────────────────────────────────────────────────────────
     if (success && savedSale) {
@@ -511,6 +512,16 @@ export default function Index({ products, customers }) {
                 {/* ── Total + actions ── */}
                 <div className="bg-white rounded-2xl border border-emerald-100 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-3">
+                        {returnItems.length > 0 && (
+                            <>
+                                <div className="flex justify-between gap-10 text-xs text-slate-400 mb-0.5">
+                                    <span>Penjualan</span><span>{formatPrice(soldTotal)}</span>
+                                </div>
+                                <div className="flex justify-between gap-10 text-xs text-red-400 mb-1">
+                                    <span>Retur</span><span>- {formatPrice(returnTotal)}</span>
+                                </div>
+                            </>
+                        )}
                         <p className="text-xs text-emerald-500 mb-0.5">Total</p>
                         <p className="text-2xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
                     </div>

@@ -23,12 +23,14 @@ class SaleBySaleExport implements
     WithTitle
 {
     protected float $qtyPercent;
-    protected string $from;
-    protected string $to;
+    protected ?string $from;
+    protected ?string $to;
 
-    public function __construct(float $qtyPercent = 100, string $from = null, string $to = null)
+    public function __construct(float $qtyPercent = 100, ?string $from = null, ?string $to = null)
     {
         $this->qtyPercent = $qtyPercent / 100;
+        $this->from       = $from;
+        $this->to         = $to;
     }
 
     public function title(): string
@@ -47,8 +49,8 @@ class SaleBySaleExport implements
             ->get()
             ->flatMap(function ($sale) {
                 return $sale->items->where('type', 'Sell')->map(fn($item) => [
-                    'sale'    => $sale,
-                    'item'    => $item,
+                    'sale' => $sale,
+                    'item' => $item,
                 ]);
             });
     }

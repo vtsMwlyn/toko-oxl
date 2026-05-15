@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, usePage, router } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, Eye, ClipboardCheck } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -79,10 +79,7 @@ function DateSalesModal({
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {sales.map((sale, index) => (
-                                <tr
-                                    key={index}
-                                    className={`hover:bg-slate-50 ${selectedIds.includes(sale.id) ? 'bg-emerald-50' : ''}`}
-                                >
+                                <tr key={index} className="hover:bg-slate-50">
                                     {auth.user.role === 'Admin' && (
                                         <td className="px-4 py-3">
                                             <input
@@ -97,39 +94,41 @@ function DateSalesModal({
                                     <td className="px-4 py-3">{formatTime(sale.time)}</td>
                                     <td className="px-4 py-3">{sale.customer_name || <span className="text-slate-400 italic">—</span>}</td>
                                     <td className="px-4 py-3">
-                                        <div className="w-full flex items-center gap-2">
-                                            <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.Draft}`}>
-                                                {sale.status}
-                                            </span>
-                                            {sale.status === 'Draft' && (
+                                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.Draft}`}>
+                                            {sale.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3">{formatPrice(sale.total)}</td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex gap-2 items-center">
+                                            {sale.status === 'Draft' && auth.user.role === 'Admin' && (
                                                 <PrimaryButton
                                                     styled={false} className="text-emerald-600"
                                                     icon={<ClipboardCheck className="size-4" />} type="button"
                                                     onClick={() => onSetFixed(sale)}
                                                 />
                                             )}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3">{formatPrice(sale.total)}</td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex gap-2 items-center">
-                                            <PrintReceipt icon={true} sale={sale} products={products} />
+                                            {sale.status === 'Fixed' && (
+                                                <PrintReceipt icon={true} sale={sale} products={products} />
+                                            )}
                                             <PrimaryButton
                                                 styled={false} className="text-emerald-600"
                                                 icon={<Eye className="size-4" />} type="button"
                                                 onClick={() => onView(sale)}
                                             />
-                                            <PrimaryButton
-                                                styled={false} className="text-emerald-600"
-                                                icon={<Pencil className="size-4" />} type="button"
-                                                onClick={() => onEdit(sale)}
-                                            />
                                             {auth.user.role === 'Admin' && (
-                                                <PrimaryButton
-                                                    styled={false} className="text-emerald-600"
-                                                    icon={<Trash2 className="size-4" />} type="button"
-                                                    onClick={() => onDelete(sale)}
-                                                />
+                                                <>
+                                                    <PrimaryButton
+                                                        styled={false} className="text-emerald-600"
+                                                        icon={<Pencil className="size-4" />} type="button"
+                                                        onClick={() => onEdit(sale)}
+                                                    />
+                                                    <PrimaryButton
+                                                        styled={false} className="text-emerald-600"
+                                                        icon={<Trash2 className="size-4" />} type="button"
+                                                        onClick={() => onDelete(sale)}
+                                                    />
+                                                </>
                                             )}
                                         </div>
                                     </td>
@@ -139,23 +138,25 @@ function DateSalesModal({
                     </table>
                 </div>
 
-                <div className="px-6 py-3 border-t text-sm text-slate-500 flex justify-between items-center">
-                    <span>{sales.length} transaksi</span>
-                    <div className="flex items-center gap-4">
-                        {auth.user.role === 'Admin' && selectedIds.length > 0 && (
-                            <PrimaryButton
-                                icon={<Trash2 className="size-4" />}
-                                type="button"
-                                className="bg-red-600 hover:bg-red-700 text-white text-xs py-1 px-3"
-                                onClick={() => onBatchDelete(selectedIds)}
-                            >
-                                Hapus ({selectedIds.length})
-                            </PrimaryButton>
-                        )}
-                        <span className="font-medium text-slate-700">
-                            Total: {formatPrice(sales.reduce((sum, s) => sum + (s.total ?? 0), 0))}
-                        </span>
+                {auth.user.role === 'Admin' && selectedIds.length > 0 && (
+                    <div className="px-6 py-3 border-t flex items-center justify-between bg-slate-50">
+                        <span className="text-sm text-slate-600">{selectedIds.length} transaksi dipilih</span>
+                        <PrimaryButton
+                            icon={<Trash2 className="size-4" />}
+                            type="button"
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            onClick={() => onBatchDelete(selectedIds)}
+                        >
+                            Hapus ({selectedIds.length})
+                        </PrimaryButton>
                     </div>
+                )}
+
+                <div className="px-6 py-3 border-t flex justify-between items-center text-sm text-slate-500">
+                    <span>{sales.length} transaksi</span>
+                    <span className="font-medium text-slate-700">
+                        Total: {formatPrice(sales.reduce((sum, s) => sum + (s.total ?? 0), 0))}
+                    </span>
                 </div>
             </div>
         </div>
@@ -174,32 +175,31 @@ export default function Index({ sales, products, customers }) {
 
     const [selectedTab, setSelectedTab] = useState(auth.user.role === 'Admin' ? 'All' : 'Draft');
 
+    // Date range filter
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo,   setDateTo]   = useState('');
+
     // Date group modal state
     const [viewingDateGroup, setViewingDateGroup] = useState(null);
 
     // Batch delete state — batchIds is what gets passed to the popup
-    const [selectedIds,    setSelectedIds]    = useState([]);
-    const [batchIds,       setBatchIds]       = useState([]);
+    const [selectedIds,     setSelectedIds]     = useState([]);
+    const [batchIds,        setBatchIds]        = useState([]);
     const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
-    // Add this block to handle the auto-refresh
-    useEffect(() => {
-        const interval = setInterval(() => {
-            router.reload({
-                only: ['sales', 'products', 'customers'], // Optional: Limits the payload to just these props
-                preserveState: true,  // Keeps your modals open and checkboxes selected
-                preserveScroll: true, // Keeps the user's scroll position intact
-            });
-        }, 5000);
-
-        // Cleanup the interval when the component unmounts
-        return () => clearInterval(interval);
-    }, []);
-
     const todayStr = new Date().toISOString().slice(0, 10);
-    const todaySales = sales.filter(s => s.date?.slice(0, 10) === todayStr);
 
-    const salesByDate = sales.reduce((acc, sale) => {
+    // Apply date range to all sales
+    const filteredSales = sales.filter(s => {
+        const d = s.date?.slice(0, 10) ?? '';
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo   && d > dateTo)   return false;
+        return true;
+    });
+
+    const todaySales = filteredSales.filter(s => s.date?.slice(0, 10) === todayStr);
+
+    const salesByDate = filteredSales.reduce((acc, sale) => {
         const dateKey = sale.date?.slice(0, 10) ?? 'Unknown';
         if (!acc[dateKey]) acc[dateKey] = [];
         acc[dateKey].push(sale);
@@ -296,7 +296,32 @@ export default function Index({ sales, products, customers }) {
                                 </PrimaryButton>
                             )}
                         </div>
-                        <TextInput placeholder="Cari penjualan..." />
+
+                        {/* ── Date range filter ── */}
+                        <div className="flex items-center gap-2">
+                            <TextInput
+                                type="date"
+                                value={dateFrom}
+                                onChange={e => setDateFrom(e.target.value)}
+                                className="w-40"
+                            />
+                            <span className="text-slate-400 text-sm">—</span>
+                            <TextInput
+                                type="date"
+                                value={dateTo}
+                                onChange={e => setDateTo(e.target.value)}
+                                className="w-40"
+                            />
+                            {(dateFrom || dateTo) && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setDateFrom(''); setDateTo(''); }}
+                                    className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                                >
+                                    Reset
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     <div className="w-1/3 grid grid-cols-3 mt-6 gap-1">
@@ -444,7 +469,7 @@ export default function Index({ sales, products, customers }) {
                 </Table>
             )}
 
-            {/* Date group modal — now with onBatchDelete */}
+            {/* Date group modal */}
             {viewingDateGroup && (
                 <DateSalesModal
                     isOpen={!!viewingDateGroup}
@@ -474,7 +499,7 @@ export default function Index({ sales, products, customers }) {
                 <Delete isOpen={!!isDeleting} onClose={() => setIsDeleting(null)} sale={isDeleting} />
             )}
             {isSettingFixed && (
-                <SetFixed isOpen={isSettingFixed} onClose={() => setIsSettingFixed(false)} sale={isSettingFixed} products={products} />
+                <SetFixed isOpen={!!isSettingFixed} onClose={() => setIsSettingFixed(false)} sale={isSettingFixed} products={products} />
             )}
 
             {isBatchDeleting && (
