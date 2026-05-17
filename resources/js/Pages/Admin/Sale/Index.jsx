@@ -72,6 +72,9 @@ function DateSalesModal({
                                 <th className="px-4 py-3 text-left">No. Antrian</th>
                                 <th className="px-4 py-3 text-left">Waktu</th>
                                 <th className="px-4 py-3 text-left">Pelanggan</th>
+                                {auth.user.role === 'Admin' && (
+                                    <th className="px-4 py-3 text-left">Kasir</th>
+                                )}
                                 <th className="px-4 py-3 text-left">Status</th>
                                 <th className="px-4 py-3 text-left">Total</th>
                                 <th className="px-4 py-3 text-left">Aksi</th>
@@ -93,6 +96,9 @@ function DateSalesModal({
                                     <td className="px-4 py-3">{sale.queue_number}</td>
                                     <td className="px-4 py-3">{formatTime(sale.time)}</td>
                                     <td className="px-4 py-3">{sale.customer_name || <span className="text-slate-400 italic">—</span>}</td>
+                                    {auth.user.role === 'Admin' && (
+                                        <td className="px-4 py-3 text-sm text-slate-500">{sale.cashier_name || <span className="italic text-slate-300">—</span>}</td>
+                                    )}
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.Draft}`}>
                                             {sale.status}
@@ -407,7 +413,9 @@ export default function Index({ sales, products, customers }) {
                                 />
                             )
                             : null,
-                        'Tanggal', 'Waktu', 'No. Antrian', 'Pelanggan', 'Status', 'Total', 'Aksi',
+                        'Tanggal', 'Waktu', 'No. Antrian', 'Pelanggan',
+                        ...(auth.user.role === 'Admin' ? ['Kasir'] : []),
+                        'Status', 'Total', 'Aksi',
                     ].filter(h => h !== null)}
                     className={auth.user.role === 'Admin' ? 'mt-4' : ''}
                 >
@@ -427,6 +435,9 @@ export default function Index({ sales, products, customers }) {
                             <td>{formatTime(sale.time)}</td>
                             <td>{sale.queue_number}</td>
                             <td>{sale.customer_name || <span className="text-slate-400 italic">—</span>}</td>
+                            {auth.user.role === 'Admin' && (
+                                <td className="text-sm text-slate-500">{sale.cashier_name || <span className="italic text-slate-300">—</span>}</td>
+                            )}
                             <td>
                                 <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.Draft}`}>
                                     {sale.status}

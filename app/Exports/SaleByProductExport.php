@@ -13,7 +13,6 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
 class SaleByProductExport implements
     FromCollection,
@@ -24,14 +23,14 @@ class SaleByProductExport implements
     WithTitle
 {
     protected float $qtyPercent;
-    protected string $from;
-    protected string $to;
+    protected ?string $from;
+    protected ?string $to;
 
-    public function __construct(float $qtyPercent = 100, string $from = null, string $to = null)
+    public function __construct(float $qtyPercent = 100, ?string $from = null, ?string $to = null)
     {
         $this->qtyPercent = $qtyPercent / 100;
-        $this->from = $from;
-        $this->to = $to;
+        $this->from       = $from;
+        $this->to         = $to;
     }
 
     public function title(): string
@@ -47,7 +46,6 @@ class SaleByProductExport implements
                 ->when($this->from, fn($q) => $q->whereDate('date', '>=', $this->from))
                 ->when($this->to,   fn($q) => $q->whereDate('date', '<=', $this->to))
             )
-            ->whereHas('sale', fn($q) => $q->where('status', 'Fixed'))
             ->get()
             ->sortBy([
                 fn($a, $b) => strcmp(
@@ -60,7 +58,7 @@ class SaleByProductExport implements
 
     public function headings(): array
     {
-        return ['Nama Produk', 'Varian', 'Tanggal', 'Pelanggan', 'Qty', 'Harga'];
+        return ['Nama Produk', 'Varian', 'Tipe', 'Tanggal', 'Pelanggan', 'Qty', 'Harga'];
     }
 
     public function map($item): array
@@ -68,6 +66,7 @@ class SaleByProductExport implements
         return [[
             $item->variant->product->name ?? '—',
             $item->variant->name          ?? '—',
+            $item->type,
             $item->sale->date,
             $item->sale->customer_name    ?? '',
             (int) ceil($item->qty * $this->qtyPercent),
@@ -80,30 +79,23 @@ class SaleByProductExport implements
         return [
             'A' => 28,  // Nama Produk
             'B' => 18,  // Varian
-            'C' => 14,  // Tanggal
-            'D' => 24,  // Pelanggan
-            'E' => 8,   // Qty
-            'F' => 18,  // Harga
+            'C' => 10,  // Tipe
+            'D' => 14,  // Tanggal
+            'E' => 24,  // Pelanggan
+            'F' => 8,   // Qty
+            'G' => 18,  // Harga
         ];
     }
 
     public function styles(Worksheet $sheet): array
     {
-        return $this->applyStyles($sheet, 'A1:F');
-    }
-
-    // Shared styling helper
-    public static function applyStyles(Worksheet $sheet, string $range): array
-    {
         $lastRow = $sheet->getHighestRow();
-        $cols    = substr($range, 0, strpos($range, '1:') + 1) . $lastRow;
-        $header  = substr($range, 0, strpos($range, ':')) . '1:' . substr($range, strpos($range, ':') + 1) . '1';
 
-        $sheet->getStyle($header)->applyFromArray([
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11, 'name' => 'Arial'],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '059669']],
+        $sheet->getStyle('A1:G1')->applyFromArray([
+            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11, 'name' => 'Arial'],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '059669']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D1FAE5']]],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'D1FAE5']]],
         ]);
 
         $sheet->getRowDimension(1)->setRowHeight(20);
@@ -111,25 +103,24 @@ class SaleByProductExport implements
         if ($lastRow >= 2) {
             for ($row = 2; $row <= $lastRow; $row++) {
                 $fill = ($row % 2 === 0) ? 'F0FDF4' : 'FFFFFF';
-                $rowRange = substr($range, 0, strpos($range, ':')) . $row . ':' . substr($range, strpos($range, ':') + 1) . $row;
-                $sheet->getStyle($rowRange)->applyFromArray([
+                $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
                     'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
                     'font'    => ['name' => 'Arial', 'size' => 10],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR, 'color' => ['rgb' => 'D1D5DB']]],
                 ]);
             }
 
-            $lastCol = substr($range, strpos($range, ':') + 1);
-            $priceCol = $lastCol; // Last column is always price
-            $sheet->getStyle("{$priceCol}2:{$priceCol}{$lastRow}")
+            $sheet->getStyle("G2:G{$lastRow}")
                 ->getNumberFormat()->setFormatCode('"Rp "#,##0');
 
-            $qtyCol = chr(ord($lastCol) - 1); // Second to last is qty
-            $sheet->getStyle("{$qtyCol}2:{$qtyCol}{$lastRow}")
+            $sheet->getStyle("F2:F{$lastRow}")
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            $sheet->getStyle("C2:C{$lastRow}")
                 ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         }
 
-        $sheet->getStyle($cols)->applyFromArray([
+        $sheet->getStyle("A1:G{$lastRow}")->applyFromArray([
             'borders' => ['outline' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '059669']]],
         ]);
 

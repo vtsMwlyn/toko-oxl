@@ -527,16 +527,6 @@ export default function Index({ products, customers }) {
                     </div>
 
                     <div className="flex gap-3">
-                        <Receipt
-                            sale={{
-                                ...data,
-                                items: [
-                                    ...soldItems.map(i => ({ ...i, type: 'Sell' })),
-                                    ...returnItems.map(i => ({ ...i, type: 'Return' })),
-                                ],
-                            }}
-                            products={products}
-                        />
                         <button
                             type="button"
                             disabled={loading || soldItems.length === 0}

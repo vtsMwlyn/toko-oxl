@@ -21,14 +21,25 @@ class SaleController extends Controller
 {
     public function index()
     {
+        $user = Auth::user();
+
+        $query = Sale::with('items.variant.product', 'user')
+            ->orderByDesc('date')
+            ->orderByDesc('time');
+
+        // Non-admins only see their own sales
+        if ($user->role !== 'Admin') {
+            $query->where('user_id', $user->id);
+        }
+
         return Inertia::render('Admin/Sale/Index', [
-            'sales' => Sale::with('items.variant.product')->orderByDesc('date')->orderByDesc('time')->get()
-                ->map(fn($sale) => array_merge($sale->toArray(), [
-                    'total' => $sale->items->reduce(function ($carry, $item) {
-                        $subtotal = ($item->price - ($item->discount ?? 0)) * $item->qty;
-                        return $carry + ($item->type === 'Sell' ? $subtotal : -$subtotal);
-                    }, 0),
-                ])),
+            'sales' => $query->get()->map(fn($sale) => array_merge($sale->toArray(), [
+                'total'      => $sale->items->reduce(function ($carry, $item) {
+                    $subtotal = ($item->price - ($item->discount ?? 0)) * $item->qty;
+                    return $carry + ($item->type === 'Sell' ? $subtotal : -$subtotal);
+                }, 0),
+                'cashier_name' => $sale->user?->name,
+            ])),
             'products'  => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'phone']),
         ]);
@@ -52,6 +63,7 @@ class SaleController extends Controller
         $lastSale = Sale::where('date', $validatedData['date'])->orderBy('time', 'desc')->first();
 
         $sale = Sale::create([
+            'user_id'       => Auth::id(),
             'date'          => $validatedData['date'],
             'time'          => $validatedData['time'],
             'customer_name' => $validatedData['customer_name'],
