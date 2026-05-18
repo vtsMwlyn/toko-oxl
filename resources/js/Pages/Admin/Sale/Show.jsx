@@ -1,4 +1,6 @@
 import { Eye } from 'lucide-react';
+import { useEffect } from 'react';
+import { router } from '@inertiajs/react';
 
 import Popup from '@/Components/Popup';
 import Table from '@/Components/Table';
@@ -75,6 +77,17 @@ function ItemsTable({ items, products, emptyText }) {
 
 export default function Show({ isOpen, onClose, sale, products }) {
     if (!sale) return null;
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const reload = () => router.reload({ only: ['sales'], preserveScroll: true, preserveState: true });
+        const id = setInterval(reload, 10000);
+        document.addEventListener('visibilitychange', reload);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', reload);
+        };
+    }, [isOpen]);
 
     const soldItems   = sale.items?.filter(i => i.type === 'Sell')   ?? [];
     const returnItems = sale.items?.filter(i => i.type === 'Return') ?? [];

@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, Eye, ClipboardCheck } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -194,6 +194,20 @@ export default function Index({ sales, products, customers }) {
     const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
     const todayStr = new Date().toISOString().slice(0, 10);
+
+    // Reload page props every 15 seconds and whenever the tab regains focus
+    const reload = useCallback(() => {
+        router.reload({ only: ['sales'], preserveScroll: true, preserveState: true });
+    }, []);
+
+    useEffect(() => {
+        const id = setInterval(reload, 15000);
+        document.addEventListener('visibilitychange', reload);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', reload);
+        };
+    }, [reload]);
 
     // Date range filter — only applies to the Riwayat (All) tab
     const filteredSales = sales.filter(s => {
@@ -462,7 +476,7 @@ export default function Index({ sales, products, customers }) {
                                     <PrimaryButton
                                         styled={false} className="text-emerald-600"
                                         icon={<Eye className="size-4" />} type="button"
-                                        onClick={() => setIsViewing(sale)}
+                                        onClick={() => setIsViewing(sale.id)}
                                     />
                                     <PrimaryButton
                                         styled={false} className="text-emerald-600"
@@ -492,7 +506,7 @@ export default function Index({ sales, products, customers }) {
                     sales={viewingDateGroup.sales}
                     products={products}
                     auth={auth}
-                    onView={(sale) => { setViewingDateGroup(null); setIsViewing(sale); }}
+                    onView={(sale) => { setViewingDateGroup(null); setIsViewing(sale.id); }}
                     onEdit={(sale) => { setViewingDateGroup(null); setIsEditing(sale); }}
                     onDelete={(sale) => { setViewingDateGroup(null); setIsDeleting(sale); }}
                     onSetFixed={(sale) => { setViewingDateGroup(null); setIsSettingFixed(sale); }}
@@ -501,25 +515,30 @@ export default function Index({ sales, products, customers }) {
             )}
 
             {isViewing && (
-                <Show isOpen={!!isViewing} onClose={() => setIsViewing(null)} sale={isViewing} products={products} />
+                <Show
+                    isOpen={!!isViewing}
+                    onClose={() => setIsViewing(null)}
+                    sale={sales.find(s => s.id === isViewing) ?? null}
+                    products={products}
+                />
             )}
             {isCreating && (
-                <CreateEdit mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)} products={products} customers={customers} />
+                <CreateEdit mode="Create" isOpen={isCreating} onClose={() => { setIsCreating(false); reload(); }} products={products} customers={customers} />
             )}
             {isEditing && (
-                <CreateEdit mode="Edit" isOpen={!!isEditing} onClose={() => setIsEditing(null)} sale={isEditing} products={products} customers={customers} />
+                <CreateEdit mode="Edit" isOpen={!!isEditing} onClose={() => { setIsEditing(null); reload(); }} sale={isEditing} products={products} customers={customers} />
             )}
             {isDeleting && (
-                <Delete isOpen={!!isDeleting} onClose={() => setIsDeleting(null)} sale={isDeleting} />
+                <Delete isOpen={!!isDeleting} onClose={() => { setIsDeleting(null); reload(); }} sale={isDeleting} />
             )}
             {isSettingFixed && (
-                <SetFixed isOpen={!!isSettingFixed} onClose={() => setIsSettingFixed(false)} sale={isSettingFixed} products={products} />
+                <SetFixed isOpen={!!isSettingFixed} onClose={() => { setIsSettingFixed(false); reload(); }} sale={isSettingFixed} products={products} />
             )}
 
             {isBatchDeleting && (
                 <BatchDelete
                     isOpen={isBatchDeleting}
-                    onClose={closeBatchDelete}
+                    onClose={() => { closeBatchDelete(); reload(); }}
                     saleIds={batchIds}
                     onSuccess={() => { setSelectedIds([]); setSelectedDates([]); }}
                 />
