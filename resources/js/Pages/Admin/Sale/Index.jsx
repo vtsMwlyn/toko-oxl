@@ -195,7 +195,7 @@ export default function Index({ sales, products, customers }) {
 
     const todayStr = new Date().toISOString().slice(0, 10);
 
-    // Apply date range to all sales
+    // Date range filter — only applies to the Riwayat (All) tab
     const filteredSales = sales.filter(s => {
         const d = s.date?.slice(0, 10) ?? '';
         if (dateFrom && d < dateFrom) return false;
@@ -203,7 +203,8 @@ export default function Index({ sales, products, customers }) {
         return true;
     });
 
-    const todaySales = filteredSales.filter(s => s.date?.slice(0, 10) === todayStr);
+    // Draft/Fixed tabs always show today regardless of the date filter
+    const todaySales = sales.filter(s => s.date?.slice(0, 10) === todayStr);
 
     const salesByDate = filteredSales.reduce((acc, sale) => {
         const dateKey = sale.date?.slice(0, 10) ?? 'Unknown';
@@ -303,31 +304,33 @@ export default function Index({ sales, products, customers }) {
                             )}
                         </div>
 
-                        {/* ── Date range filter ── */}
-                        <div className="flex items-center gap-2">
-                            <TextInput
-                                type="date"
-                                value={dateFrom}
-                                onChange={e => setDateFrom(e.target.value)}
-                                className="w-40"
-                            />
-                            <span className="text-slate-400 text-sm">—</span>
-                            <TextInput
-                                type="date"
-                                value={dateTo}
-                                onChange={e => setDateTo(e.target.value)}
-                                className="w-40"
-                            />
-                            {(dateFrom || dateTo) && (
-                                <button
-                                    type="button"
-                                    onClick={() => { setDateFrom(''); setDateTo(''); }}
-                                    className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
-                                >
-                                    Reset
-                                </button>
-                            )}
-                        </div>
+                        {/* ── Date range filter — Riwayat tab only ── */}
+                        {selectedTab === 'All' && (
+                            <div className="flex items-center gap-2">
+                                <TextInput
+                                    type="date"
+                                    value={dateFrom}
+                                    onChange={e => setDateFrom(e.target.value)}
+                                    className="w-40"
+                                />
+                                <span className="text-slate-400 text-sm">—</span>
+                                <TextInput
+                                    type="date"
+                                    value={dateTo}
+                                    onChange={e => setDateTo(e.target.value)}
+                                    className="w-40"
+                                />
+                                {(dateFrom || dateTo) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setDateFrom(''); setDateTo(''); }}
+                                        className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                                    >
+                                        Reset
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div className="w-1/3 grid grid-cols-3 mt-6 gap-1">

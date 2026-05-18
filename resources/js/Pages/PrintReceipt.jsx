@@ -63,6 +63,9 @@ function ReceiptContent({ sale, products }) {
                 <ReceiptRow label="Pelanggan" value={sale.customer_name} />
             )}
             <ReceiptRow label="Status" value={sale.status === 'Fixed' ? 'Lunas' : 'Draft'} />
+            {sale.cashier_name && (
+                <ReceiptRow label="Kasir" value={sale.cashier_name} />
+            )}
             {sale.queue_number && (
                 <ReceiptRow label="No. Antrian" value={sale.queue_number} />
             )}
@@ -121,8 +124,6 @@ function ReceiptContent({ sale, products }) {
                     })}
                 </>
             )}
-
-            <ReceiptDivider />
 
             {/* ── Grand total ── */}
             {returnItems.length > 0 && (

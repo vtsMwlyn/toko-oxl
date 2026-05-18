@@ -27,8 +27,8 @@ export default function SetFixed({ isOpen, onClose, sale, products }) {
         );
     };
 
-    // Block the × button and backdrop click until the receipt has been printed
-    const handleClose = hasPrinted ? onClose : undefined;
+    // Block closing only after the action succeeded and before the receipt is printed
+    const handleClose = success && !hasPrinted ? undefined : onClose;
 
     return (
         <Popup

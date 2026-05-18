@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
-import { Plus, Trash2, ScanBarcode, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { Plus, Trash2, ScanBarcode, ChevronDown, ChevronUp } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputLabel from '@/Components/InputLabel';
@@ -270,7 +270,7 @@ export default function Index({ products, customers }) {
 
     const { data, setData, errors, setError, reset } = useForm({
         date:          new Date().toISOString().slice(0, 10),
-        time:          new Date().toTimeString().slice(0, 5),
+        time:          new Date().toTimeString().slice(0, 8),
         customer_name: '',
         status:        'Fixed',
     });
@@ -280,6 +280,22 @@ export default function Index({ products, customers }) {
     }));
 
     const [customerOption, setCustomerOption] = useState(null);
+
+    // Keep date and time ticking every second
+    useEffect(() => {
+        const tick = () => {
+            const now = new Date();
+            setData(prev => ({
+                ...prev,
+                date: now.toISOString().slice(0, 10),
+                time: now.toTimeString().slice(0, 8),
+            }));
+        };
+
+        tick(); // set immediately on mount
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, []);
 
     function handleCustomerChange(option) {
         setCustomerOption(option);
@@ -310,8 +326,14 @@ export default function Index({ products, customers }) {
     function submit(status) {
         setLoading(true);
 
+        const now     = new Date();
+        const date    = now.toISOString().slice(0, 10);
+        const time    = now.toTimeString().slice(0, 8);
+
         const payload = {
             ...data,
+            date,
+            time,
             status,
             items: [
                 ...soldItems.map(({ _localId, ...i })   => ({ ...i, type: 'Sell' })),
@@ -322,7 +344,7 @@ export default function Index({ products, customers }) {
         router.post(route('cashier.sale.store'), payload, {
             onSuccess: (page) => {
                 const queueNumber = page.props.flash?.queue_number;
-                setSavedSale({ ...data, status, items: payload.items, queue_number: queueNumber });
+                setSavedSale({ ...data, date, time, status, items: payload.items, queue_number: queueNumber });
                 setSuccess(true);
             },
             onError: serverErrors => {
@@ -390,40 +412,25 @@ export default function Index({ products, customers }) {
                 <div className="bg-white rounded-2xl border border-emerald-100 p-5">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-sm font-bold text-emerald-900">Informasi Transaksi</h2>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                const now = new Date();
-                                setData(prev => ({
-                                    ...prev,
-                                    date: now.toISOString().slice(0, 10),
-                                    time: now.toTimeString().slice(0, 5),
-                                }));
-                            }}
-                            className="flex items-center gap-1.5 text-xs text-emerald-600 border border-emerald-200 rounded-lg px-2.5 py-1.5 hover:bg-emerald-50 transition-colors"
-                        >
-                            <Clock size={12} />
-                            Sekarang
-                        </button>
+                        <p className="text-xs text-slate-400">Tanggal & waktu diambil otomatis saat transaksi disimpan.</p>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div className="grid gap-1">
                             <InputLabel htmlFor="date" value="Tanggal" />
                             <TextInput
                                 id="date" type="date" value={data.date}
-                                className="block w-full"
-                                onChange={e => setData('date', e.target.value)}
+                                className="block w-full bg-slate-50 text-slate-400 cursor-not-allowed"
+                                readOnly
                             />
-                            <InputError message={errors.date} />
                         </div>
                         <div className="grid gap-1">
                             <InputLabel htmlFor="time" value="Waktu" />
                             <TextInput
                                 id="time" type="time" value={data.time}
-                                className="block w-full"
-                                onChange={e => setData('time', e.target.value)}
+                                className="block w-full bg-slate-50 text-slate-400 cursor-not-allowed"
+                                step="1"
+                                readOnly
                             />
-                            <InputError message={errors.time} />
                         </div>
                         <div className="grid gap-1">
                             <InputLabel htmlFor="customer_name" value="Nama Pelanggan" />
@@ -527,6 +534,16 @@ export default function Index({ products, customers }) {
                     </div>
 
                     <div className="flex gap-3">
+                        <Receipt
+                            sale={{
+                                ...data,
+                                items: [
+                                    ...soldItems.map(i => ({ ...i, type: 'Sell' })),
+                                    ...returnItems.map(i => ({ ...i, type: 'Return' })),
+                                ],
+                            }}
+                            products={products}
+                        />
                         <button
                             type="button"
                             disabled={loading || soldItems.length === 0}
