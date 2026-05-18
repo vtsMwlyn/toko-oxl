@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\SaleByProductExport;
 use App\Exports\SaleBySaleExport;
 use App\Exports\SaleBySpecificProductExport;
+use App\Exports\SaleBySpecificVariantExport;
 use App\Helpers\ModelChangeLogger;
 use App\Helpers\SaleItemChangeLogger;
 use App\Models\ActionLog;
@@ -185,7 +186,18 @@ class SaleController extends Controller
         $to       = $request->input('to');
         $filename = 'penjualan_' . str($variant->product->name)->slug('_') . '_' . now()->format('Ymd_His') . '.xlsx';
 
-        return Excel::download(new SaleBySpecificProductExport($variant, $percent, $from, $to), $filename);
+        return Excel::download(new SaleBySpecificVariantExport($variant, $percent, $from, $to), $filename);
+    }
+
+    public function exportBySpecificProductGroup(Request $request, Product $product)
+    {
+        $percent  = (float) $request->input('qty_percent', 100);
+        $percent  = max(1, min(100, $percent));
+        $from     = $request->input('from');
+        $to       = $request->input('to');
+        $filename = 'penjualan_' . str($product->name)->slug('_') . '_semua_varian_' . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(new SaleBySpecificProductExport($product, $percent, $from, $to), $filename);
     }
 
     public function exportBySale(Request $request)

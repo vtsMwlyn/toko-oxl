@@ -2,11 +2,12 @@
 
 namespace App\Exports;
 
-use App\Models\Product;
 use App\Models\SaleItem;
+use App\Models\Variant;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -14,7 +15,7 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class SaleBySpecificProductExport implements
+class SaleBySpecificVariantExport implements
     FromCollection,
     WithHeadings,
     WithMapping,
@@ -23,32 +24,30 @@ class SaleBySpecificProductExport implements
     WithColumnFormatting,
     ShouldAutoSize
 {
-    protected Product $product;
+    protected Variant $variant;
     protected float $qtyPercent;
     protected ?string $from;
     protected ?string $to;
 
-    public function __construct(Product $product, float $qtyPercent = 100, ?string $from = null, ?string $to = null)
+    public function __construct(Variant $variant, float $qtyPercent = 100, ?string $from = null, ?string $to = null)
     {
-        $this->product    = $product;
+        $this->variant    = $variant;
         $this->qtyPercent = $qtyPercent / 100;
-        $this->from       = $from;
-        $this->to         = $to;
+        $this->from = $from;
+        $this->to = $to;
     }
 
     // ── Data ──────────────────────────────────────────────────────────────────
 
     public function collection()
     {
-        $variantIds = $this->product->variants->pluck('id');
-
         return SaleItem::with(['sale', 'variant'])
-            ->whereIn('variant_id', $variantIds)
             ->whereHas('sale', fn($q) => $q
                 ->where('status', 'Fixed')
                 ->when($this->from, fn($q) => $q->whereDate('date', '>=', $this->from))
                 ->when($this->to,   fn($q) => $q->whereDate('date', '<=', $this->to))
             )
+            ->where('variant_id', $this->variant->id)
             ->orderByDesc(
                 \App\Models\Sale::select('date')
                     ->whereColumn('sales.id', 'sale_items.sale_id')
@@ -61,7 +60,8 @@ class SaleBySpecificProductExport implements
 
     public function title(): string
     {
-        return substr($this->product->name, 0, 31);
+        // Sheet names are limited to 31 chars in Excel
+        return substr($this->variant->product->name, 0, 31);
     }
 
     // ── Column headings ───────────────────────────────────────────────────────
@@ -88,21 +88,21 @@ class SaleBySpecificProductExport implements
     public function map($item): array
     {
         $net      = $item->price - ($item->discount ?? 0);
-        $adjQty   = (int) floor($item->qty * $this->qtyPercent);
+        $adjQty   = (int) floor($item->qty * $this->qtyPercent);                              // ← adjusted
         $subtotal = $item->type === 'Return' ? -($net * $adjQty) : $net * $adjQty;
 
         return [
             $item->sale->date,
             $item->sale->time,
-            $item->sale->customer_name    ?? '—',
+            $item->sale->customer_name ?? '—',
             $item->sale_id,
             $item->variant->product->name ?? '—',
-            $item->variant->name          ?? '—',
+            $item->variant->name ?? '—',
             $item->type,
             $item->price,
-            $item->discount               ?? 0,
-            $adjQty,
-            $subtotal,
+            $item->discount ?? 0,
+            $adjQty,        // ← adjusted
+            $subtotal,      // ← recalculated
         ];
     }
 
@@ -111,9 +111,9 @@ class SaleBySpecificProductExport implements
     public function columnFormats(): array
     {
         return [
-            'H' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Price
-            'I' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Discount
-            'K' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Subtotal
+            'G' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Price
+            'H' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Discount
+            'J' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Subtotal
         ];
     }
 
@@ -121,6 +121,7 @@ class SaleBySpecificProductExport implements
 
     public function styles(Worksheet $sheet): array
     {
+        // Bold header row
         return [
             1 => ['font' => ['bold' => true]],
         ];

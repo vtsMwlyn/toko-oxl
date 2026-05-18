@@ -62,7 +62,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
     const [dateTo,   setDateTo]   = useState(to);
     const [search,   setSearch]   = useState('');
 
-    const [exportType, setExportType] = useState(null);
+    const [exportType,               setExportType]               = useState(null);
     const [isExportingSpecificProduct, setIsExportingSpecificProduct] = useState(false);
 
     function handleFilter(e) {
@@ -83,7 +83,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
         <AuthenticatedLayout title="Laporan">
             <Head title="Laporan" />
 
-            {/* ── Date range filter ── */}
+            {/* ── Date range filter + export buttons ── */}
             <div className="w-full flex items-center justify-between">
                 <form onSubmit={handleFilter} className="flex flex-wrap items-end gap-3 mb-6">
                     <div className="grid gap-1">
@@ -115,7 +115,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                         Export by Transaksi
                     </PrimaryButton>
                     <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setIsExportingSpecificProduct(true)}>
-                        Export by Varian Spesifik
+                        Export Spesifik
                     </PrimaryButton>
                 </div>
             </div>
@@ -187,11 +187,23 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                 </Table>
             </div>
 
+            {/* ── Popups ── */}
             {isExportingSpecificProduct && (
-                <ExportSpecificProduct isOpen={isExportingSpecificProduct} onClose={() => setIsExportingSpecificProduct(false)} products={products} from={dateFrom} to={dateTo} />
+                <ExportSpecificProduct
+                    isOpen={isExportingSpecificProduct}
+                    onClose={() => setIsExportingSpecificProduct(false)}
+                    products={products}
+                    from={dateFrom}
+                    to={dateTo}
+                />
             )}
             {exportType && (
-                <ExportWithPercent type={exportType} onClose={() => setExportType(null)} from={dateFrom} to={dateTo} />
+                <ExportWithPercent
+                    type={exportType}
+                    onClose={() => setExportType(null)}
+                    from={dateFrom}
+                    to={dateTo}
+                />
             )}
         </AuthenticatedLayout>
     );

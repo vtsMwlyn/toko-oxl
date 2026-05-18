@@ -74,9 +74,10 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/{sale}', [SaleController::class, 'destroy'])->name('destroy');
             Route::delete('/', [SaleController::class, 'destroyBatch'])->name('destroyBatch');
 
-            Route::get('/sales/export/product', [SaleController::class, 'exportByProduct'])->name('export.product');
-            Route::get('/export/product/{variant}', [SaleController::class, 'exportBySpecificProduct'])->name('export.variant.specific');
-            Route::get('/sales/export/sale',    [SaleController::class, 'exportBySale'])->name('export.sale');
+            Route::get('/export/by-product',                  [SaleController::class, 'exportByProduct'])->name('export.byProduct');
+            Route::get('/export/by-sale',                     [SaleController::class, 'exportBySale'])->name('export.bySale');
+            Route::get('/export/by-variant/{variant}',        [SaleController::class, 'exportBySpecificProduct'])->name('export.byVariant');
+            Route::get('/export/by-product-group/{product}',  [SaleController::class, 'exportBySpecificProductGroup'])->name('export.byProductGroup');
         });
 
         Route::prefix('returns')->name('return.')->group(function () {
