@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { TrendingUp, TrendingDown, BarChart2, Search, FileDown } from 'lucide-react';
 
 import ExportWithPercent from './ExportWithPercent';
@@ -64,6 +64,19 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
 
     const [exportType,               setExportType]               = useState(null);
     const [isExportingSpecificProduct, setIsExportingSpecificProduct] = useState(false);
+
+    const reload = useCallback(() => {
+        router.reload({ only: ['omzet_per_day', 'summary', 'variant_stats'], preserveScroll: true, preserveState: true });
+    }, []);
+
+    useEffect(() => {
+        const id = setInterval(reload, 10000);
+        document.addEventListener('visibilitychange', reload);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', reload);
+        };
+    }, [reload]);
 
     function handleFilter(e) {
         e.preventDefault();

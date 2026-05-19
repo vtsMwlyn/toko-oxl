@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -17,6 +17,19 @@ export default function Index({ customers }) {
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
     const [search,     setSearch]     = useState('');
+
+    const reload = useCallback(() => {
+        router.reload({ only: ['customers'], preserveScroll: true, preserveState: true });
+    }, []);
+
+    useEffect(() => {
+        const id = setInterval(reload, 10000);
+        document.addEventListener('visibilitychange', reload);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', reload);
+        };
+    }, [reload]);
 
     const filtered = customers.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||

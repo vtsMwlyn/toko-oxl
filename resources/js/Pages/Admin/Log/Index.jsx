@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { useEffect, useCallback } from 'react';
 
 const roleBadge = {
     Admin: 'bg-emerald-100 text-emerald-700',
@@ -180,6 +181,19 @@ function LogCard({ log }) {
 }
 
 export default function Index({ logs }) {
+    const reload = useCallback(() => {
+        router.reload({ only: ['logs'], preserveScroll: true, preserveState: true });
+    }, []);
+
+    useEffect(() => {
+        const id = setInterval(reload, 10000);
+        document.addEventListener('visibilitychange', reload);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', reload);
+        };
+    }, [reload]);
+
     return (
         <AuthenticatedLayout title="Log Aksi Sistem">
             <Head title="Log" />

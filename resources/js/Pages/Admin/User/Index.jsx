@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -19,6 +19,19 @@ export default function Index({ users }) {
     const [isCreating, setIsCreating] = useState(false);
     const [isEditing, setIsEditing] = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
+
+    const reload = useCallback(() => {
+        router.reload({ only: ['users'], preserveScroll: true, preserveState: true });
+    }, []);
+
+    useEffect(() => {
+        const id = setInterval(reload, 10000);
+        document.addEventListener('visibilitychange', reload);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', reload);
+        };
+    }, [reload]);
 
     return (
         <AuthenticatedLayout title="Daftar Pengguna">

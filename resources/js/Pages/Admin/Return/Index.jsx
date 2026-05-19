@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Head, usePage } from '@inertiajs/react';
+import { useState, useEffect, useCallback } from 'react';
+import { Head, usePage, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -21,6 +21,19 @@ export default function Index({ returns, products }) {
 
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo,   setDateTo]   = useState('');
+
+    const reload = useCallback(() => {
+        router.reload({ only: ['returns', 'products'], preserveScroll: true, preserveState: true });
+    }, []);
+
+    useEffect(() => {
+        const id = setInterval(reload, 10000);
+        document.addEventListener('visibilitychange', reload);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', reload);
+        };
+    }, [reload]);
 
     const filtered = returns.filter(r => {
         const d = r.date?.slice(0, 10) ?? '';

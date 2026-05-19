@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import { Plus, Trash2, ScanBarcode, ChevronDown, ChevronUp } from 'lucide-react';
@@ -296,6 +296,19 @@ export default function Index({ products, customers, auth }) {
         const id = setInterval(tick, 1000);
         return () => clearInterval(id);
     }, []);
+
+    const reload = useCallback(() => {
+        router.reload({ only: ['products', 'customers'], preserveScroll: true, preserveState: true });
+    }, []);
+
+    useEffect(() => {
+        const id = setInterval(reload, 10000);
+        document.addEventListener('visibilitychange', reload);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', reload);
+        };
+    }, [reload]);
 
     function handleCustomerChange(option) {
         setCustomerOption(option);
