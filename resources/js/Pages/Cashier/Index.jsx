@@ -260,7 +260,7 @@ function ItemTable({ items, products, onRemove }) {
     );
 }
 
-export default function Index({ products, customers }) {
+export default function Index({ products, customers, auth }) {
     const [loading,           setLoading]           = useState(false);
     const [success,           setSuccess]           = useState(false);
     const [savedSale,         setSavedSale]         = useState(null);
@@ -344,7 +344,7 @@ export default function Index({ products, customers }) {
         router.post(route('cashier.sale.store'), payload, {
             onSuccess: (page) => {
                 const queueNumber = page.props.flash?.queue_number;
-                setSavedSale({ ...data, date, time, status, items: payload.items, queue_number: queueNumber });
+                setSavedSale({ ...data, date, time, status, items: payload.items, queue_number: queueNumber, cashier_name: auth?.user?.name });
                 setSuccess(true);
             },
             onError: serverErrors => {
@@ -534,16 +534,6 @@ export default function Index({ products, customers }) {
                     </div>
 
                     <div className="flex gap-3">
-                        <Receipt
-                            sale={{
-                                ...data,
-                                items: [
-                                    ...soldItems.map(i => ({ ...i, type: 'Sell' })),
-                                    ...returnItems.map(i => ({ ...i, type: 'Return' })),
-                                ],
-                            }}
-                            products={products}
-                        />
                         <button
                             type="button"
                             disabled={loading || soldItems.length === 0}
