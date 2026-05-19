@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import Pagination from '@/Components/Pagination';
 
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
@@ -45,11 +46,11 @@ export default function Index({ users }) {
             </div>
 
             <Table
-                isEmpty={users.length === 0}
+                isEmpty={users.data.length === 0}
                 headers={['Nama', 'Email', 'Role', 'Aksi']}
                 className="mt-4"
             >
-                {users.map((user, index) => (
+                {users.data.map((user, index) => (
                     <tr key={index} className="hover:bg-slate-200">
                         <td>{user.name}</td>
                         <td>{user.email}</td>
@@ -79,6 +80,7 @@ export default function Index({ users }) {
                     </tr>
                 ))}
             </Table>
+            <Pagination paginator={users} />
 
             {isCreating && (
                 <CreateEdit mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)} />

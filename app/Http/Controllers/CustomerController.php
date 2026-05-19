@@ -14,7 +14,7 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        $customers = Customer::orderBy('name')->get()->map(function ($customer) {
+        $customers = Customer::orderBy('name')->paginate(20)->through(function ($customer) {
             $sales = Sale::where('customer_name', $customer->name)
                 ->where('status', 'Fixed')
                 ->with('items')

@@ -18,6 +18,7 @@ import SetFixed from './SetFixed';
 import formatPrice from '@/Helpers/formatPrice';
 import formatDate from '@/Helpers/formatDate';
 import formatTime from '@/Helpers/formatTime';
+import Pagination from '@/Components/Pagination';
 
 const statusBadge = {
     Draft: 'bg-amber-100 text-amber-700',
@@ -169,7 +170,7 @@ function DateSalesModal({
     );
 }
 
-export default function Index({ sales, products, customers }) {
+export default function Index({ today_sales, history_sales, from: initialFrom, to: initialTo, products, customers }) {
     const { auth } = usePage().props;
 
     const [isViewing,  setIsViewing]  = useState(null);
@@ -181,23 +182,36 @@ export default function Index({ sales, products, customers }) {
 
     const [selectedTab, setSelectedTab] = useState(auth.user.role === 'Admin' ? 'All' : 'Draft');
 
-    // Date range filter
-    const [dateFrom, setDateFrom] = useState('');
-    const [dateTo,   setDateTo]   = useState('');
+    // Date range filter — initialize from server props
+    const [dateFrom, setDateFrom] = useState(initialFrom ?? '');
+    const [dateTo,   setDateTo]   = useState(initialTo   ?? '');
+
+    // Sync date inputs with server props (e.g. after navigation)
+    useEffect(() => {
+        setDateFrom(initialFrom ?? '');
+        setDateTo(initialTo   ?? '');
+    }, [initialFrom, initialTo]);
 
     // Date group modal state
     const [viewingDateGroup, setViewingDateGroup] = useState(null);
+
+    // Batch delete at the date-group level (All tab)
+    const [selectedDates, setSelectedDates] = useState([]);
+
+    // Close date-group modal and reset selection on pagination page change
+    useEffect(() => {
+        setViewingDateGroup(null);
+        setSelectedDates([]);
+    }, [history_sales?.current_page]);
 
     // Batch delete state — batchIds is what gets passed to the popup
     const [selectedIds,     setSelectedIds]     = useState([]);
     const [batchIds,        setBatchIds]        = useState([]);
     const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-
-    // Reload page props every 15 seconds and whenever the tab regains focus
+    // Reload page props every 10 seconds and whenever the tab regains focus
     const reload = useCallback(() => {
-        router.reload({ only: ['sales'], preserveScroll: true, preserveState: true });
+        router.reload({ only: ['today_sales', 'history_sales'], preserveScroll: true, preserveState: true });
     }, []);
 
     useEffect(() => {
@@ -209,18 +223,7 @@ export default function Index({ sales, products, customers }) {
         };
     }, [reload]);
 
-    // Date range filter — only applies to the Riwayat (All) tab
-    const filteredSales = sales.filter(s => {
-        const d = s.date?.slice(0, 10) ?? '';
-        if (dateFrom && d < dateFrom) return false;
-        if (dateTo   && d > dateTo)   return false;
-        return true;
-    });
-
-    // Draft/Fixed tabs always show today regardless of the date filter
-    const todaySales = sales.filter(s => s.date?.slice(0, 10) === todayStr);
-
-    const salesByDate = filteredSales.reduce((acc, sale) => {
+    const salesByDate = (history_sales.data ?? []).reduce((acc, sale) => {
         const dateKey = sale.date?.slice(0, 10) ?? 'Unknown';
         if (!acc[dateKey]) acc[dateKey] = [];
         acc[dateKey].push(sale);
@@ -230,7 +233,7 @@ export default function Index({ sales, products, customers }) {
 
     const visibleSales = selectedTab === 'All'
         ? []
-        : todaySales.filter(s => s.status === selectedTab);
+        : today_sales.filter(s => s.status === selectedTab);
 
     const allVisibleIds = visibleSales.map(s => s.id);
     const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.includes(id));
@@ -254,9 +257,6 @@ export default function Index({ sales, products, customers }) {
         setSelectedIds([]);
         setSelectedDates([]);
     };
-
-    // Batch delete at the date-group level (All tab)
-    const [selectedDates, setSelectedDates] = useState([]);
 
     const allDatesSelected = sortedDates.length > 0 && sortedDates.every(d => selectedDates.includes(d));
 
@@ -324,20 +324,30 @@ export default function Index({ sales, products, customers }) {
                                 <TextInput
                                     type="date"
                                     value={dateFrom}
-                                    onChange={e => setDateFrom(e.target.value)}
+                                    onChange={e => {
+                                        setDateFrom(e.target.value);
+                                        router.get(route('sale.index'), { from: e.target.value, ...(dateTo ? { to: dateTo } : {}) }, { preserveState: true, preserveScroll: true });
+                                    }}
                                     className="w-40"
                                 />
                                 <span className="text-slate-400 text-sm">—</span>
                                 <TextInput
                                     type="date"
                                     value={dateTo}
-                                    onChange={e => setDateTo(e.target.value)}
+                                    onChange={e => {
+                                        setDateTo(e.target.value);
+                                        router.get(route('sale.index'), { ...(dateFrom ? { from: dateFrom } : {}), to: e.target.value }, { preserveState: true, preserveScroll: true });
+                                    }}
                                     className="w-40"
                                 />
                                 {(dateFrom || dateTo) && (
                                     <button
                                         type="button"
-                                        onClick={() => { setDateFrom(''); setDateTo(''); }}
+                                        onClick={() => {
+                                            setDateFrom('');
+                                            setDateTo('');
+                                            router.get(route('sale.index'), {}, { preserveState: true, preserveScroll: true });
+                                        }}
                                         className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
                                     >
                                         Reset
@@ -357,6 +367,7 @@ export default function Index({ sales, products, customers }) {
 
             {/* ALL TAB — grouped by date */}
             {selectedTab === 'All' ? (
+                <>
                 <Table
                     isEmpty={sortedDates.length === 0}
                     headers={[
@@ -407,13 +418,15 @@ export default function Index({ sales, products, customers }) {
                                     <PrimaryButton
                                         styled={false} className="text-emerald-600"
                                         icon={<Eye className="size-4" />} type="button"
-                                        onClick={() => setViewingDateGroup({ date: dateKey, sales: group })}
+                                        onClick={() => setViewingDateGroup({ date: dateKey })}
                                     />
                                 </td>
                             </tr>
                         );
                     })}
                 </Table>
+                <Pagination paginator={history_sales} />
+                </>
             ) : (
                 /* DRAFT / FIXED TABS — today only, with checkboxes */
                 <Table
@@ -503,7 +516,7 @@ export default function Index({ sales, products, customers }) {
                     isOpen={!!viewingDateGroup}
                     onClose={() => setViewingDateGroup(null)}
                     date={viewingDateGroup.date}
-                    sales={viewingDateGroup.sales}
+                    sales={salesByDate[viewingDateGroup.date] ?? []}
                     products={products}
                     auth={auth}
                     onView={(sale) => { setViewingDateGroup(null); setIsViewing(sale.id); }}
@@ -518,7 +531,7 @@ export default function Index({ sales, products, customers }) {
                 <Show
                     isOpen={!!isViewing}
                     onClose={() => setIsViewing(null)}
-                    sale={sales.find(s => s.id === isViewing) ?? null}
+                    sale={[...today_sales, ...(history_sales.data ?? [])].find(s => s.id === isViewing) ?? null}
                     products={products}
                 />
             )}

@@ -14,14 +14,23 @@ use Inertia\Inertia;
 
 class ReturnController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $from = $request->input('from');
+        $to   = $request->input('to');
+
+        $query = ProductReturn::with('variant.product')
+            ->orderByDesc('date')
+            ->orderByDesc('id');
+
+        if ($from) $query->where('date', '>=', $from);
+        if ($to)   $query->where('date', '<=', $to);
+
         return Inertia::render('Admin/Return/Index', [
-            'returns'  => ProductReturn::with('variant.product')
-                ->orderByDesc('date')
-                ->orderByDesc('id')
-                ->get(),
+            'returns'  => $query->paginate(20),
             'products' => Product::with('variants')->orderBy('name')->get(),
+            'from'     => $from,
+            'to'       => $to,
         ]);
     }
 

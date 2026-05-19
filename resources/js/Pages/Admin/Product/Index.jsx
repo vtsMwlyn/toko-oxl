@@ -7,6 +7,7 @@ import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import LowStockWarning from '@/Components/LowStockWarning';
+import Pagination from '@/Components/Pagination';
 
 import CreateEdit from './CreateEdit';
 import Show from './Show';
@@ -79,11 +80,11 @@ export default function Index({ products, low_stock_variants }) {
             </div>
 
             <Table
-                isEmpty={products.length === 0}
+                isEmpty={products.data.length === 0}
                 headers={['Nama', 'Total Varian', 'Total Stok', 'Harga Jual', 'Harga Langganan', 'Aksi']}
                 className="mt-4"
             >
-                {products.map((product, index) => {
+                {products.data.map((product, index) => {
                     const totalStock = product.variants.reduce(
                         (sum, v) => sum + v.stock,
                         0
@@ -134,13 +135,15 @@ export default function Index({ products, low_stock_variants }) {
                 })}
             </Table>
 
+            <Pagination paginator={products} />
+
             {isCreating && (
                 <CreateEdit mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)} />
             )}
             {isShowing && (
                 <Show
                     isOpen={!!isShowing} onClose={() => setIsShowing(false)}
-                    product={products.find(p => p.id === isShowing)}
+                    product={products.data.find(p => p.id === isShowing)}
                 />
             )}
             {isEditing && (

@@ -10,6 +10,7 @@ import TextInput from '@/Components/TextInput';
 import Show from './Show';
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
+import Pagination from '@/Components/Pagination';
 
 export default function Index({ customers }) {
     const [isViewing,  setIsViewing]  = useState(null);
@@ -31,7 +32,7 @@ export default function Index({ customers }) {
         };
     }, [reload]);
 
-    const filtered = customers.filter(c =>
+    const filtered = customers.data.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         (c.phone ?? '').includes(search)
     );
@@ -90,6 +91,8 @@ export default function Index({ customers }) {
                     </tr>
                 ))}
             </Table>
+
+            <Pagination paginator={customers} />
 
             {isViewing && (
                 <Show

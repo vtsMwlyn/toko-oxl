@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useCallback } from 'react';
+import Pagination from '@/Components/Pagination';
 
 const roleBadge = {
     Admin: 'bg-emerald-100 text-emerald-700',
@@ -198,17 +199,18 @@ export default function Index({ logs }) {
         <AuthenticatedLayout title="Log Aksi Sistem">
             <Head title="Log" />
 
-            {logs.length === 0 ? (
+            {logs.data.length === 0 ? (
                 <div className="text-center py-16 text-gray-400 text-sm">
                     Belum ada log aksi.
                 </div>
             ) : (
                 <div className="flex flex-col gap-3">
-                    {logs.map((log, index) => (
+                    {logs.data.map((log, index) => (
                         <LogCard key={index} log={log} />
                     ))}
                 </div>
             )}
+            <Pagination paginator={logs} />
         </AuthenticatedLayout>
     );
 }

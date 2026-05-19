@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useState, useEffect, useCallback } from 'react';
-import { TrendingUp, TrendingDown, BarChart2, Search, FileDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart2, Search, FileDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import ExportWithPercent from './ExportWithPercent';
 import ExportSpecificProduct from './ExportSpecificProduct';
@@ -64,6 +64,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
 
     const [exportType,               setExportType]               = useState(null);
     const [isExportingSpecificProduct, setIsExportingSpecificProduct] = useState(false);
+    const [statsPage, setStatsPage] = useState(1);
 
     const reload = useCallback(() => {
         router.reload({ only: ['omzet_per_day', 'summary', 'variant_stats'], preserveScroll: true, preserveState: true });
@@ -86,11 +87,17 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
         });
     }
 
+    useEffect(() => { setStatsPage(1); }, [search]);
+
     const filteredStats = variant_stats.filter(p =>
         p.product_name.toLowerCase().includes(search.toLowerCase()) ||
         p.variant_name.toLowerCase().includes(search.toLowerCase()) ||
         p.code.toLowerCase().includes(search.toLowerCase())
     );
+
+    const STATS_PER_PAGE = 20;
+    const statsTotalPages = Math.ceil(filteredStats.length / STATS_PER_PAGE);
+    const paginatedStats  = filteredStats.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE);
 
     return (
         <AuthenticatedLayout title="Laporan">
@@ -170,7 +177,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                     headers={['Kode', 'Nama Produk', 'Varian', 'Terjual', 'Retur', 'Net Qty', 'Pendapatan']}
                     disableHeight={true}
                 >
-                    {filteredStats.map((p, index) => (
+                    {paginatedStats.map((p, index) => (
                         <tr key={index} className="hover:bg-slate-50">
                             <td className="font-mono text-xs">{p.code}</td>
                             <td className="font-medium">{p.product_name}</td>
@@ -198,6 +205,25 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                         </tr>
                     ))}
                 </Table>
+
+                {statsTotalPages > 1 && (
+                    <div className="flex items-center justify-between mt-4 px-1">
+                        <p className="text-xs text-slate-400">
+                            {(statsPage - 1) * STATS_PER_PAGE + 1}–{Math.min(statsPage * STATS_PER_PAGE, filteredStats.length)} dari {filteredStats.length} data
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => setStatsPage(p => Math.max(1, p - 1))} disabled={statsPage === 1}
+                                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                <ChevronLeft size={16} />
+                            </button>
+                            <span className="text-xs text-slate-600">{statsPage} / {statsTotalPages}</span>
+                            <button type="button" onClick={() => setStatsPage(p => Math.min(statsTotalPages, p + 1))} disabled={statsPage === statsTotalPages}
+                                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* ── Popups ── */}

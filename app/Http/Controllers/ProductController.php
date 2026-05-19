@@ -20,7 +20,7 @@ class ProductController extends Controller
     public function index()
     {
         return Inertia::render('Admin/Product/Index', [
-            'products' => Product::with(['variants', 'discounts'])->orderBy('name', 'asc')->get()->map(function ($product) {
+            'products' => Product::with(['variants', 'discounts'])->orderBy('name', 'asc')->paginate(20)->through(function ($product) {
                 $product->variants->each(function ($variant) {
                     $variant->image_url = $variant->image
                         ? Storage::url($variant->image)

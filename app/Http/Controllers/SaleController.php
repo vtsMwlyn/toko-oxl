@@ -20,29 +20,41 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SaleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
+        $from = $request->input('from');
+        $to   = $request->input('to');
 
-        $query = Sale::with('items.variant.product', 'user')
-            ->orderByDesc('date')
-            ->orderByDesc('time');
+        $mapSale = fn ($sale) => array_merge($sale->toArray(), [
+            'total' => $sale->items->reduce(function ($carry, $item) {
+                $subtotal = ($item->price - ($item->discount ?? 0)) * $item->qty;
+                return $carry + ($item->type === 'Sell' ? $subtotal : -$subtotal);
+            }, 0),
+            'cashier_name' => $sale->user?->name,
+        ]);
 
-        // Non-admins only see their own sales
-        if ($user->role !== 'Admin') {
-            $query->where('user_id', $user->id);
-        }
+        $baseQuery = fn () => Sale::with('items.variant.product', 'user')
+            ->when($user->role !== 'Admin', fn ($q) => $q->where('user_id', $user->id));
+
+        $todaySales = $baseQuery()
+            ->where('date', today()->toDateString())
+            ->orderByDesc('time')
+            ->get()
+            ->map($mapSale);
+
+        $historyQuery = $baseQuery()->orderByDesc('date')->orderByDesc('time');
+        if ($from) $historyQuery->where('date', '>=', $from);
+        if ($to)   $historyQuery->where('date', '<=', $to);
+        $historySales = $historyQuery->paginate(20)->through($mapSale);
 
         return Inertia::render('Admin/Sale/Index', [
-            'sales' => $query->get()->map(fn($sale) => array_merge($sale->toArray(), [
-                'total'      => $sale->items->reduce(function ($carry, $item) {
-                    $subtotal = ($item->price - ($item->discount ?? 0)) * $item->qty;
-                    return $carry + ($item->type === 'Sell' ? $subtotal : -$subtotal);
-                }, 0),
-                'cashier_name' => $sale->user?->name,
-            ])),
-            'products'  => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
-            'customers' => Customer::orderBy('name')->get(['id', 'name', 'phone']),
+            'today_sales'   => $todaySales,
+            'history_sales' => $historySales,
+            'from'          => $from,
+            'to'            => $to,
+            'products'      => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
+            'customers'     => Customer::orderBy('name')->get(['id', 'name', 'phone']),
         ]);
     }
 

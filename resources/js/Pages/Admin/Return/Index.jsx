@@ -6,21 +6,27 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import Pagination from '@/Components/Pagination';
 
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
 
 import formatDate from '@/Helpers/formatDate';
 
-export default function Index({ returns, products }) {
+export default function Index({ returns, products, from: initialFrom, to: initialTo }) {
     const { auth } = usePage().props;
 
     const [isCreating, setIsCreating] = useState(false);
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
 
-    const [dateFrom, setDateFrom] = useState('');
-    const [dateTo,   setDateTo]   = useState('');
+    const [dateFrom, setDateFrom] = useState(initialFrom ?? '');
+    const [dateTo,   setDateTo]   = useState(initialTo   ?? '');
+
+    useEffect(() => {
+        setDateFrom(initialFrom ?? '');
+        setDateTo(initialTo   ?? '');
+    }, [initialFrom, initialTo]);
 
     const reload = useCallback(() => {
         router.reload({ only: ['returns', 'products'], preserveScroll: true, preserveState: true });
@@ -34,13 +40,6 @@ export default function Index({ returns, products }) {
             document.removeEventListener('visibilitychange', reload);
         };
     }, [reload]);
-
-    const filtered = returns.filter(r => {
-        const d = r.date?.slice(0, 10) ?? '';
-        if (dateFrom && d < dateFrom) return false;
-        if (dateTo   && d > dateTo)   return false;
-        return true;
-    });
 
     return (
         <AuthenticatedLayout title="Retur Produk">
@@ -60,20 +59,30 @@ export default function Index({ returns, products }) {
                     <TextInput
                         type="date"
                         value={dateFrom}
-                        onChange={e => setDateFrom(e.target.value)}
+                        onChange={e => {
+                            setDateFrom(e.target.value);
+                            router.get(route('admin.return.index'), { from: e.target.value, ...(dateTo ? { to: dateTo } : {}) }, { preserveState: true, preserveScroll: true });
+                        }}
                         className="w-40"
                     />
                     <span className="text-slate-400 text-sm">—</span>
                     <TextInput
                         type="date"
                         value={dateTo}
-                        onChange={e => setDateTo(e.target.value)}
+                        onChange={e => {
+                            setDateTo(e.target.value);
+                            router.get(route('admin.return.index'), { ...(dateFrom ? { from: dateFrom } : {}), to: e.target.value }, { preserveState: true, preserveScroll: true });
+                        }}
                         className="w-40"
                     />
                     {(dateFrom || dateTo) && (
                         <button
                             type="button"
-                            onClick={() => { setDateFrom(''); setDateTo(''); }}
+                            onClick={() => {
+                                setDateFrom('');
+                                setDateTo('');
+                                router.get(route('admin.return.index'), {}, { preserveState: true, preserveScroll: true });
+                            }}
                             className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
                         >
                             Reset
@@ -83,10 +92,10 @@ export default function Index({ returns, products }) {
             </div>
 
             <Table
-                isEmpty={filtered.length === 0}
+                isEmpty={returns.data.length === 0}
                 headers={['Tanggal', 'Produk', 'Kode', 'Qty', 'Aksi']}
             >
-                {filtered.map((item) => {
+                {returns.data.map((item) => {
                     const variant = item.variant;
                     const product = variant?.product;
                     return (
@@ -118,6 +127,8 @@ export default function Index({ returns, products }) {
                     );
                 })}
             </Table>
+
+            <Pagination paginator={returns} />
 
             {isCreating && (
                 <CreateEdit
