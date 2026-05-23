@@ -15,7 +15,8 @@ export default function Popup({
     isOpen = false,
     title = "Popup Title",
     onClose = () => {},
-    closeable = false
+    closeable = false,
+    headerRight,
 }) {
     const handleClose = () => {
         if (closeable) {
@@ -56,7 +57,10 @@ export default function Popup({
                         <DialogTitle>
                             <div className="flex items-center justify-between">
                                 <h1 className="font-bold text-emerald-800 text-lg">{title}</h1>
-                                <PrimaryButton type="button" styled={false} onClick={onClose}><X className='size-5 text-emerald-600'/></PrimaryButton>
+                                <div className="flex items-center gap-1">
+                                    {headerRight}
+                                    <PrimaryButton type="button" styled={false} onClick={onClose}><X className='size-5 text-emerald-600'/></PrimaryButton>
+                                </div>
                             </div>
                             <SeparatorLine className="mt-2 mb-4" />
                         </DialogTitle>

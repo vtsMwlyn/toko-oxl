@@ -33,7 +33,7 @@ export default function Index({ returns, products, from: initialFrom, to: initia
     }, []);
 
     useEffect(() => {
-        const id = setInterval(reload, 10000);
+        const id = setInterval(reload, 5000);
         document.addEventListener('visibilitychange', reload);
         return () => {
             clearInterval(id);

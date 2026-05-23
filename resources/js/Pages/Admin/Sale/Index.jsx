@@ -32,13 +32,27 @@ function DateSalesModal({
     onBatchDelete, auth,
 }) {
     const [selectedIds, setSelectedIds] = useState([]);
+    const [tab, setTab] = useState('with');
+
+    useEffect(() => {
+        if (isOpen) { setTab('with'); setSelectedIds([]); }
+    }, [isOpen, date]);
 
     if (!isOpen) return null;
 
-    const allSelected = sales.length > 0 && sales.every(s => selectedIds.includes(s.id));
+    const withCustomer    = sales.filter(s => s.customer_name);
+    const withoutCustomer = sales.filter(s => !s.customer_name);
+    const visibleSales    = tab === 'with' ? withCustomer : withoutCustomer;
+
+    const allSelected = visibleSales.length > 0 && visibleSales.every(s => selectedIds.includes(s.id));
 
     const toggleAll = () => {
-        setSelectedIds(allSelected ? [] : sales.map(s => s.id));
+        const ids = visibleSales.map(s => s.id);
+        if (allSelected) {
+            setSelectedIds(prev => prev.filter(i => !ids.includes(i)));
+        } else {
+            setSelectedIds(prev => [...new Set([...prev, ...ids])]);
+        }
     };
 
     const toggleOne = (id) => {
@@ -47,12 +61,36 @@ function DateSalesModal({
         );
     };
 
+    const handleTabChange = (newTab) => { setTab(newTab); setSelectedIds([]); };
+
+    const selectedVisible = selectedIds.filter(id => visibleSales.some(s => s.id === id));
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[80vh] flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                     <h2 className="text-lg font-semibold">Transaksi — {formatDate(date)}</h2>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex border-b px-6 gap-1">
+                    <button
+                        type="button"
+                        onClick={() => handleTabChange('with')}
+                        className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === 'with' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                    >
+                        Pelanggan
+                        <span className="ml-1.5 text-xs text-slate-400">({withCustomer.length})</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleTabChange('without')}
+                        className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === 'without' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                    >
+                        Tanpa Pelanggan
+                        <span className="ml-1.5 text-xs text-slate-400">({withoutCustomer.length})</span>
+                    </button>
                 </div>
 
                 <div className="overflow-auto flex-1">
@@ -82,7 +120,7 @@ function DateSalesModal({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {sales.map((sale, index) => (
+                            {visibleSales.map((sale, index) => (
                                 <tr key={index} className="hover:bg-slate-50">
                                     {auth.user.role === 'Admin' && (
                                         <td className="px-4 py-3">
@@ -115,9 +153,7 @@ function DateSalesModal({
                                                     onClick={() => onSetFixed(sale)}
                                                 />
                                             )}
-                                            {sale.status === 'Fixed' && (
-                                                <PrintReceipt icon={true} sale={sale} products={products} />
-                                            )}
+                                            <PrintReceipt icon={true} sale={sale} products={products} />
                                             <PrimaryButton
                                                 styled={false} className="text-emerald-600"
                                                 icon={<Eye className="size-4" />} type="button"
@@ -145,24 +181,24 @@ function DateSalesModal({
                     </table>
                 </div>
 
-                {auth.user.role === 'Admin' && selectedIds.length > 0 && (
+                {auth.user.role === 'Admin' && selectedVisible.length > 0 && (
                     <div className="px-6 py-3 border-t flex items-center justify-between bg-slate-50">
-                        <span className="text-sm text-slate-600">{selectedIds.length} transaksi dipilih</span>
+                        <span className="text-sm text-slate-600">{selectedVisible.length} transaksi dipilih</span>
                         <PrimaryButton
                             icon={<Trash2 className="size-4" />}
                             type="button"
                             className="bg-red-600 hover:bg-red-700 text-white"
-                            onClick={() => onBatchDelete(selectedIds)}
+                            onClick={() => onBatchDelete(selectedVisible)}
                         >
-                            Hapus ({selectedIds.length})
+                            Hapus ({selectedVisible.length})
                         </PrimaryButton>
                     </div>
                 )}
 
                 <div className="px-6 py-3 border-t flex justify-between items-center text-sm text-slate-500">
-                    <span>{sales.length} transaksi</span>
+                    <span>{visibleSales.length} transaksi</span>
                     <span className="font-medium text-slate-700">
-                        Total: {formatPrice(sales.reduce((sum, s) => sum + (s.total ?? 0), 0))}
+                        Total: {formatPrice(visibleSales.reduce((sum, s) => sum + (s.total ?? 0), 0))}
                     </span>
                 </div>
             </div>
@@ -215,7 +251,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
     }, []);
 
     useEffect(() => {
-        const id = setInterval(reload, 10000);
+        const id = setInterval(reload, 5000);
         document.addEventListener('visibilitychange', reload);
         return () => {
             clearInterval(id);

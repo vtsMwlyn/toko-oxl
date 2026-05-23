@@ -81,7 +81,7 @@ export default function Show({ isOpen, onClose, sale, products }) {
     useEffect(() => {
         if (!isOpen) return;
         const reload = () => router.reload({ only: ['sales'], preserveScroll: true, preserveState: true });
-        const id = setInterval(reload, 10000);
+        const id = setInterval(reload, 5000);
         document.addEventListener('visibilitychange', reload);
         return () => {
             clearInterval(id);
