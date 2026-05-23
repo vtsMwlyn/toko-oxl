@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, X, FileDown, Eye, Bell } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -38,7 +38,18 @@ function ImagePreview({ src, onClose }) {
     );
 }
 
-export default function Index({ products, low_stock_variants }) {
+export default function Index({ products, low_stock_variants, search: initialSearch }) {
+    const [search, setSearch] = useState(initialSearch ?? '');
+    const isFirstRender = useRef(true);
+
+    useEffect(() => {
+        if (isFirstRender.current) { isFirstRender.current = false; return; }
+        const timer = setTimeout(() => {
+            router.get(route('admin.product.index'), search ? { search } : {}, { preserveState: true, preserveScroll: true });
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [search]);
+
     const [isCreating, setIsCreating] = useState(false);
     const [isShowing, setIsShowing] = useState(null);
     const [isEditing, setIsEditing] = useState(null);
@@ -76,7 +87,7 @@ export default function Index({ products, low_stock_variants }) {
                         Tambah Produk
                     </PrimaryButton>
                 </div>
-                <TextInput placeholder="Cari produk..." />
+                <TextInput placeholder="Cari produk..." value={search} onChange={e => setSearch(e.target.value)} />
             </div>
 
             <Table

@@ -17,17 +17,24 @@ use App\Helpers\ModelChangeLogger;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = $request->input('search');
+
         return Inertia::render('Admin/Product/Index', [
-            'products' => Product::with(['variants', 'discounts'])->orderBy('name', 'asc')->paginate(20)->through(function ($product) {
-                $product->variants->each(function ($variant) {
-                    $variant->image_url = $variant->image
-                        ? Storage::url($variant->image)
-                        : null;
-                });
-                return $product;
-            }),
+            'search'   => $search,
+            'products' => Product::with(['variants', 'discounts'])
+                ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                ->orderBy('name', 'asc')
+                ->paginate(20)
+                ->through(function ($product) {
+                    $product->variants->each(function ($variant) {
+                        $variant->image_url = $variant->image
+                            ? Storage::url($variant->image)
+                            : null;
+                    });
+                    return $product;
+                }),
             'low_stock_variants' => Variant::whereColumn('stock', '<=', 'low_stock_warning')->with('product')->get(),
         ]);
     }

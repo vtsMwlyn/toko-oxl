@@ -24,7 +24,7 @@ export default function ExportSpecificProduct({ isOpen, onClose, products, from,
         if (!selected) return;
 
         const url = mode === 'variant'
-            ? route('admin.sale.export.variant.specific', {
+            ? route('admin.sale.export.byVariant', {
                 variant:     selected.value,
                 qty_percent: percent,
                 from,

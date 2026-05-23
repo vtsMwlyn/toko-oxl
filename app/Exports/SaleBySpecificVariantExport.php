@@ -7,7 +7,6 @@ use App\Models\Variant;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -88,7 +87,7 @@ class SaleBySpecificVariantExport implements
     public function map($item): array
     {
         $net      = $item->price - ($item->discount ?? 0);
-        $adjQty   = (int) floor($item->qty * $this->qtyPercent);                              // ← adjusted
+        $adjQty   = (int) ceil($item->qty * $this->qtyPercent);                               // ← adjusted
         $subtotal = $item->type === 'Return' ? -($net * $adjQty) : $net * $adjQty;
 
         return [
@@ -111,9 +110,9 @@ class SaleBySpecificVariantExport implements
     public function columnFormats(): array
     {
         return [
-            'G' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Price
-            'H' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Discount
-            'J' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Subtotal
+            'H' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Price
+            'I' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Discount
+            'K' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Subtotal
         ];
     }
 

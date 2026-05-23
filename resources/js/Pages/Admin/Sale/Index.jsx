@@ -483,9 +483,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                                             onClick={() => setIsSettingFixed(sale)}
                                         />
                                     )}
-                                    {sale.status === 'Fixed' && (
-                                        <PrintReceipt icon={true} sale={sale} products={products} />
-                                    )}
+                                    <PrintReceipt icon={true} sale={sale} products={products} />
                                     <PrimaryButton
                                         styled={false} className="text-emerald-600"
                                         icon={<Eye className="size-4" />} type="button"

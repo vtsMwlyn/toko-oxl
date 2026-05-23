@@ -88,7 +88,7 @@ class SaleBySpecificProductExport implements
     public function map($item): array
     {
         $net      = $item->price - ($item->discount ?? 0);
-        $adjQty   = (int) floor($item->qty * $this->qtyPercent);
+        $adjQty   = (int) ceil($item->qty * $this->qtyPercent);
         $subtotal = $item->type === 'Return' ? -($net * $adjQty) : $net * $adjQty;
 
         return [

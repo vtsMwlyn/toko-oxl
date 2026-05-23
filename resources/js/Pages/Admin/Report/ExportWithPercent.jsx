@@ -3,8 +3,8 @@ import { FileDown, X } from 'lucide-react';
 import PrimaryButton from '@/Components/PrimaryButton';
 
 const EXPORT_TYPES = [
-    { key: 'product',  label: 'Export per Produk',      routeName: 'admin.sale.export.product' },
-    { key: 'sale',     label: 'Export per Transaksi',   routeName: 'admin.sale.export.sale'    },
+    { key: 'product',  label: 'Export per Produk',      routeName: 'admin.sale.export.byProduct' },
+    { key: 'sale',     label: 'Export per Transaksi',   routeName: 'admin.sale.export.bySale'    },
 ];
 
 export default function ExportWithPercent({ type, onClose, from, to }) {
