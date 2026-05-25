@@ -86,6 +86,10 @@ class SaleController extends Controller
 
         $this->syncItems($sale, $request->items ?? []);
 
+        if ($validatedData['status'] === 'Fixed') {
+            $this->applyStockDelta($request->items ?? [], +1);
+        }
+
         return back();
     }
 
@@ -116,16 +120,28 @@ class SaleController extends Controller
         // Merge
         $changes = array_merge($changes, $itemChanges);
 
-        // 3. Persist
+        // 3. Conditionally reverse old stock, persist, then conditionally apply new stock
+        $oldStatus = $sale->status;
+        $newStatus = $validatedData['status'];
+
+        if ($oldStatus === 'Fixed') {
+            $sale->load('items');
+            $this->applyStockDelta($sale->items, -1);
+        }
+
         $sale->update([
             'date'          => $validatedData['date'],
             'time'          => $validatedData['time'],
             'customer_name' => $validatedData['customer_name'],
-            'status'        => $validatedData['status'],
+            'status'        => $newStatus,
         ]);
 
         $sale->items()->delete();
         $this->syncItems($sale, $validatedData['items'] ?? []);
+
+        if ($newStatus === 'Fixed') {
+            $this->applyStockDelta($validatedData['items'] ?? [], +1);
+        }
 
         // 4. Log
         if (!empty($changes)) {
@@ -144,6 +160,11 @@ class SaleController extends Controller
 
     public function destroy(Sale $sale)
     {
+        if ($sale->status === 'Fixed') {
+            $sale->load('items');
+            $this->applyStockDelta($sale->items, -1);
+        }
+
         $sale->items()->delete();
         $sale->delete();
 
@@ -157,9 +178,12 @@ class SaleController extends Controller
             'ids.*' => ['integer', 'exists:sales,id'],
         ]);
 
-        $sales = Sale::whereIn('id', $validated['ids'])->get();
+        $sales = Sale::with('items')->whereIn('id', $validated['ids'])->get();
 
         foreach ($sales as $sale) {
+            if ($sale->status === 'Fixed') {
+                $this->applyStockDelta($sale->items, -1);
+            }
             $sale->items()->delete();
             $sale->delete();
         }
@@ -169,6 +193,9 @@ class SaleController extends Controller
 
     public function set_fixed(Sale $sale)
     {
+        $sale->load('items');
+        $this->applyStockDelta($sale->items, +1);
+
         $sale->update(['status' => 'Fixed']);
 
         ActionLog::create([
@@ -235,6 +262,19 @@ class SaleController extends Controller
                 'qty'        => $item['qty'],
                 'type'       => $item['type'],
             ]);
+        }
+    }
+
+    // $sign = +1 to apply (store), -1 to reverse (update/delete)
+    private function applyStockDelta(iterable $items, int $sign): void
+    {
+        foreach ($items as $item) {
+            [$variantId, $qty, $type] = is_array($item)
+                ? [$item['variant_id'], $item['qty'], $item['type']]
+                : [$item->variant_id,  $item->qty,   $item->type];
+
+            $delta = ($type === 'Sell' ? -$qty : $qty) * $sign;
+            Variant::where('id', $variantId)->increment('stock', $delta);
         }
     }
 }

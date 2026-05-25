@@ -24,7 +24,13 @@ class ProductController extends Controller
         return Inertia::render('Admin/Product/Index', [
             'search'   => $search,
             'products' => Product::with(['variants', 'discounts'])
-                ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
+                ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhereHas('variants', fn ($vq) => $vq
+                          ->where('name', 'like', "%{$search}%")
+                          ->orWhere('code', 'like', "%{$search}%")
+                      );
+                }))
                 ->orderBy('name', 'asc')
                 ->paginate(20)
                 ->through(function ($product) {
