@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
@@ -9,6 +9,7 @@ import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import OperationSuccess from '@/Components/OperationSuccess';
+import PrintReceipt from '@/Pages/PrintReceipt';
 import Table from '@/Components/Table';
 import SelectInput from '@/Components/Select';
 
@@ -28,8 +29,13 @@ function computeTotal(items) {
 }
 
 export default function CreateEdit({ mode, isOpen, onClose, sale, products, customers }) {
-    const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
+    const { auth } = usePage().props;
+    const lockHeaderFields = mode === 'Edit' && sale?.status === 'Fixed' && auth?.user?.role !== 'Admin';
+
+    const [loading,    setLoading]    = useState(false);
+    const [success,    setSuccess]    = useState(false);
+    const [becameFixed, setBecameFixed] = useState(false);
+    const [hasPrinted,  setHasPrinted]  = useState(false);
 
     const [soldItems, setSoldItems] = useState(() =>
         (sale?.items?.filter(i => i.type === 'Sell') ?? [])
@@ -87,6 +93,8 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         e.preventDefault();
         setLoading(true);
 
+        const isTransitioningToFixed = mode === 'Edit' && sale?.status === 'Draft' && data.status === 'Fixed';
+
         const payload = {
             ...data,
             items: [
@@ -97,8 +105,12 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
 
         const afterSubmission = {
             onSuccess: () => {
-                setSuccess(true);
-                setTimeout(() => { setSuccess(false); onClose(); }, 500);
+                if (isTransitioningToFixed) {
+                    setBecameFixed(true);
+                } else {
+                    setSuccess(true);
+                    setTimeout(() => { setSuccess(false); onClose(); }, 500);
+                }
             },
             onError: (serverErrors) => {
                 Object.entries(serverErrors).forEach(([key, message]) => setError(key, message));
@@ -122,10 +134,41 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         <Popup
             title={mode === 'Create' ? 'Tambah Penjualan' : 'Ubah Penjualan'}
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={becameFixed && !hasPrinted ? undefined : onClose}
             className="max-w-3xl"
         >
-            {success ? (
+            {becameFixed ? (
+                <div className="flex flex-col items-center gap-4 py-2">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                    </div>
+                    <div className="text-center">
+                        <p className="font-semibold text-slate-800">Status berhasil diubah ke Fixed!</p>
+                        <p className="text-sm text-slate-500 mt-1">
+                            Cetak struk terlebih dahulu sebelum menutup jendela ini.
+                        </p>
+                    </div>
+                    <PrintReceipt
+                        sale={{ ...sale, ...data, status: 'Fixed', items: [
+                            ...soldItems.map(({ _localId, ...i }) => ({ ...i, type: 'Sell' })),
+                            ...returnItems.map(({ _localId, ...i }) => ({ ...i, type: 'Return' })),
+                        ]}}
+                        products={products}
+                        onPrinted={() => setHasPrinted(true)}
+                    />
+                    <button
+                        type="button"
+                        disabled={!hasPrinted}
+                        onClick={onClose}
+                        className="text-sm text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                        {hasPrinted ? 'Tutup' : 'Tutup (cetak struk dulu)'}
+                    </button>
+                </div>
+            ) : success ? (
                 <OperationSuccess
                     type={mode === 'Create' ? 'Create' : 'Edit'}
                     message={mode === 'Create' ? 'Penjualan berhasil ditambahkan.' : 'Penjualan berhasil diperbarui.'}
@@ -141,6 +184,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                                 id="date" type="date" value={data.date}
                                 className="block w-full"
                                 onChange={(e) => setData('date', e.target.value)}
+                                disabled={lockHeaderFields}
                             />
                             <InputError message={errors.date} />
                         </div>
@@ -151,6 +195,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                                 id="time" type="time" value={data.time}
                                 className="block w-full"
                                 onChange={(e) => setData('time', e.target.value)}
+                                disabled={lockHeaderFields}
                             />
                             <InputError message={errors.time} />
                         </div>
@@ -181,7 +226,8 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                             <select
                                 id="status" value={data.status}
                                 onChange={(e) => setData('status', e.target.value)}
-                                className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                                disabled={lockHeaderFields}
+                                className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                             >
                                 <option value="Draft">Draft</option>
                                 <option value="Fixed">Fixed</option>

@@ -374,50 +374,47 @@ export default function Index({ products, customers, auth }) {
     const returnTotal = returnItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
     const grandTotal  = soldTotal - returnTotal;
 
-    // ── Success screen ────────────────────────────────────────────────────────
-    if (success && savedSale) {
-        return (
-            <AuthenticatedLayout title="Kasir">
-                <Head title="Kasir" />
-                <div className="max-w-sm mx-auto bg-white rounded-2xl border border-emerald-100 p-8 flex flex-col items-center gap-5 text-center">
-                    <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                            stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-emerald-900">
-                            {savedSale.status === 'Fixed' ? 'Transaksi Berhasil!' : 'Draft Disimpan!'}
-                        </h2>
-                        <p className="text-sm text-slate-400 mt-1">
-                            Total: <span className="font-semibold text-emerald-700">{formatPrice(grandTotal)}</span>
-                        </p>
-                        {savedSale.status === 'Draft' && (
-                            <p className="text-xs text-amber-500 mt-1">Transaksi tersimpan sebagai draft.</p>
-                        )}
-                    </div>
-                    <div className="flex flex-col items-center gap-3">
-                        <Receipt
-                            sale={savedSale}
-                            products={products}
-                            onPrinted={() => setHasPrinted(true)}
-                        />
-                        {hasPrinted ? (
-                            <PrimaryButton type="button" onClick={resetForm}>Transaksi Baru</PrimaryButton>
-                        ) : (
-                            <p className="text-xs text-slate-400">Cetak struk terlebih dahulu</p>
-                        )}
-                    </div>
-                </div>
-            </AuthenticatedLayout>
-        );
-    }
-
     // ── Main form ─────────────────────────────────────────────────────────────
     return (
         <AuthenticatedLayout title="Kasir">
             <Head title="Kasir" />
+
+            {/* Full-screen overlay — blocks sidebar access until receipt is printed */}
+            {success && savedSale && (
+                <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 flex flex-col items-center gap-5 text-center">
+                        <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                                stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-emerald-900">
+                                {savedSale.status === 'Fixed' ? 'Transaksi Berhasil!' : 'Draft Disimpan!'}
+                            </h2>
+                            <p className="text-sm text-slate-400 mt-1">
+                                Total: <span className="font-semibold text-emerald-700">{formatPrice(grandTotal)}</span>
+                            </p>
+                            {savedSale.status === 'Draft' && (
+                                <p className="text-xs text-amber-500 mt-1">Transaksi tersimpan sebagai draft.</p>
+                            )}
+                        </div>
+                        <div className="flex flex-col items-center gap-3">
+                            <Receipt
+                                sale={savedSale}
+                                products={products}
+                                onPrinted={() => setHasPrinted(true)}
+                            />
+                            {hasPrinted ? (
+                                <PrimaryButton type="button" onClick={resetForm}>Transaksi Baru</PrimaryButton>
+                            ) : (
+                                <p className="text-xs text-slate-400">Cetak struk terlebih dahulu</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="flex flex-col gap-4">
 
