@@ -251,7 +251,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
     }, []);
 
     useEffect(() => {
-        const id = setInterval(reload, 5000);
+        const id = setInterval(reload, 3000);
         document.addEventListener('visibilitychange', reload);
         return () => {
             clearInterval(id);

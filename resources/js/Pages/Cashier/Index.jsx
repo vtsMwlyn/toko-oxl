@@ -302,7 +302,7 @@ export default function Index({ products, customers, auth }) {
     }, []);
 
     useEffect(() => {
-        const id = setInterval(reload, 5000);
+        const id = setInterval(reload, 3000);
         document.addEventListener('visibilitychange', reload);
         return () => {
             clearInterval(id);
