@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, X, FileDown, Eye, Bell } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Eye } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import Table from '@/Components/Table';
@@ -50,6 +50,7 @@ export default function Index({ products, low_stock_variants, search: initialSea
         return () => clearTimeout(timer);
     }, [search]);
 
+    const [hoveredProductId, setHoveredProductId] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
     const [isShowing, setIsShowing] = useState(null);
     const [isEditing, setIsEditing] = useState(null);
@@ -92,57 +93,69 @@ export default function Index({ products, low_stock_variants, search: initialSea
 
             <Table
                 isEmpty={products.data.length === 0}
-                headers={['Nama', 'Total Varian', 'Total Stok', 'Harga Jual', 'Harga Langganan', 'Aksi']}
+                headers={['Nama', 'Varian', 'Stok', 'Harga Jual', 'Harga Langganan', 'Aksi']}
                 className="mt-4"
             >
-                {products.data.map((product, index) => {
-                    const totalStock = product.variants.reduce(
-                        (sum, v) => sum + v.stock,
-                        0
-                    );
-
+                {products.data.map((product) => {
                     const hasLowStock = product.variants.some(
-                        v => v.low_stock_warning > 0 &&
-                            v.stock <= v.low_stock_warning
+                        v => v.low_stock_warning > 0 && v.stock <= v.low_stock_warning
                     );
 
-                    return (
-                        <tr key={index} className="hover:bg-slate-200">
-                            <td>
-                                <div className="flex items-center gap-2">
-                                    {product.name}
-                                    {hasLowStock && (
-                                        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-600">
-                                            Stok Rendah
-                                        </span>
-                                    )}
-                                </div>
-                            </td>
-                            <td>{product.variants.length}</td>
-                            <td>{totalStock}</td>
-                            <td>{formatPrice(product.normal_price)}</td>
-                            <td>{formatPrice(product.customer_price)}</td>
-                            <td>
-                                <div className="flex gap-2 items-center">
-                                    <PrimaryButton
-                                        styled={false} className="text-emerald-600"
-                                        icon={<Eye className="size-4" />} type="button"
-                                        onClick={() => setIsShowing(product.id)}
-                                    />
-                                    <PrimaryButton
-                                        styled={false} className="text-emerald-600"
-                                        icon={<Pencil className="size-4" />} type="button"
-                                        onClick={() => setIsEditing(product)}
-                                    />
-                                    <PrimaryButton
-                                        styled={false} className="text-emerald-600"
-                                        icon={<Trash2 className="size-4" />} type="button"
-                                        onClick={() => setIsDeleting(product)}
-                                    />
-                                </div>
-                            </td>
-                        </tr>
-                    );
+                    return product.variants.map((variant, variantIndex) => {
+                        const isFirst = variantIndex === 0;
+                        const isLow   = variant.low_stock_warning > 0 && variant.stock <= variant.low_stock_warning;
+
+                        return (
+                            <tr
+                                key={`${product.id}-${variant.id}`}
+                                className={`${hoveredProductId === product.id ? 'bg-slate-200' : ''} ${!isFirst ? '[&_td]:border-t-0' : ''}`}
+                                onMouseEnter={() => setHoveredProductId(product.id)}
+                                onMouseLeave={() => setHoveredProductId(null)}
+                            >
+                                {isFirst && (
+                                    <td rowSpan={product.variants.length} className="align-top">
+                                        <div className="flex items-center gap-2">
+                                            {product.name}
+                                            {hasLowStock && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-600">
+                                                    Stok Rendah
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                )}
+                                <td className="text-slate-500">{variant.name || variant.code}</td>
+                                <td className={isLow ? 'text-amber-600 font-medium' : ''}>
+                                    {variant.stock}
+                                </td>
+                                {isFirst && (
+                                    <>
+                                        <td rowSpan={product.variants.length} className="align-top">{formatPrice(product.normal_price)}</td>
+                                        <td rowSpan={product.variants.length} className="align-top">{formatPrice(product.customer_price)}</td>
+                                        <td rowSpan={product.variants.length} className="align-top">
+                                            <div className="flex gap-2 items-center">
+                                                <PrimaryButton
+                                                    styled={false} className="text-emerald-600"
+                                                    icon={<Eye className="size-4" />} type="button"
+                                                    onClick={() => setIsShowing(product.id)}
+                                                />
+                                                <PrimaryButton
+                                                    styled={false} className="text-emerald-600"
+                                                    icon={<Pencil className="size-4" />} type="button"
+                                                    onClick={() => setIsEditing(product)}
+                                                />
+                                                <PrimaryButton
+                                                    styled={false} className="text-emerald-600"
+                                                    icon={<Trash2 className="size-4" />} type="button"
+                                                    onClick={() => setIsDeleting(product)}
+                                                />
+                                            </div>
+                                        </td>
+                                    </>
+                                )}
+                            </tr>
+                        );
+                    });
                 })}
             </Table>
 
