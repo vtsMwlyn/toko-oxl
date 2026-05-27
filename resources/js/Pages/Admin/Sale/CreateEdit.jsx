@@ -30,7 +30,9 @@ function computeTotal(items) {
 
 export default function CreateEdit({ mode, isOpen, onClose, sale, products, customers }) {
     const { auth } = usePage().props;
-    const lockHeaderFields = mode === 'Edit' && sale?.status === 'Fixed' && auth?.user?.role !== 'Admin';
+    const isCashier          = auth?.user?.role !== 'Admin';
+    const lockDateTimeFields = mode === 'Edit' && isCashier;
+    const lockHeaderFields   = mode === 'Edit' && sale?.status === 'Fixed' && isCashier;
 
     const [loading,    setLoading]    = useState(false);
     const [success,    setSuccess]    = useState(false);
@@ -184,7 +186,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                                 id="date" type="date" value={data.date}
                                 className="block w-full"
                                 onChange={(e) => setData('date', e.target.value)}
-                                disabled={lockHeaderFields}
+                                disabled={lockDateTimeFields}
                             />
                             <InputError message={errors.date} />
                         </div>
@@ -195,7 +197,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                                 id="time" type="time" value={data.time}
                                 className="block w-full"
                                 onChange={(e) => setData('time', e.target.value)}
-                                disabled={lockHeaderFields}
+                                disabled={lockDateTimeFields}
                             />
                             <InputError message={errors.time} />
                         </div>
@@ -227,7 +229,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                                 id="status" value={data.status}
                                 onChange={(e) => setData('status', e.target.value)}
                                 disabled={lockHeaderFields}
-                                className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <option value="Draft">Draft</option>
                                 <option value="Fixed">Fixed</option>

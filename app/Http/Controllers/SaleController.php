@@ -120,11 +120,13 @@ class SaleController extends Controller
         // Merge
         $changes = array_merge($changes, $itemChanges);
 
-        // 3. Lock date/time/status for cashiers editing a Fixed sale
-        if (Auth::user()->role !== 'Admin' && $sale->status === 'Fixed') {
-            $validatedData['date']   = $sale->date;
-            $validatedData['time']   = $sale->time;
-            $validatedData['status'] = $sale->status;
+        // 3. Lock fields for cashiers: date/time always, status only when already Fixed
+        if (Auth::user()->role !== 'Admin') {
+            $validatedData['date'] = $sale->date;
+            $validatedData['time'] = $sale->time;
+            if ($sale->status === 'Fixed') {
+                $validatedData['status'] = $sale->status;
+            }
         }
 
         $oldStatus = $sale->status;
