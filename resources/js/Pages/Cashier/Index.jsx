@@ -93,6 +93,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd }) {
     function handleQtyKeyDown(e) {
         if (e.key !== 'Enter') return;
         e.preventDefault();
+        if (type === 'Return') { handleAdd(); return; }
         document.getElementById(`${label}-price`)?.focus();
     }
 
@@ -108,7 +109,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd }) {
         if (!field.qty || Number(field.qty) <= 0)          newErrors.qty     = 'Qty > 0.';
         else if (type === 'Sell' && matched && Number(field.qty) > matched.stock)
             newErrors.qty = `Stok tidak cukup. Tersedia: ${matched.stock}`;
-        if (field.price === '' || Number(field.price) < 0) newErrors.price   = 'Harga tidak valid.';
+        if (type === 'Sell' && (field.price === '' || Number(field.price) < 0)) newErrors.price = 'Harga tidak valid.';
         setErrors(newErrors);
         if (Object.keys(newErrors).length) return;
 
@@ -116,7 +117,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd }) {
             _localId:   Date.now(),
             variant_id: matched.id,
             price:      Number(field.price),
-            discount:   Number(field.discount) || 0,
+            discount:   type === 'Sell' ? (Number(field.discount) || 0) : 0,
             qty:        Number(field.qty),
         });
 
@@ -127,7 +128,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd }) {
 
     const qtyNum      = Number(field.qty)      || 0;
     const priceNum    = Number(field.price)    || 0;
-    const discountNum = Number(field.discount) || 0;
+    const discountNum = type === 'Sell' ? (Number(field.discount) || 0) : 0;
     const subtotal    = (priceNum - discountNum) * qtyNum;
 
     return (
@@ -156,7 +157,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd }) {
             </div>
 
             <div className="grid gap-1 mb-3">
-                <InputLabel value="Atau pilih manual" />
+                <InputLabel value="Atau pilih manual" required={false} />
                 <Select
                     options={variantOptions}
                     value={field.selectedOption}
@@ -167,7 +168,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd }) {
                 <InputError message={errors.product} />
             </div>
 
-            <div className="grid grid-cols-3 items-start gap-3 mb-3">
+            <div className={`grid items-start gap-3 mb-3 ${type === 'Sell' ? 'grid-cols-3' : 'grid-cols-1'}`}>
                 <div className="grid gap-1">
                     <InputLabel htmlFor={`${label}-qty`} value="Qty" />
                     <TextInput
@@ -185,30 +186,34 @@ function ItemInputRow({ label, type, products, customerName, onAdd }) {
                     <InputError message={errors.qty} />
                 </div>
 
-                <div className="grid gap-1">
-                    <InputLabel htmlFor={`${label}-price`} value="Harga (Rp)" />
-                    <TextInput
-                        id={`${label}-price`}
-                        type="number" min="0"
-                        value={field.price}
-                        className="block w-full"
-                        onChange={e => setField(f => ({ ...f, price: e.target.value, priceTouched: true }))}
-                    />
-                    {priceHint && <p className="text-[10px] text-emerald-600">{priceHint}</p>}
-                    <InputError message={errors.price} />
-                </div>
+                {type === 'Sell' && (
+                    <>
+                        <div className="grid gap-1">
+                            <InputLabel htmlFor={`${label}-price`} value="Harga (Rp)" />
+                            <TextInput
+                                id={`${label}-price`}
+                                type="number" min="0"
+                                value={field.price}
+                                className="block w-full"
+                                onChange={e => setField(f => ({ ...f, price: e.target.value, priceTouched: true }))}
+                            />
+                            {priceHint && <p className="text-[10px] text-emerald-600">{priceHint}</p>}
+                            <InputError message={errors.price} />
+                        </div>
 
-                <div className="grid gap-1">
-                    <InputLabel htmlFor={`${label}-discount`} value="Diskon (Rp)" />
-                    <TextInput
-                        id={`${label}-discount`}
-                        type="number" min="0"
-                        value={field.discount}
-                        className="block w-full"
-                        onChange={e => setField(f => ({ ...f, discount: e.target.value }))}
-                        onKeyDown={handleDiscountKeyDown}
-                    />
-                </div>
+                        <div className="grid gap-1">
+                            <InputLabel htmlFor={`${label}-discount`} value="Diskon (Rp)" />
+                            <TextInput
+                                id={`${label}-discount`}
+                                type="number" min="0"
+                                value={field.discount}
+                                className="block w-full"
+                                onChange={e => setField(f => ({ ...f, discount: e.target.value }))}
+                                onKeyDown={handleDiscountKeyDown}
+                            />
+                        </div>
+                    </>
+                )}
             </div>
 
             <div className="flex justify-between items-center">

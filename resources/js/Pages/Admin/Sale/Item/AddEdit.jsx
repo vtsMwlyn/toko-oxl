@@ -82,8 +82,8 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
         if (!qty || Number(qty) <= 0)    newErrors.qty      = 'Qty harus lebih dari 0.';
         else if (type === 'Sell' && matched && Number(qty) > matched.stock)
             newErrors.qty = `Stok tidak cukup. Tersedia: ${matched.stock}`;
-        if (!price || Number(price) < 0) newErrors.price    = 'Harga tidak valid.';
-        if (discount !== '' && Number(discount) < 0) newErrors.discount = 'Diskon tidak boleh negatif.';
+        if (type === 'Sell' && (!price || Number(price) < 0)) newErrors.price = 'Harga tidak valid.';
+        if (type === 'Sell' && discount !== '' && Number(discount) < 0) newErrors.discount = 'Diskon tidak boleh negatif.';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     }
@@ -96,12 +96,12 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
             ...(item?._localId ? { _localId: item._localId } : {}),
             variant_id: matched.id,
             price:      Number(price),
-            discount:   Number(discount) || 0,
+            discount:   type === 'Sell' ? (Number(discount) || 0) : 0,
             qty:        Number(qty),
         });
     }
 
-    const discountNum = Number(discount) || 0;
+    const discountNum = type === 'Sell' ? (Number(discount) || 0) : 0;
     const priceNum    = Number(price)    || 0;
     const qtyNum      = Number(qty)      || 0;
     const subtotal    = (priceNum - discountNum) * qtyNum;
@@ -158,38 +158,42 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
                     <InputError message={errors.qty} />
                 </div>
 
-                {/* ── Price ── */}
-                <div className="grid gap-1">
-                    <InputLabel htmlFor="item-price" value="Harga (Rp)" />
-                    <TextInput
-                        id="item-price"
-                        type="number"
-                        min="0"
-                        value={price}
-                        className="block w-full"
-                        placeholder="0"
-                        onChange={handlePriceChange}
-                    />
-                    {priceHint && (
-                        <p className="text-[11px] text-emerald-600 mt-0.5">{priceHint}</p>
-                    )}
-                    <InputError message={errors.price} />
-                </div>
+                {/* ── Price (Sell only) ── */}
+                {type === 'Sell' && (
+                    <div className="grid gap-1">
+                        <InputLabel htmlFor="item-price" value="Harga (Rp)" />
+                        <TextInput
+                            id="item-price"
+                            type="number"
+                            min="0"
+                            value={price}
+                            className="block w-full"
+                            placeholder="0"
+                            onChange={handlePriceChange}
+                        />
+                        {priceHint && (
+                            <p className="text-[11px] text-emerald-600 mt-0.5">{priceHint}</p>
+                        )}
+                        <InputError message={errors.price} />
+                    </div>
+                )}
 
-                {/* ── Discount ── */}
-                <div className="grid gap-1">
-                    <InputLabel htmlFor="item-discount" value="Diskon (Rp)" />
-                    <TextInput
-                        id="item-discount"
-                        type="number"
-                        min="0"
-                        value={discount}
-                        className="block w-full"
-                        placeholder="0"
-                        onChange={(e) => setDiscount(e.target.value)}
-                    />
-                    <InputError message={errors.discount} />
-                </div>
+                {/* ── Discount (Sell only) ── */}
+                {type === 'Sell' && (
+                    <div className="grid gap-1">
+                        <InputLabel htmlFor="item-discount" value="Diskon (Rp)" />
+                        <TextInput
+                            id="item-discount"
+                            type="number"
+                            min="0"
+                            value={discount}
+                            className="block w-full"
+                            placeholder="0"
+                            onChange={(e) => setDiscount(e.target.value)}
+                        />
+                        <InputError message={errors.discount} />
+                    </div>
+                )}
 
                 {/* ── Live subtotal ── */}
                 {matched && qtyNum > 0 && (
