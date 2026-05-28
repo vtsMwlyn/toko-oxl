@@ -80,6 +80,8 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
         const newErrors = {};
         if (!matched)                    newErrors.variant  = 'Pilih produk terlebih dahulu.';
         if (!qty || Number(qty) <= 0)    newErrors.qty      = 'Qty harus lebih dari 0.';
+        else if (type === 'Sell' && matched && Number(qty) > matched.stock)
+            newErrors.qty = `Stok tidak cukup. Tersedia: ${matched.stock}`;
         if (!price || Number(price) < 0) newErrors.price    = 'Harga tidak valid.';
         if (discount !== '' && Number(discount) < 0) newErrors.discount = 'Diskon tidak boleh negatif.';
         setErrors(newErrors);
@@ -150,6 +152,9 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
                         className="block w-full"
                         onChange={handleQtyChange}
                     />
+                    {type === 'Sell' && matched && !errors.qty && (
+                        <p className="text-[11px] text-slate-400 mt-0.5">Stok tersedia: {matched.stock}</p>
+                    )}
                     <InputError message={errors.qty} />
                 </div>
 

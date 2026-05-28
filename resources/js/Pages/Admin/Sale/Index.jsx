@@ -247,7 +247,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
 
     // Reload page props every 10 seconds and whenever the tab regains focus
     const reload = useCallback(() => {
-        router.reload({ only: ['today_sales', 'history_sales'], preserveScroll: true, preserveState: true });
+        router.reload({ only: ['today_sales', 'history_sales', 'products'], preserveScroll: true, preserveState: true });
     }, []);
 
     useEffect(() => {

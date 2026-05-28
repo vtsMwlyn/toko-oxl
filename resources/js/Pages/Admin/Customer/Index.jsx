@@ -23,6 +23,14 @@ export default function Index({ customers }) {
         router.reload({ only: ['customers'], preserveScroll: true, preserveState: true });
     }, []);
 
+    // Keep the open customer popup in sync when customers prop refreshes
+    useEffect(() => {
+        if (isViewing) {
+            const updated = customers.data.find(c => c.id === isViewing.id);
+            if (updated) setIsViewing(updated);
+        }
+    }, [customers]);
+
     useEffect(() => {
         const id = setInterval(reload, 3000);
         document.addEventListener('visibilitychange', reload);

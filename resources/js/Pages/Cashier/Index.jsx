@@ -35,7 +35,7 @@ function blankItem() {
     return { selectedOption: null, qty: 1, price: 0, discount: 0, priceTouched: false };
 }
 
-function ItemInputRow({ label, products, customerName, onAdd }) {
+function ItemInputRow({ label, type, products, customerName, onAdd }) {
     const [field,      setField]      = useState(blankItem());
     const [errors,     setErrors]     = useState({});
     const [barcodeVal, setBarcodeVal] = useState('');
@@ -106,6 +106,8 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
         const newErrors = {};
         if (!matched)                                      newErrors.product = 'Pilih produk.';
         if (!field.qty || Number(field.qty) <= 0)          newErrors.qty     = 'Qty > 0.';
+        else if (type === 'Sell' && matched && Number(field.qty) > matched.stock)
+            newErrors.qty = `Stok tidak cukup. Tersedia: ${matched.stock}`;
         if (field.price === '' || Number(field.price) < 0) newErrors.price   = 'Harga tidak valid.';
         setErrors(newErrors);
         if (Object.keys(newErrors).length) return;
@@ -177,6 +179,9 @@ function ItemInputRow({ label, products, customerName, onAdd }) {
                         onChange={e => setField(f => ({ ...f, qty: e.target.value }))}
                         onKeyDown={handleQtyKeyDown}
                     />
+                    {type === 'Sell' && matched && !errors.qty && (
+                        <p className="text-[10px] text-slate-400">Stok: {matched.stock}</p>
+                    )}
                     <InputError message={errors.qty} />
                 </div>
 
@@ -470,6 +475,7 @@ export default function Index({ products, customers, auth }) {
                     <h2 className="text-sm font-bold text-emerald-900 mb-4">Produk Terjual</h2>
                     <ItemInputRow
                         label="Tambah produk terjual"
+                        type="Sell"
                         products={products}
                         customerName={data.customer_name}
                         onAdd={item => addItem('Sell', item)}
@@ -508,6 +514,7 @@ export default function Index({ products, customers, auth }) {
                         <div className="mt-4">
                             <ItemInputRow
                                 label="Tambah produk retur"
+                                type="Return"
                                 products={products}
                                 customerName={data.customer_name}
                                 onAdd={item => addItem('Return', item)}
