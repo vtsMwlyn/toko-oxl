@@ -4,9 +4,19 @@ import {
     ShoppingBag, Users, TrendingUp, Receipt,
     ArrowRight, Package,
 } from 'lucide-react';
+import { Bar } from 'react-chartjs-2';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Tooltip,
+} from 'chart.js';
 import LowStockWarning from '@/Components/LowStockWarning';
 
 import formatPrice from '@/Helpers/formatPrice';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 function StatCard({ label, value, icon: Icon, sub }) {
@@ -24,28 +34,57 @@ function StatCard({ label, value, icon: Icon, sub }) {
     );
 }
 
-// ── Simple bar chart (pure CSS, no lib) ───────────────────────────────────────
+const shortPrice = (val) => {
+    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}jt`;
+    if (val >= 1_000)     return `${(val / 1_000).toFixed(0)}rb`;
+    return String(val);
+};
+
 function BarChart({ data }) {
-    const max = Math.max(...data.map(d => d.total), 1);
+    const chartData = {
+        labels: data.map(d => d.label),
+        datasets: [{
+            data: data.map(d => d.total),
+            backgroundColor: 'rgba(52, 211, 153, 0.75)',
+            hoverBackgroundColor: '#059669',
+            borderRadius: 5,
+            borderSkipped: false,
+        }],
+    };
+
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ' ' + formatPrice(ctx.parsed.y),
+                },
+            },
+        },
+        scales: {
+            x: {
+                grid: { display: false },
+                border: { display: false },
+                ticks: { color: '#94a3b8', font: { size: 10 } },
+            },
+            y: {
+                grid: { color: '#f1f5f9' },
+                border: { display: false },
+                ticks: {
+                    color: '#94a3b8',
+                    font: { size: 10 },
+                    maxTicksLimit: 4,
+                    callback: val => shortPrice(val),
+                },
+            },
+        },
+    };
 
     return (
-        <div className="flex items-end gap-1.5 h-28 w-full">
-            {data.map((d, i) => {
-                const pct = Math.max((d.total / max) * 100, d.total > 0 ? 4 : 0);
-                return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full mb-1 hidden group-hover:flex bg-slate-800 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap z-10">
-                            {formatPrice(d.total)}
-                        </div>
-                        <div
-                            className="w-full rounded-t-md bg-emerald-400 group-hover:bg-emerald-600 transition-colors"
-                            style={{ height: `${pct}%`, minHeight: d.total > 0 ? '4px' : '0' }}
-                        />
-                        <span className="text-[9px] text-slate-400 truncate w-full text-center">{d.label}</span>
-                    </div>
-                );
-            })}
+        <div className="relative h-28 w-full">
+            <Bar data={chartData} options={options} />
         </div>
     );
 }

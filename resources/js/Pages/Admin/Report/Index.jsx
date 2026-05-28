@@ -2,6 +2,18 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useState, useEffect, useCallback } from 'react';
 import { TrendingUp, TrendingDown, BarChart2, Search, FileDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Line } from 'react-chartjs-2';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    LineElement,
+    PointElement,
+    Tooltip,
+    Filler,
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Filler);
 
 import ExportWithPercent from './ExportWithPercent';
 import ExportSpecificProduct from './ExportSpecificProduct';
@@ -29,30 +41,72 @@ function SummaryCard({ label, value, icon: Icon, color = 'emerald' }) {
     );
 }
 
-function BarChart({ data }) {
+const shortPrice = (val) => {
+    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}jt`;
+    if (val >= 1_000)     return `${(val / 1_000).toFixed(0)}rb`;
+    return String(val);
+};
+
+function OmzetChart({ data }) {
     if (!data.length) return <p className="text-sm text-slate-400 italic py-8 text-center">Tidak ada data.</p>;
 
-    const max = Math.max(...data.map(d => d.total), 1);
+    const chartData = {
+        labels: data.map(d => d.date?.slice(5) ?? d.date),
+        datasets: [{
+            data: data.map(d => d.total),
+            borderColor: '#059669',
+            backgroundColor: 'rgba(52, 211, 153, 0.12)',
+            borderWidth: 2,
+            pointRadius: data.length > 30 ? 0 : 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: '#059669',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1.5,
+            fill: true,
+            tension: 0.35,
+        }],
+    };
+
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    title: ctx => ctx[0].label,
+                    label: ctx => ' ' + formatPrice(ctx.parsed.y),
+                },
+            },
+        },
+        scales: {
+            x: {
+                grid: { display: false },
+                border: { display: false },
+                ticks: {
+                    color: '#94a3b8',
+                    font: { size: 10 },
+                    maxRotation: 0,
+                    autoSkip: true,
+                    maxTicksLimit: 14,
+                },
+            },
+            y: {
+                grid: { color: '#f1f5f9' },
+                border: { display: false },
+                ticks: {
+                    color: '#94a3b8',
+                    font: { size: 10 },
+                    maxTicksLimit: 5,
+                    callback: val => shortPrice(val),
+                },
+            },
+        },
+    };
 
     return (
-        <div className="flex items-end gap-1 h-40 w-full pt-2">
-            {data.map((d, i) => {
-                const pct = Math.max((d.total / max) * 100, d.total > 0 ? 3 : 0);
-                return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative min-w-0">
-                        <div className="absolute bottom-full mb-1 hidden group-hover:flex bg-slate-800 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap z-10 pointer-events-none">
-                            {d.date}: {formatPrice(d.total)}
-                        </div>
-                        <div
-                            className="w-full rounded-t-md bg-emerald-400 group-hover:bg-emerald-600 transition-colors cursor-default"
-                            style={{ height: `${pct}%`, minHeight: d.total > 0 ? '3px' : '0' }}
-                        />
-                        <span className="text-[9px] text-slate-400 truncate w-full text-center leading-tight">
-                            {d.date?.slice(5)}
-                        </span>
-                    </div>
-                );
-            })}
+        <div className="relative h-48 w-full">
+            <Line data={chartData} options={options} />
         </div>
     );
 }
@@ -153,7 +207,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                     Grafik Omzet Harian
                     <span className="ml-2 text-xs font-normal text-slate-400">({from} s/d {to})</span>
                 </h3>
-                <BarChart data={omzet_per_day} />
+                <OmzetChart data={omzet_per_day} />
             </div>
 
             {/* ── Per-variant stats ── */}
