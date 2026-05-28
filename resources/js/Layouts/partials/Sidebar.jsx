@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
+import ApplicationLogo from '@/Components/ApplicationLogo';
 import {
     LayoutDashboard,
     Landmark,
@@ -87,11 +88,7 @@ export default function Sidebar({ open, onClose }) {
             >
                 {/* ── Brand ── */}
                 <div className="flex items-center gap-3 px-6 py-5">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                            <path d="M12 2C9 2 7 4 7 4S3 4 3 8c0 3 2 5 2 5H5l1 9h12l1-9h.03S20 11 20 8c0-4-4-4-4-4S15 2 12 2z" />
-                        </svg>
-                    </div>
+                    <ApplicationLogo className="h-9 w-9 rounded-md" />
                     <div>
                         <p className="text-sm font-semibold text-emerald-900 leading-tight">Toko OXL</p>
                         <p className="text-[11px] text-emerald-600 leading-tight">Toko Perlengkapan Alat Muslim</p>

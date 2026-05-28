@@ -70,6 +70,7 @@ function BarChart({ data }) {
                 ticks: { color: '#94a3b8', font: { size: 10 } },
             },
             y: {
+                min: 0,
                 grid: { color: '#f1f5f9' },
                 border: { display: false },
                 ticks: {

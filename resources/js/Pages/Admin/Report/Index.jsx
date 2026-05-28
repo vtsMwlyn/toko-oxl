@@ -92,6 +92,7 @@ function OmzetChart({ data }) {
                 },
             },
             y: {
+                min: 0,
                 grid: { color: '#f1f5f9' },
                 border: { display: false },
                 ticks: {
