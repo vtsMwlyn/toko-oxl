@@ -36,7 +36,9 @@ class ProductController extends Controller
                 ->through(function ($product) {
                     $product->variants->each(function ($variant) {
                         $variant->image_url = $variant->image
-                            ? Storage::url($variant->image)
+                            ? (app()->isLocal()
+                                ? Storage::url($variant->image)
+                                : Storage::url('/app/public/' . $variant->image))
                             : null;
                     });
                     return $product;
