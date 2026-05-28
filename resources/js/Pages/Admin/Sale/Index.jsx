@@ -553,7 +553,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                     sales={salesByDate[viewingDateGroup.date] ?? []}
                     products={products}
                     auth={auth}
-                    onView={(sale) => { setViewingDateGroup(null); setIsViewing(sale.id); }}
+                    onView={(sale) => { setIsViewing(sale.id); }}
                     onEdit={(sale) => { setViewingDateGroup(null); setIsEditing(sale); }}
                     onDelete={(sale) => { setViewingDateGroup(null); setIsDeleting(sale); }}
                     onSetFixed={(sale) => { setViewingDateGroup(null); setIsSettingFixed(sale); }}

@@ -101,6 +101,42 @@ export default function Index({ products, low_stock_variants, search: initialSea
                         v => v.low_stock_warning > 0 && v.stock <= v.low_stock_warning
                     );
 
+                    if (product.variants.length === 0) {
+                        return (
+                            <tr
+                                key={product.id}
+                                className={hoveredProductId === product.id ? 'bg-slate-200' : ''}
+                                onMouseEnter={() => setHoveredProductId(product.id)}
+                                onMouseLeave={() => setHoveredProductId(null)}
+                            >
+                                <td>{product.name}</td>
+                                <td className="text-slate-300 italic">—</td>
+                                <td className="text-slate-300 italic">—</td>
+                                <td>{formatPrice(product.normal_price)}</td>
+                                <td>{formatPrice(product.customer_price)}</td>
+                                <td>
+                                    <div className="flex gap-2 items-center">
+                                        <PrimaryButton
+                                            styled={false} className="text-emerald-600"
+                                            icon={<Eye className="size-4" />} type="button"
+                                            onClick={() => setIsShowing(product.id)}
+                                        />
+                                        <PrimaryButton
+                                            styled={false} className="text-emerald-600"
+                                            icon={<Pencil className="size-4" />} type="button"
+                                            onClick={() => setIsEditing(product)}
+                                        />
+                                        <PrimaryButton
+                                            styled={false} className="text-emerald-600"
+                                            icon={<Trash2 className="size-4" />} type="button"
+                                            onClick={() => setIsDeleting(product)}
+                                        />
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    }
+
                     return product.variants.map((variant, variantIndex) => {
                         const isFirst = variantIndex === 0;
                         const isLow   = variant.low_stock_warning > 0 && variant.stock <= variant.low_stock_warning;

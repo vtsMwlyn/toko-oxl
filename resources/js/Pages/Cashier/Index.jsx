@@ -443,7 +443,7 @@ export default function Index({ products, customers, auth }) {
                             />
                         </div>
                         <div className="grid gap-1">
-                            <InputLabel htmlFor="customer_name" value="Nama Pelanggan" />
+                            <InputLabel htmlFor="customer_name" value="Nama Pelanggan" required={false} />
                             <SelectInput
                                 creatable
                                 options={customerOptions}
