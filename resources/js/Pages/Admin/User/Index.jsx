@@ -38,11 +38,11 @@ export default function Index({ users }) {
         <AuthenticatedLayout title="Daftar Pengguna">
             <Head title="Pengguna" />
 
-            <div className="w-full flex justify-between items-center">
+            <div className="w-full flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                 <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                     Tambah Pengguna
                 </PrimaryButton>
-                <TextInput placeholder="Cari pengguna..." />
+                <TextInput placeholder="Cari pengguna..." className="w-full sm:w-auto" />
             </div>
 
             <Table

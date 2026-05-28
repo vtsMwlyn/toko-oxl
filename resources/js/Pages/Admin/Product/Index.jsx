@@ -78,13 +78,13 @@ export default function Index({ products, search: initialSearch }) {
                 <ImagePreview src={previewImage} onClose={() => setPreviewImage(null)} />
             )}
 
-            <div className="mt-4 w-full flex justify-between items-center">
+            <div className="mt-4 w-full flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                 <div className="flex gap-2">
                     <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                         Tambah Produk
                     </PrimaryButton>
                 </div>
-                <TextInput placeholder="Cari produk..." value={search} onChange={e => setSearch(e.target.value)} />
+                <TextInput placeholder="Cari produk..." value={search} onChange={e => setSearch(e.target.value)} className="w-full sm:w-auto" />
             </div>
 
             <Table

@@ -52,7 +52,7 @@ export default function Popup({
                     leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                 >
                     <DialogPanel
-                        className={`mb-6 transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:mx-auto p-4 sm:w-full ${className}`}
+                        className={`mb-6 transform overflow-hidden rounded-lg bg-white shadow-xl transition-all mx-auto p-4 w-full ${className}`}
                     >
                         <DialogTitle>
                             <div className="flex items-center justify-between">

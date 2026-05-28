@@ -49,7 +49,7 @@ export default function Index({ customers }) {
         <AuthenticatedLayout title="Pelanggan">
             <Head title="Pelanggan" />
 
-            <div className="w-full flex justify-between items-center">
+            <div className="w-full flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                 <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                     Tambah Pelanggan
                 </PrimaryButton>
@@ -57,6 +57,7 @@ export default function Index({ customers }) {
                     placeholder="Cari nama atau telepon..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
+                    className="w-full sm:w-auto"
                 />
             </div>
 

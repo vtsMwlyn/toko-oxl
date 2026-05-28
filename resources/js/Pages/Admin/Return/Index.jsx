@@ -45,7 +45,7 @@ export default function Index({ returns, products, from: initialFrom, to: initia
         <AuthenticatedLayout title="Retur Produk">
             <Head title="Retur Produk" />
 
-            <div className="w-full flex justify-between items-center mb-4">
+            <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
                 {auth.user.role === 'Admin' ? (
                     <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                         Tambah Retur
@@ -55,7 +55,7 @@ export default function Index({ returns, products, from: initialFrom, to: initia
                 )}
 
                 {/* ── Date range filter ── */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <TextInput
                         type="date"
                         value={dateFrom}
@@ -63,9 +63,9 @@ export default function Index({ returns, products, from: initialFrom, to: initia
                             setDateFrom(e.target.value);
                             router.get(route('admin.return.index'), { from: e.target.value, ...(dateTo ? { to: dateTo } : {}) }, { preserveState: true, preserveScroll: true });
                         }}
-                        className="w-40"
+                        className="w-full sm:w-40"
                     />
-                    <span className="text-slate-400 text-sm">—</span>
+                    <span className="hidden sm:block text-slate-400 text-sm">—</span>
                     <TextInput
                         type="date"
                         value={dateTo}
@@ -73,7 +73,7 @@ export default function Index({ returns, products, from: initialFrom, to: initia
                             setDateTo(e.target.value);
                             router.get(route('admin.return.index'), { ...(dateFrom ? { from: dateFrom } : {}), to: e.target.value }, { preserveState: true, preserveScroll: true });
                         }}
-                        className="w-40"
+                        className="w-full sm:w-40"
                     />
                     {(dateFrom || dateTo) && (
                         <button

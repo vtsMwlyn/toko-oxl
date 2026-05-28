@@ -67,7 +67,7 @@ function DateSalesModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[80vh] flex flex-col">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[80vh] mx-4 flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                     <h2 className="text-lg font-semibold">Transaksi — {formatDate(date)}</h2>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
@@ -326,7 +326,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
 
             {auth.user.role === 'Admin' && (
                 <>
-                    <div className="w-full flex justify-between items-center">
+                    <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                         <div className="flex items-center gap-2">
                             <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                                 Tambah Penjualan
@@ -349,14 +349,14 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                                     className="bg-red-600 hover:bg-red-700 text-white"
                                     onClick={() => openBatchDelete(selectedDateGroupIds)}
                                 >
-                                    Hapus ({selectedDates.length} hari, {selectedDateGroupIds.length} transaksi)
+                                    Hapus {selectedDates.length}h / {selectedDateGroupIds.length}tx
                                 </PrimaryButton>
                             )}
                         </div>
 
                         {/* ── Date range filter — Riwayat tab only ── */}
                         {selectedTab === 'All' && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                 <TextInput
                                     type="date"
                                     value={dateFrom}
@@ -364,9 +364,9 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                                         setDateFrom(e.target.value);
                                         router.get(route('sale.index'), { from: e.target.value, ...(dateTo ? { to: dateTo } : {}) }, { preserveState: true, preserveScroll: true });
                                     }}
-                                    className="w-40"
+                                    className="w-full sm:w-40"
                                 />
-                                <span className="text-slate-400 text-sm">—</span>
+                                <span className="hidden sm:block text-slate-400 text-sm">—</span>
                                 <TextInput
                                     type="date"
                                     value={dateTo}
@@ -374,7 +374,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                                         setDateTo(e.target.value);
                                         router.get(route('sale.index'), { ...(dateFrom ? { from: dateFrom } : {}), to: e.target.value }, { preserveState: true, preserveScroll: true });
                                     }}
-                                    className="w-40"
+                                    className="w-full sm:w-40"
                                 />
                                 {(dateFrom || dateTo) && (
                                     <button
@@ -393,7 +393,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                         )}
                     </div>
 
-                    <div className="w-1/3 grid grid-cols-3 mt-6 gap-1">
+                    <div className="w-full sm:w-auto grid grid-cols-3 mt-6 gap-1">
                         <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Fixed' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('Fixed')}>Fixed</button>
                         <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Draft' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('Draft')}>Draft</button>
                         <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'All' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('All')}>Riwayat</button>

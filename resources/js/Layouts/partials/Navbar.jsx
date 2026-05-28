@@ -54,7 +54,7 @@ export default function Navbar({ title, onMenuClick }) {
                 </button>
 
                 {notifOpen && (
-                    <div className="absolute right-0 top-full mt-1 w-72 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-50">
+                    <div className="absolute right-0 top-full mt-1 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-50">
                         <div className="px-4 py-3 border-b border-slate-100">
                             <p className="text-xs font-semibold text-slate-700">
                                 {lowStock.length > 0

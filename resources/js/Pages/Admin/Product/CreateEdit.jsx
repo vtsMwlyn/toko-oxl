@@ -52,7 +52,7 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
                         <InputError message={errors.name} className="mt-2" />
                     </div>
 
-                    <div className="w-full grid grid-cols-2 mb-4 gap-4">
+                    <div className="w-full grid grid-cols-1 sm:grid-cols-2 mb-4 gap-4">
                         {/* ── Normal Price ── */}
                         <div className="w-full grid gap-1">
                             <InputLabel htmlFor="normal_price" value="Harga Normal" />

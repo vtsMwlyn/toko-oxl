@@ -160,15 +160,15 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
             <Head title="Laporan" />
 
             {/* ── Date range filter + export buttons ── */}
-            <div className="w-full flex items-center justify-between">
-                <form onSubmit={handleFilter} className="flex flex-wrap items-end gap-3 mb-6">
+            <div className="w-full flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+                <form onSubmit={handleFilter} className="flex flex-col sm:flex-row sm:items-end gap-3">
                     <div className="grid gap-1">
                         <label className="text-xs font-medium text-slate-500">Dari</label>
                         <input
                             type="date"
                             value={dateFrom}
                             onChange={e => setDateFrom(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                         />
                     </div>
                     <div className="grid gap-1">
@@ -177,13 +177,13 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                             type="date"
                             value={dateTo}
                             onChange={e => setDateTo(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                         />
                     </div>
                     <PrimaryButton type="submit">Tampilkan</PrimaryButton>
                 </form>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <PrimaryButton icon={<FileDown className="size-4" />} type="button" onClick={() => setExportType('product')}>
                         Export by Produk
                     </PrimaryButton>
@@ -223,7 +223,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                             placeholder="Cari produk atau varian..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="bg-transparent text-sm text-slate-600 placeholder:text-slate-400 outline-none w-44"
+                            className="bg-transparent text-sm text-slate-600 placeholder:text-slate-400 outline-none w-32 sm:w-44"
                         />
                     </div>
                 </div>

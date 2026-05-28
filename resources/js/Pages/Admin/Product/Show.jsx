@@ -57,7 +57,7 @@ export default function Show({ isOpen, onClose, product }) {
         <Popup title="Detail Data Produk" isOpen={isOpen} onClose={onClose} className="max-w-5xl">
             <div className="w-full flex items-start gap-10">
                 <div className="w-full">
-                    <div className="w-5/6 grid grid-cols-3 gap-4">
+                    <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="w-full grid">
                             <h2 className="font-semibold text-sm">Nama</h2>
                             <p>{product.name}</p>

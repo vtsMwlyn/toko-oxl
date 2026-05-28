@@ -133,7 +133,7 @@ export default function Dashboard({ stats, omzet_per_day, recent_sales, auth }) 
             </div>
 
             {/* ── Stat cards ── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard
                     label="Omzet Hari Ini"
                     value={formatPrice(stats.omzet_today)}

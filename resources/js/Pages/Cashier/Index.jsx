@@ -166,7 +166,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd }) {
                 <InputError message={errors.product} />
             </div>
 
-            <div className={`grid items-start gap-3 mb-3 ${type === 'Sell' ? 'grid-cols-3' : 'grid-cols-1'}`}>
+            <div className={`grid items-start gap-3 mb-3 ${type === 'Sell' ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'}`}>
                 <div className="grid gap-1">
                     <InputLabel htmlFor={`${label}-qty`} value="Qty" />
                     <TextInput
@@ -490,8 +490,8 @@ export default function Index({ products, customers, auth }) {
 
                 </div>
 
-                {/* ── Right column (sticky) ── */}
-                <div className="sticky top-4">
+                {/* ── Right column (sticky on desktop) ── */}
+                <div className="lg:sticky lg:top-4">
                     <div className="bg-white rounded-2xl border border-emerald-100 p-5 flex flex-col gap-5">
 
                         {/* Date / time */}

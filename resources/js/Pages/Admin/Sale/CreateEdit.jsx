@@ -171,7 +171,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                 <form onSubmit={submit} className="w-full flex flex-col">
 
                     {/* ── Header fields ── */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="grid gap-1">
                             <InputLabel htmlFor="date" value="Tanggal" />
                             <TextInput
