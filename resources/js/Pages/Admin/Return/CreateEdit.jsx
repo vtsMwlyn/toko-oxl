@@ -7,12 +7,10 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
-import OperationSuccess from '@/Components/OperationSuccess';
 import Select from '@/Components/Select';
 
 export default function CreateEdit({ mode, isOpen, onClose, item, products }) {
     const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
 
     const variantOptions = products.flatMap(product =>
         product.variants.map(variant => ({
@@ -44,10 +42,7 @@ export default function CreateEdit({ mode, isOpen, onClose, item, products }) {
         setLoading(true);
 
         const afterSubmission = {
-            onSuccess: () => {
-                setSuccess(true);
-                setTimeout(() => { setSuccess(false); onClose(); }, 500);
-            },
+            onSuccess: onClose,
             onError: (serverErrors) => {
                 Object.entries(serverErrors).forEach(([key, message]) => setError(key, message));
             },
@@ -68,13 +63,7 @@ export default function CreateEdit({ mode, isOpen, onClose, item, products }) {
             onClose={onClose}
             className="max-w-sm"
         >
-            {success ? (
-                <OperationSuccess
-                    type={mode === 'Create' ? 'Create' : 'Edit'}
-                    message={mode === 'Create' ? 'Data retur berhasil ditambahkan.' : 'Data retur berhasil diperbarui.'}
-                />
-            ) : (
-                <form onSubmit={submit} className="flex flex-col gap-4">
+            <form onSubmit={submit} className="flex flex-col gap-4">
 
                     <div className="grid gap-1">
                         <InputLabel htmlFor="return-date" value="Tanggal" />
@@ -122,7 +111,6 @@ export default function CreateEdit({ mode, isOpen, onClose, item, products }) {
                         </PrimaryButton>
                     </div>
                 </form>
-            )}
         </Popup>
     );
 }

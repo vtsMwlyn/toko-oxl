@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { useForm } from "@inertiajs/react"
 
 import Popup from "@/Components/Popup"
@@ -6,11 +5,7 @@ import InputLabel from "@/Components/InputLabel"
 import TextInput from "@/Components/TextInput"
 import InputError from "@/Components/InputError"
 import PrimaryButton from "@/Components/PrimaryButton"
-import OperationSuccess from "@/Components/OperationSuccess"
-
 export default function CreateEdit({ mode, isOpen, onClose, product }) {
-    const [success, setSuccess] = useState(false);
-
     const { data, setData, post, processing, errors, setError } = useForm({
         name: product?.name || '',
         normal_price: product?.normal_price || '',
@@ -21,13 +16,7 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
         e.preventDefault();
 
         const afterSubmission = {
-            onSuccess: () => {
-                setSuccess(true);
-                setTimeout(() => {
-                    setSuccess(false);
-                    onClose();
-                }, 500);
-            },
+            onSuccess: onClose,
             onError: (serverErrors) => {
                 Object.entries(serverErrors).forEach(([key, message]) => {
                     setError(key, message);
@@ -49,10 +38,7 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
             onClose={onClose}
             className="max-w-lg"
         >
-            {success ? (
-                <OperationSuccess type={mode} message={mode === 'Create' ? 'Berhasil menambahkan produk baru ke sistem.' : 'Berhasil memperbaharui data produk!'} />
-            ) : (
-                <form onSubmit={submit} className="w-full flex flex-col">
+            <form onSubmit={submit} className="w-full flex flex-col">
                     {/* ── Name ── */}
                     <div className="w-full grid mb-4 gap-1">
                         <InputLabel htmlFor="name" value="Nama" />
@@ -108,7 +94,6 @@ export default function CreateEdit({ mode, isOpen, onClose, product }) {
                         </PrimaryButton>
                     </div>
                 </form>
-            )}
         </Popup>
     );
 }

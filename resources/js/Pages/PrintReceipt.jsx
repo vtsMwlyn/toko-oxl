@@ -3,6 +3,8 @@ import { Printer } from 'lucide-react';
 
 import PrimaryButton from '@/Components/PrimaryButton';
 import formatPrice from '@/Helpers/formatPrice';
+import formatDate from '@/Helpers/formatDate';
+import formatTime from '@/Helpers/formatTime';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -57,8 +59,8 @@ function ReceiptContent({ sale, products }) {
             <ReceiptDivider />
 
             {/* ── Sale info ── */}
-            <ReceiptRow label="Tanggal" value={sale.date} />
-            <ReceiptRow label="Waktu"   value={sale.time} />
+            <ReceiptRow label="Tanggal" value={formatDate(sale.date)} />
+            <ReceiptRow label="Waktu"   value={formatTime(sale.time)} />
             {sale.customer_name && (
                 <ReceiptRow label="Pelanggan" value={sale.customer_name} />
             )}

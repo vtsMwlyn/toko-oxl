@@ -90,7 +90,7 @@ class SaleController extends Controller
             $this->applyStockDelta($request->items ?? [], +1);
         }
 
-        return back();
+        return back()->with('success', 'Penjualan berhasil disimpan.');
     }
 
     public function update(Request $request, Sale $sale)
@@ -163,7 +163,7 @@ class SaleController extends Controller
             ]);
         }
 
-        return back();
+        return back()->with('success', 'Penjualan berhasil diperbarui.');
     }
 
     public function destroy(Sale $sale)
@@ -176,7 +176,7 @@ class SaleController extends Controller
         $sale->items()->delete();
         $sale->delete();
 
-        return back();
+        return back()->with('success', 'Penjualan berhasil dihapus.');
     }
 
     public function destroyBatch(Request $request)
@@ -196,7 +196,7 @@ class SaleController extends Controller
             $sale->delete();
         }
 
-        return back();
+        return back()->with('success', 'Penjualan berhasil dihapus.');
     }
 
     public function set_fixed(Sale $sale)
@@ -211,7 +211,7 @@ class SaleController extends Controller
             'message' => 'Mengubah status penjualan ' . $sale->date . ' ' . $sale->time . ' antrian ' . $sale->queue_number . ' atas nama ' . $sale->customer_name . ' menjadi Fixed.',
         ]);
 
-        return back();
+        return back()->with('success', 'Status penjualan diubah menjadi Fixed.');
     }
 
     public function exportByProduct(Request $request)

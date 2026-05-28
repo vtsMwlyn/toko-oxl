@@ -51,7 +51,7 @@ class CustomerController extends Controller
 
         Customer::create($request->only('name', 'phone', 'address', 'notes'));
 
-        return back();
+        return back()->with('success', 'Pelanggan berhasil ditambahkan.');
     }
 
     public function show(Customer $customer)
@@ -99,13 +99,13 @@ class CustomerController extends Controller
             ]);
         }
 
-        return back();
+        return back()->with('success', 'Pelanggan berhasil diperbarui.');
     }
 
     public function destroy(Customer $customer)
     {
         $customer->delete();
 
-        return back();
+        return back()->with('success', 'Pelanggan berhasil dihapus.');
     }
 }

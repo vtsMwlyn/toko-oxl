@@ -7,11 +7,8 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
-import OperationSuccess from '@/Components/OperationSuccess';
-
 export default function CreateEdit({ mode, isOpen, onClose, customer }) {
     const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
 
     const { data, setData, errors, setError } = useForm({
         name:    customer?.name    || '',
@@ -25,10 +22,7 @@ export default function CreateEdit({ mode, isOpen, onClose, customer }) {
         setLoading(true);
 
         const afterSubmission = {
-            onSuccess: () => {
-                setSuccess(true);
-                setTimeout(() => { setSuccess(false); onClose(); }, 500);
-            },
+            onSuccess: onClose,
             onError: (serverErrors) => {
                 Object.entries(serverErrors).forEach(([key, message]) => setError(key, message));
             },
@@ -49,13 +43,7 @@ export default function CreateEdit({ mode, isOpen, onClose, customer }) {
             onClose={onClose}
             className="max-w-lg"
         >
-            {success ? (
-                <OperationSuccess
-                    type={mode === 'Create' ? 'Create' : 'Edit'}
-                    message={mode === 'Create' ? 'Pelanggan berhasil ditambahkan.' : 'Data pelanggan berhasil diperbarui.'}
-                />
-            ) : (
-                <form onSubmit={submit} className="w-full flex flex-col">
+            <form onSubmit={submit} className="w-full flex flex-col">
 
                     {/* ── Name ── */}
                     <div className="w-full grid mb-4 gap-1">
@@ -118,7 +106,6 @@ export default function CreateEdit({ mode, isOpen, onClose, customer }) {
                         </PrimaryButton>
                     </div>
                 </form>
-            )}
         </Popup>
     );
 }

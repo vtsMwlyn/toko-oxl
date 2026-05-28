@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Variant;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -36,7 +37,14 @@ class HandleInertiaRequests extends Middleware
             ],
             'flash' => [
                 'queue_number' => fn () => $request->session()->get('queue_number'),
+                'success'      => fn () => $request->session()->get('success'),
             ],
+            'low_stock_variants' => fn () => $request->user()
+                ? Variant::where('low_stock_warning', '>', 0)
+                    ->whereColumn('stock', '<=', 'low_stock_warning')
+                    ->with('product')
+                    ->get()
+                : [],
         ];
     }
 }

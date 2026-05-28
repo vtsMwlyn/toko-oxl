@@ -12,9 +12,9 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import Select from '@/Components/Select';
 import Table from '@/Components/Table';
 import Receipt from '@/Pages/PrintReceipt';
-import SelectInput from '@/Components/Select';
 
 import formatPrice from '@/Helpers/formatPrice';
+import formatDate  from '@/Helpers/formatDate';
 
 function resolveDiscount(discounts, qty) {
     if (!discounts?.length || !qty) return null;
@@ -133,8 +133,6 @@ function ItemInputRow({ label, type, products, customerName, onAdd }) {
 
     return (
         <div className="border border-emerald-100 rounded-xl p-4 bg-emerald-50/40">
-            <p className="text-xs font-semibold text-emerald-700 mb-3">{label}</p>
-
             <div className="grid gap-1 mb-3">
                 <InputLabel htmlFor={`${label}-barcode`} value="Scan Barcode / Kode Produk" />
                 <div className="relative">
@@ -277,6 +275,7 @@ export default function Index({ products, customers, auth }) {
     const [soldItems,         setSoldItems]         = useState([]);
     const [returnItems,       setReturnItems]       = useState([]);
     const [showReturnSection, setShowReturnSection] = useState(false);
+    const [hasPrinted,        setHasPrinted]        = useState(false);
 
     const { data, setData, errors, setError, reset } = useForm({
         date:          new Date().toISOString().slice(0, 10),
@@ -291,7 +290,6 @@ export default function Index({ products, customers, auth }) {
 
     const [customerOption, setCustomerOption] = useState(null);
 
-    // Keep date and time ticking every second
     useEffect(() => {
         const tick = () => {
             const now = new Date();
@@ -302,7 +300,7 @@ export default function Index({ products, customers, auth }) {
             }));
         };
 
-        tick(); // set immediately on mount
+        tick();
         const id = setInterval(tick, 1000);
         return () => clearInterval(id);
     }, []);
@@ -349,9 +347,9 @@ export default function Index({ products, customers, auth }) {
     function submit(status) {
         setLoading(true);
 
-        const now     = new Date();
-        const date    = now.toISOString().slice(0, 10);
-        const time    = now.toTimeString().slice(0, 8);
+        const now  = new Date();
+        const date = now.toISOString().slice(0, 10);
+        const time = now.toTimeString().slice(0, 8);
 
         const payload = {
             ...data,
@@ -377,19 +375,15 @@ export default function Index({ products, customers, auth }) {
         });
     }
 
-    const [hasPrinted, setHasPrinted] = useState(false);
-
-    // Total subtracts return items from sold items
     const soldTotal   = soldItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
     const returnTotal = returnItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
     const grandTotal  = soldTotal - returnTotal;
 
-    // ── Main form ─────────────────────────────────────────────────────────────
     return (
         <AuthenticatedLayout title="Kasir">
             <Head title="Kasir" />
 
-            {/* Full-screen overlay — blocks sidebar access until receipt is printed */}
+            {/* ── Success overlay ── */}
             {success && savedSale && (
                 <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 flex flex-col items-center gap-5 text-center">
@@ -426,35 +420,92 @@ export default function Index({ products, customers, auth }) {
                 </div>
             )}
 
-            <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
 
-                {/* ── Transaction info ── */}
-                <div className="bg-white rounded-2xl border border-emerald-100 p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-sm font-bold text-emerald-900">Informasi Transaksi</h2>
-                        <p className="text-xs text-slate-400">Tanggal & waktu diambil otomatis saat transaksi disimpan.</p>
+                {/* ── Left column ── */}
+                <div className="lg:col-span-2 flex flex-col gap-4">
+
+                    {/* Sold items */}
+                    <div className="bg-white rounded-2xl border border-emerald-100 p-5">
+                        <h2 className="text-sm font-bold text-emerald-900 mb-4">Produk Terjual</h2>
+                        <ItemInputRow
+                            label="sell"
+                            type="Sell"
+                            products={products}
+                            customerName={data.customer_name}
+                            onAdd={item => addItem('Sell', item)}
+                        />
+                        {soldItems.length > 0 && (
+                            <div className="mt-4">
+                                <ItemTable items={soldItems} products={products} onRemove={localId => removeItem('Sell', localId)} />
+                                <div className="flex justify-end mt-2">
+                                    <p className="text-sm text-slate-500">
+                                        Subtotal: <span className="font-semibold text-slate-700">{formatPrice(soldTotal)}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div className="grid gap-1">
-                            <InputLabel htmlFor="date" value="Tanggal" />
-                            <TextInput
-                                id="date" type="date" value={data.date}
-                                className="block w-full bg-slate-50 text-slate-400 cursor-not-allowed"
-                                readOnly
-                            />
+
+                    {/* Return items (collapsible) */}
+                    <div className="bg-white rounded-2xl border border-emerald-100 p-5">
+                        <button
+                            type="button"
+                            onClick={() => setShowReturnSection(v => !v)}
+                            className="w-full flex items-center justify-between text-sm font-bold text-emerald-900"
+                        >
+                            <span>
+                                Produk Retur
+                                {returnItems.length > 0 && (
+                                    <span className="ml-2 text-xs font-medium px-1.5 py-0.5 rounded-md bg-red-100 text-red-500">
+                                        {returnItems.length} item
+                                    </span>
+                                )}
+                            </span>
+                            {showReturnSection ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </button>
+
+                        {showReturnSection && (
+                            <div className="mt-4">
+                                <ItemInputRow
+                                    label="return"
+                                    type="Return"
+                                    products={products}
+                                    customerName={data.customer_name}
+                                    onAdd={item => addItem('Return', item)}
+                                />
+                                {returnItems.length > 0 && (
+                                    <div className="mt-4">
+                                        <ItemTable items={returnItems} products={products} onRemove={localId => removeItem('Return', localId)} />
+                                        <div className="flex justify-end mt-2">
+                                            <p className="text-sm text-slate-500">
+                                                Subtotal Retur: <span className="font-semibold text-slate-700">{formatPrice(returnTotal)}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+
+                {/* ── Right column (sticky) ── */}
+                <div className="sticky top-4">
+                    <div className="bg-white rounded-2xl border border-emerald-100 p-5 flex flex-col gap-5">
+
+                        {/* Date / time */}
+                        <div>
+                            <h2 className="text-sm font-bold text-emerald-900 mb-1">Ringkasan</h2>
+                            <p className="text-xs text-slate-400">
+                                {formatDate(data.date)} · {data.time.slice(0, 5)}
+                            </p>
                         </div>
+
+                        {/* Customer */}
                         <div className="grid gap-1">
-                            <InputLabel htmlFor="time" value="Waktu" />
-                            <TextInput
-                                id="time" type="time" value={data.time}
-                                className="block w-full bg-slate-50 text-slate-400 cursor-not-allowed"
-                                step="1"
-                                readOnly
-                            />
-                        </div>
-                        <div className="grid gap-1">
-                            <InputLabel htmlFor="customer_name" value="Nama Pelanggan" required={false} />
-                            <SelectInput
+                            <InputLabel value="Pelanggan" required={false} />
+                            <Select
                                 creatable
                                 options={customerOptions}
                                 value={customerOption}
@@ -466,113 +517,57 @@ export default function Index({ products, customers, auth }) {
                                     }
                                 }}
                                 isClearable
-                                placeholder="Pilih pelanggan atau ketik nama..."
+                                placeholder="Pilih atau ketik nama..."
                                 formatCreateLabel={(val) => `Gunakan nama: "${val}"`}
-                                noOptionsMessage={() => 'Tidak ada pelanggan terdaftar'}
+                                noOptionsMessage={() => 'Tidak ada pelanggan'}
                             />
                             <InputError message={errors.customer_name} />
                         </div>
-                    </div>
-                </div>
 
-                {/* ── Sold items ── */}
-                <div className="bg-white rounded-2xl border border-emerald-100 p-5">
-                    <h2 className="text-sm font-bold text-emerald-900 mb-4">Produk Terjual</h2>
-                    <ItemInputRow
-                        label="Tambah produk terjual"
-                        type="Sell"
-                        products={products}
-                        customerName={data.customer_name}
-                        onAdd={item => addItem('Sell', item)}
-                    />
-                    {soldItems.length > 0 && (
-                        <div className="mt-4">
-                            <ItemTable items={soldItems} products={products} onRemove={localId => removeItem('Sell', localId)} />
-                            <div className="flex justify-end mt-2">
-                                <p className="text-sm text-slate-500">
-                                    Subtotal: <span className="font-semibold text-slate-700">{formatPrice(soldTotal)}</span>
-                                </p>
+                        <div className="border-t border-slate-100" />
+
+                        {/* Total breakdown */}
+                        <div>
+                            {returnItems.length > 0 && (
+                                <>
+                                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                                        <span>Penjualan</span>
+                                        <span>{formatPrice(soldTotal)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs text-red-400 mb-3">
+                                        <span>Retur</span>
+                                        <span>− {formatPrice(returnTotal)}</span>
+                                    </div>
+                                    <div className="border-t border-slate-100 mb-3" />
+                                </>
+                            )}
+                            <div className="flex justify-between items-end">
+                                <span className="text-xs text-slate-500">Total</span>
+                                <span className="text-2xl font-bold text-emerald-700">{formatPrice(grandTotal)}</span>
                             </div>
                         </div>
-                    )}
-                </div>
 
-                {/* ── Return items (collapsible) ── */}
-                <div className="bg-white rounded-2xl border border-emerald-100 p-5">
-                    <button
-                        type="button"
-                        onClick={() => setShowReturnSection(v => !v)}
-                        className="w-full flex items-center justify-between text-sm font-bold text-emerald-900"
-                    >
-                        <span>
-                            Produk Retur
-                            {returnItems.length > 0 && (
-                                <span className="ml-2 text-xs font-medium px-1.5 py-0.5 rounded-md bg-red-100 text-red-500">
-                                    {returnItems.length} item
-                                </span>
-                            )}
-                        </span>
-                        {showReturnSection ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </button>
-
-                    {showReturnSection && (
-                        <div className="mt-4">
-                            <ItemInputRow
-                                label="Tambah produk retur"
-                                type="Return"
-                                products={products}
-                                customerName={data.customer_name}
-                                onAdd={item => addItem('Return', item)}
-                            />
-                            {returnItems.length > 0 && (
-                                <div className="mt-4">
-                                    <ItemTable items={returnItems} products={products} onRemove={localId => removeItem('Return', localId)} />
-                                    <div className="flex justify-end mt-2">
-                                        <p className="text-sm text-slate-500">
-                                            Subtotal Retur: <span className="font-semibold text-slate-700">{formatPrice(returnTotal)}</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
+                        {/* Actions */}
+                        <div className="flex flex-col gap-2">
+                            <PrimaryButton
+                                type="button"
+                                disabled={loading || soldItems.length === 0}
+                                loading={loading}
+                                className="w-full justify-center"
+                                onClick={() => submit('Fixed')}
+                            >
+                                {loading ? 'Memproses...' : 'Selesaikan Transaksi'}
+                            </PrimaryButton>
+                            <button
+                                type="button"
+                                disabled={loading || soldItems.length === 0}
+                                onClick={() => submit('Draft')}
+                                className="w-full px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                {loading ? 'Memproses...' : 'Simpan Draft'}
+                            </button>
                         </div>
-                    )}
-                </div>
 
-                {/* ── Total + actions ── */}
-                <div className="bg-white rounded-2xl border border-emerald-100 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-5 py-3">
-                        {returnItems.length > 0 && (
-                            <>
-                                <div className="flex justify-between gap-10 text-xs text-slate-400 mb-0.5">
-                                    <span>Penjualan</span><span>{formatPrice(soldTotal)}</span>
-                                </div>
-                                <div className="flex justify-between gap-10 text-xs text-red-400 mb-1">
-                                    <span>Retur</span><span>- {formatPrice(returnTotal)}</span>
-                                </div>
-                            </>
-                        )}
-                        <p className="text-xs text-emerald-500 mb-0.5">Total</p>
-                        <p className="text-2xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
-                    </div>
-
-                    <div className="flex gap-3">
-                        <button
-                            type="button"
-                            disabled={loading || soldItems.length === 0}
-                            onClick={() => submit('Draft')}
-                            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {loading ? 'Memproses...' : 'Simpan Draft'}
-                        </button>
-                        <PrimaryButton
-                            type="button"
-                            disabled={loading || soldItems.length === 0}
-                            loading={loading}
-                            className="px-8"
-                            onClick={() => submit('Fixed')}
-                        >
-                            {loading ? 'Memproses...' : 'Selesaikan Transaksi'}
-                        </PrimaryButton>
                     </div>
                 </div>
 

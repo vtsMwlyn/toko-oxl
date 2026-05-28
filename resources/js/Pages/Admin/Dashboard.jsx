@@ -12,9 +12,10 @@ import {
     BarElement,
     Tooltip,
 } from 'chart.js';
-import LowStockWarning from '@/Components/LowStockWarning';
 
 import formatPrice from '@/Helpers/formatPrice';
+import formatDate from '@/Helpers/formatDate';
+import formatTime from '@/Helpers/formatTime';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
@@ -70,7 +71,6 @@ function BarChart({ data }) {
                 ticks: { color: '#94a3b8', font: { size: 10 } },
             },
             y: {
-                min: 0,
                 grid: { color: '#f1f5f9' },
                 border: { display: false },
                 ticks: {
@@ -84,7 +84,7 @@ function BarChart({ data }) {
     };
 
     return (
-        <div className="relative h-28 w-full">
+        <div style={{ position: 'relative', flex: 1, minHeight: '100px', width: '100%' }}>
             <Bar data={chartData} options={options} />
         </div>
     );
@@ -105,7 +105,7 @@ function SaleRow({ sale }) {
                 <p className="text-sm font-medium text-slate-700 truncate">
                     {sale.customer_name || <span className="text-slate-400 italic">Tanpa nama</span>}
                 </p>
-                <p className="text-xs text-slate-400">{sale.date} · {sale.time}</p>
+                <p className="text-xs text-slate-400">{formatDate(sale.date)} · {formatTime(sale.time)}</p>
             </div>
             <span className="text-sm font-semibold text-emerald-700 shrink-0">{formatPrice(sale.total)}</span>
         </div>
@@ -113,7 +113,7 @@ function SaleRow({ sale }) {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export default function Dashboard({ stats, omzet_per_day, recent_sales, auth, low_stock_variants }) {
+export default function Dashboard({ stats, omzet_per_day, recent_sales, auth }) {
     return (
         <AuthenticatedLayout title="Dashboard">
             <Head title="Dashboard" />
@@ -131,13 +131,6 @@ export default function Dashboard({ stats, omzet_per_day, recent_sales, auth, lo
                     <p className="text-emerald-200 text-xs mt-0.5">penjualan lunas</p>
                 </div>
             </div>
-
-            {/* ── Low stock warning ── */}
-            {low_stock_variants.length > 0 && (
-                <div className="mb-6">
-                    <LowStockWarning variants={low_stock_variants} />
-                </div>
-            )}
 
             {/* ── Stat cards ── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -167,7 +160,7 @@ export default function Dashboard({ stats, omzet_per_day, recent_sales, auth, lo
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
                 {/* Omzet 7 hari terakhir */}
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-emerald-100 p-5">
+                <div className="lg:col-span-2 bg-white rounded-2xl border border-emerald-100 p-5 flex flex-col">
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h3 className="text-sm font-semibold text-emerald-900">Omzet 7 Hari Terakhir</h3>

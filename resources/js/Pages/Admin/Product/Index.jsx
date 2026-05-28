@@ -6,7 +6,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import LowStockWarning from '@/Components/LowStockWarning';
 import Pagination from '@/Components/Pagination';
 
 import CreateEdit from './CreateEdit';
@@ -38,7 +37,7 @@ function ImagePreview({ src, onClose }) {
     );
 }
 
-export default function Index({ products, low_stock_variants, search: initialSearch }) {
+export default function Index({ products, search: initialSearch }) {
     const [search, setSearch] = useState(initialSearch ?? '');
     const isFirstRender = useRef(true);
 
@@ -59,7 +58,7 @@ export default function Index({ products, low_stock_variants, search: initialSea
     const [isSettingWarning, setIsSettingWarning] = useState(false);
 
     const reload = useCallback(() => {
-        router.reload({ only: ['products', 'low_stock_variants', 'stock_warning_threshold'], preserveScroll: true, preserveState: true });
+        router.reload({ only: ['products', 'stock_warning_threshold'], preserveScroll: true, preserveState: true });
     }, []);
 
     useEffect(() => {
@@ -78,9 +77,6 @@ export default function Index({ products, low_stock_variants, search: initialSea
             {previewImage && (
                 <ImagePreview src={previewImage} onClose={() => setPreviewImage(null)} />
             )}
-
-            {/* ── Low stock warning banner ── */}
-            <LowStockWarning variants={low_stock_variants} />
 
             <div className="mt-4 w-full flex justify-between items-center">
                 <div className="flex gap-2">

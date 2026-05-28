@@ -34,7 +34,7 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        return back();
+        return back()->with('success', 'Pengguna berhasil ditambahkan.');
     }
 
     public function update(Request $request, User $user)
@@ -59,13 +59,13 @@ class UserController extends Controller
 
         $user->save();
 
-        return back();
+        return back()->with('success', 'Pengguna berhasil diperbarui.');
     }
 
     public function destroy(User $user)
     {
         $user->delete();
 
-        return back();
+        return back()->with('success', 'Pengguna berhasil dihapus.');
     }
 }

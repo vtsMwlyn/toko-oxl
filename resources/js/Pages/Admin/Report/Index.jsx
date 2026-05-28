@@ -21,6 +21,7 @@ import ExportSpecificProduct from './ExportSpecificProduct';
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import formatPrice from '@/Helpers/formatPrice';
+import formatDate from '@/Helpers/formatDate';
 
 function SummaryCard({ label, value, icon: Icon, color = 'emerald' }) {
     const colors = {
@@ -53,9 +54,9 @@ function OmzetChart({ data }) {
     const chartData = {
         labels: data.map(d => d.date?.slice(5) ?? d.date),
         datasets: [{
-            data: data.map(d => d.total),
+            data: data.map(d => d.total || null),
             borderColor: '#059669',
-            backgroundColor: 'rgba(52, 211, 153, 0.12)',
+            backgroundColor: 'rgba(52, 211, 153, 0.15)',
             borderWidth: 2,
             pointRadius: data.length > 30 ? 0 : 3,
             pointHoverRadius: 5,
@@ -63,7 +64,8 @@ function OmzetChart({ data }) {
             pointBorderColor: '#fff',
             pointBorderWidth: 1.5,
             fill: true,
-            tension: 0.35,
+            tension: 0,
+            spanGaps: false,
         }],
     };
 
@@ -92,7 +94,6 @@ function OmzetChart({ data }) {
                 },
             },
             y: {
-                min: 0,
                 grid: { color: '#f1f5f9' },
                 border: { display: false },
                 ticks: {
@@ -106,7 +107,7 @@ function OmzetChart({ data }) {
     };
 
     return (
-        <div className="relative h-48 w-full">
+        <div style={{ position: 'relative', height: '192px', width: '100%' }}>
             <Line data={chartData} options={options} />
         </div>
     );
@@ -206,7 +207,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
             <div className="bg-white rounded-2xl border border-emerald-100 p-5 mb-6">
                 <h3 className="text-sm font-semibold text-emerald-900 mb-4">
                     Grafik Omzet Harian
-                    <span className="ml-2 text-xs font-normal text-slate-400">({from} s/d {to})</span>
+                    <span className="ml-2 text-xs font-normal text-slate-400">({formatDate(from)} s/d {formatDate(to)})</span>
                 </h3>
                 <OmzetChart data={omzet_per_day} />
             </div>

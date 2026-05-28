@@ -60,7 +60,7 @@ class ReturnController extends Controller
             ]);
         });
 
-        return back();
+        return back()->with('success', 'Retur produk berhasil ditambahkan.');
     }
 
     public function update(Request $request, ProductReturn $return)
@@ -115,7 +115,7 @@ class ReturnController extends Controller
             }
         });
 
-        return back();
+        return back()->with('success', 'Retur produk berhasil diperbarui.');
     }
 
     public function destroy(ProductReturn $return)
@@ -139,6 +139,6 @@ class ReturnController extends Controller
             $return->delete();
         });
 
-        return back();
+        return back()->with('success', 'Retur produk berhasil dihapus.');
     }
 }

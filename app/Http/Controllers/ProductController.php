@@ -57,7 +57,7 @@ class ProductController extends Controller
 
         Product::create($validatedData);
 
-        return back();
+        return back()->with('success', 'Produk berhasil ditambahkan.');
     }
 
     public function update(Request $request, Product $product)
@@ -80,7 +80,7 @@ class ProductController extends Controller
             ]);
         }
 
-        return back();
+        return back()->with('success', 'Produk berhasil diperbarui.');
     }
 
     public function destroy(Product $product)
@@ -94,7 +94,7 @@ class ProductController extends Controller
 
         $product->delete();
 
-        return back();
+        return back()->with('success', 'Produk berhasil dihapus.');
     }
 
 
@@ -119,7 +119,7 @@ class ProductController extends Controller
 
         Variant::create($validatedData);
 
-        return back();
+        return back()->with('success', 'Varian berhasil ditambahkan.');
     }
 
     public function update_variant(Request $request, Variant $variant)
@@ -157,7 +157,7 @@ class ProductController extends Controller
             ]);
         }
 
-        return back();
+        return back()->with('success', 'Varian berhasil diperbarui.');
     }
 
     public function destroy_variant(Variant $variant)
@@ -169,7 +169,7 @@ class ProductController extends Controller
 
         $variant->delete();
 
-        return back();
+        return back()->with('success', 'Varian berhasil dihapus.');
     }
 
     public function add_stock(Request $request, Variant $variant)
@@ -185,7 +185,7 @@ class ProductController extends Controller
             'message' => 'Menambahkan stok ' . $variant->product->name . ' ' . $variant->name . ' (' . $variant->code . ') sebanyak ' . $request->amount . ' buah.',
         ]);
 
-        return back();
+        return back()->with('success', 'Stok berhasil ditambahkan.');
     }
 
     public function reduce_stock(Request $request, Variant $variant)
@@ -208,7 +208,7 @@ class ProductController extends Controller
             'message' => 'Mengurangi stok ' . $variant->product->name . ' ' . $variant->name . ' (' . $variant->code . ') sebanyak ' . $request->amount . ' buah.',
         ]);
 
-        return back();
+        return back()->with('success', 'Stok berhasil dikurangi.');
     }
 
     public function set_stock_warning(Request $request, Variant $variant)
@@ -219,7 +219,7 @@ class ProductController extends Controller
 
         $variant->update(['low_stock_warning' => $request->threshold]);
 
-        return back();
+        return back()->with('success', 'Batas stok rendah berhasil diatur.');
     }
 
 
@@ -235,7 +235,7 @@ class ProductController extends Controller
 
         Discount::create($validatedData);
 
-        return back();
+        return back()->with('success', 'Harga spesial berhasil ditambahkan.');
     }
 
     public function update_discount(Request $request, Discount $discount){
@@ -247,12 +247,12 @@ class ProductController extends Controller
 
         $discount->update($validatedData);
 
-        return back();
+        return back()->with('success', 'Harga spesial berhasil diperbarui.');
     }
 
     public function destroy_discount(Discount $discount){
         $discount->delete();
 
-        return back();
+        return back()->with('success', 'Harga spesial berhasil dihapus.');
     }
 }

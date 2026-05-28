@@ -8,7 +8,6 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
-import OperationSuccess from '@/Components/OperationSuccess';
 import PrintReceipt from '@/Pages/PrintReceipt';
 import Table from '@/Components/Table';
 import SelectInput from '@/Components/Select';
@@ -35,7 +34,6 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
     const lockHeaderFields   = mode === 'Edit' && sale?.status === 'Fixed' && isCashier;
 
     const [loading,    setLoading]    = useState(false);
-    const [success,    setSuccess]    = useState(false);
     const [becameFixed, setBecameFixed] = useState(false);
     const [hasPrinted,  setHasPrinted]  = useState(false);
 
@@ -110,8 +108,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                 if (isTransitioningToFixed) {
                     setBecameFixed(true);
                 } else {
-                    setSuccess(true);
-                    setTimeout(() => { setSuccess(false); onClose(); }, 500);
+                    onClose();
                 }
             },
             onError: (serverErrors) => {
@@ -170,11 +167,6 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                         {hasPrinted ? 'Tutup' : 'Tutup (cetak struk dulu)'}
                     </button>
                 </div>
-            ) : success ? (
-                <OperationSuccess
-                    type={mode === 'Create' ? 'Create' : 'Edit'}
-                    message={mode === 'Create' ? 'Penjualan berhasil ditambahkan.' : 'Penjualan berhasil diperbarui.'}
-                />
             ) : (
                 <form onSubmit={submit} className="w-full flex flex-col">
 
