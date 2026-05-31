@@ -71,6 +71,7 @@ class SaleBySpecificVariantExport implements
             'Date',
             'Time',
             'Customer',
+            'Sale Type',
             'Sale ID',
             'Product',
             'Variant',
@@ -87,21 +88,22 @@ class SaleBySpecificVariantExport implements
     public function map($item): array
     {
         $net      = $item->price - ($item->discount ?? 0);
-        $adjQty   = (int) ceil($item->qty * $this->qtyPercent);                               // ← adjusted
+        $adjQty   = (int) ceil($item->qty * $this->qtyPercent);
         $subtotal = $item->type === 'Return' ? -($net * $adjQty) : $net * $adjQty;
 
         return [
             $item->sale->date,
             $item->sale->time,
-            $item->sale->customer_name ?? '—',
+            $item->sale->customer_name    ?? '—',
+            $item->sale->type,
             $item->sale_id,
             $item->variant->product->name ?? '—',
-            $item->variant->name ?? '—',
+            $item->variant->name          ?? '—',
             $item->type,
             $item->price,
-            $item->discount ?? 0,
-            $adjQty,        // ← adjusted
-            $subtotal,      // ← recalculated
+            $item->discount               ?? 0,
+            $adjQty,
+            $subtotal,
         ];
     }
 
@@ -110,9 +112,9 @@ class SaleBySpecificVariantExport implements
     public function columnFormats(): array
     {
         return [
-            'H' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Price
-            'I' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Discount
-            'K' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Subtotal
+            'I' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Price
+            'J' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Discount
+            'L' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Subtotal
         ];
     }
 

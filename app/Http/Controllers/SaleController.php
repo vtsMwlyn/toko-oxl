@@ -65,6 +65,7 @@ class SaleController extends Controller
             'time'               => 'required',
             'customer_name'      => 'nullable|string|max:255',
             'status'             => 'required|in:Draft,Fixed',
+            'type'               => 'required|in:Offline,Online',
             'items'              => 'required|array',
             'items.*.variant_id' => 'required|integer|exists:variants,id',
             'items.*.price'      => 'required|numeric|min:0',
@@ -81,6 +82,7 @@ class SaleController extends Controller
             'time'          => $validatedData['time'],
             'customer_name' => $validatedData['customer_name'],
             'status'        => $validatedData['status'],
+            'type'          => $validatedData['type'],
             'queue_number'  => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
         ]);
 
@@ -100,6 +102,7 @@ class SaleController extends Controller
             'time'               => 'required',
             'customer_name'      => 'nullable|string|max:255',
             'status'             => 'required|in:Draft,Fixed',
+            'type'               => 'required|in:Offline,Online',
             'items'              => 'array',
             'items.*.variant_id' => 'required|integer|exists:variants,id',
             'items.*.price'      => 'required|numeric|min:0',
@@ -142,6 +145,7 @@ class SaleController extends Controller
             'time'          => $validatedData['time'],
             'customer_name' => $validatedData['customer_name'],
             'status'        => $newStatus,
+            'type'          => $validatedData['type'],
         ]);
 
         $sale->items()->delete();

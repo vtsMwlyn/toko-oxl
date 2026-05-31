@@ -72,6 +72,7 @@ class SaleBySpecificProductExport implements
             'Date',
             'Time',
             'Customer',
+            'Sale Type',
             'Sale ID',
             'Product',
             'Variant',
@@ -95,6 +96,7 @@ class SaleBySpecificProductExport implements
             $item->sale->date,
             $item->sale->time,
             $item->sale->customer_name    ?? '—',
+            $item->sale->type,
             $item->sale_id,
             $item->variant->product->name ?? '—',
             $item->variant->name          ?? '—',
@@ -111,9 +113,9 @@ class SaleBySpecificProductExport implements
     public function columnFormats(): array
     {
         return [
-            'H' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Price
-            'I' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Discount
-            'K' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Subtotal
+            'I' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Price
+            'J' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Discount
+            'L' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1, // Subtotal
         ];
     }
 

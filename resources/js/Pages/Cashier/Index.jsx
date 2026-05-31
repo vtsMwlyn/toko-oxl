@@ -282,6 +282,7 @@ export default function Index({ products, customers, auth }) {
         time:          new Date().toTimeString().slice(0, 8),
         customer_name: '',
         status:        'Fixed',
+        type:          'Offline',
     });
 
     const customerOptions = (customers ?? []).map(c => ({
@@ -500,6 +501,19 @@ export default function Index({ products, customers, auth }) {
                             <p className="text-xs text-slate-400">
                                 {formatDate(data.date)} · {data.time.slice(0, 5)}
                             </p>
+                        </div>
+
+                        {/* Transaction type */}
+                        <div className="grid gap-1">
+                            <InputLabel value="Tipe Transaksi" />
+                            <select
+                                value={data.type}
+                                onChange={e => setData('type', e.target.value)}
+                                className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                            >
+                                <option value="Offline">Langsung di Toko</option>
+                                <option value="Online">Online</option>
+                            </select>
                         </div>
 
                         {/* Customer */}

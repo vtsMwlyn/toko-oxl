@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\BarcodeHelper;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
-use App\Models\Variant;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +27,7 @@ class CashierController extends Controller
             'time'               => 'required',
             'customer_name'      => 'nullable|string|max:255',
             'status'             => 'required|in:Draft,Fixed',
+            'type'               => 'required|in:Offline,Online',
             'items'              => 'array',
             'items.*.variant_id' => 'required|integer|exists:variants,id',
             'items.*.price'      => 'required|numeric|min:0',
@@ -45,6 +44,7 @@ class CashierController extends Controller
             'time'          => $validatedData['time'],
             'customer_name' => $validatedData['customer_name'],
             'status'        => $validatedData['status'],
+            'type'          => $validatedData['type'],
             'queue_number'  => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
         ]);
 

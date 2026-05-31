@@ -66,6 +66,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         time:          sale?.time          ?? new Date().toTimeString().slice(0, 5),
         customer_name: sale?.customer_name ?? '',
         status:        sale?.status        ?? 'Draft',
+        type:          sale?.type          ?? 'Offline',
     });
 
     function handleCustomerChange(option) {
@@ -227,6 +228,19 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                                 <option value="Fixed">Fixed</option>
                             </select>
                             <InputError message={errors.status} />
+                        </div>
+
+                        <div className="grid gap-1">
+                            <InputLabel htmlFor="type" value="Tipe Transaksi" />
+                            <select
+                                id="type" value={data.type}
+                                onChange={(e) => setData('type', e.target.value)}
+                                className="block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                            >
+                                <option value="Offline">Langsung di Toko</option>
+                                <option value="Online">Online</option>
+                            </select>
+                            <InputError message={errors.type} />
                         </div>
                     </div>
 

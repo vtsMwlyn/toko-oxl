@@ -114,6 +114,7 @@ function DateSalesModal({
                                 {auth.user.role === 'Admin' && (
                                     <th className="px-4 py-3 text-left">Kasir</th>
                                 )}
+                                <th className="px-4 py-3 text-left">Tipe</th>
                                 <th className="px-4 py-3 text-left">Status</th>
                                 <th className="px-4 py-3 text-left">Total</th>
                                 <th className="px-4 py-3 text-left">Aksi</th>
@@ -138,6 +139,11 @@ function DateSalesModal({
                                     {auth.user.role === 'Admin' && (
                                         <td className="px-4 py-3 text-sm text-slate-500">{sale.cashier_name || <span className="italic text-slate-300">—</span>}</td>
                                     )}
+                                    <td className="px-4 py-3">
+                                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${sale.type === 'Online' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                                            {sale.type === 'Online' ? 'Online' : 'Langsung'}
+                                        </span>
+                                    </td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.Draft}`}>
                                             {sale.status}
@@ -481,7 +487,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                             : null,
                         'Tanggal', 'Waktu', 'No. Antrian', 'Pelanggan',
                         ...(auth.user.role === 'Admin' ? ['Kasir'] : []),
-                        'Status', 'Total', 'Aksi',
+                        'Tipe', 'Status', 'Total', 'Aksi',
                     ].filter(h => h !== null)}
                     className={auth.user.role === 'Admin' ? 'mt-4' : ''}
                 >
@@ -504,6 +510,11 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                             {auth.user.role === 'Admin' && (
                                 <td className="text-sm text-slate-500">{sale.cashier_name || <span className="italic text-slate-300">—</span>}</td>
                             )}
+                            <td>
+                                <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${sale.type === 'Online' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                                    {sale.type === 'Online' ? 'Online' : 'Langsung'}
+                                </span>
+                            </td>
                             <td>
                                 <span className={`px-2 py-0.5 rounded-md text-xs font-medium capitalize ${statusBadge[sale.status] ?? statusBadge.Draft}`}>
                                     {sale.status}
@@ -554,10 +565,10 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                     products={products}
                     auth={auth}
                     onView={(sale) => { setIsViewing(sale.id); }}
-                    onEdit={(sale) => { setViewingDateGroup(null); setIsEditing(sale); }}
-                    onDelete={(sale) => { setViewingDateGroup(null); setIsDeleting(sale); }}
-                    onSetFixed={(sale) => { setViewingDateGroup(null); setIsSettingFixed(sale); }}
-                    onBatchDelete={(ids) => { setViewingDateGroup(null); openBatchDelete(ids); }}
+                    onEdit={(sale) => { setIsEditing(sale); }}
+                    onDelete={(sale) => { setIsDeleting(sale); }}
+                    onSetFixed={(sale) => { setIsSettingFixed(sale); }}
+                    onBatchDelete={(ids) => { openBatchDelete(ids); }}
                 />
             )}
 

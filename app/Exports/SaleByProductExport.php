@@ -58,7 +58,7 @@ class SaleByProductExport implements
 
     public function headings(): array
     {
-        return ['Nama Produk', 'Varian', 'Tipe', 'Tanggal', 'Pelanggan', 'Qty', 'Harga'];
+        return ['Nama Produk', 'Varian', 'Tipe Item', 'Tanggal', 'Pelanggan', 'Tipe Transaksi', 'Qty', 'Harga'];
     }
 
     public function map($item): array
@@ -69,6 +69,7 @@ class SaleByProductExport implements
             $item->type,
             $item->sale->date,
             $item->sale->customer_name    ?? '',
+            $item->sale->type,
             (int) ceil($item->qty * $this->qtyPercent),
             $item->price,
         ]];
@@ -79,11 +80,12 @@ class SaleByProductExport implements
         return [
             'A' => 28,  // Nama Produk
             'B' => 18,  // Varian
-            'C' => 10,  // Tipe
+            'C' => 10,  // Tipe Item
             'D' => 14,  // Tanggal
             'E' => 24,  // Pelanggan
-            'F' => 8,   // Qty
-            'G' => 18,  // Harga
+            'F' => 14,  // Tipe Transaksi
+            'G' => 8,   // Qty
+            'H' => 18,  // Harga
         ];
     }
 
@@ -91,7 +93,7 @@ class SaleByProductExport implements
     {
         $lastRow = $sheet->getHighestRow();
 
-        $sheet->getStyle('A1:G1')->applyFromArray([
+        $sheet->getStyle('A1:H1')->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11, 'name' => 'Arial'],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '059669']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -103,24 +105,27 @@ class SaleByProductExport implements
         if ($lastRow >= 2) {
             for ($row = 2; $row <= $lastRow; $row++) {
                 $fill = ($row % 2 === 0) ? 'F0FDF4' : 'FFFFFF';
-                $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
+                $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
                     'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
                     'font'    => ['name' => 'Arial', 'size' => 10],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR, 'color' => ['rgb' => 'D1D5DB']]],
                 ]);
             }
 
-            $sheet->getStyle("G2:G{$lastRow}")
+            $sheet->getStyle("H2:H{$lastRow}")
                 ->getNumberFormat()->setFormatCode('"Rp "#,##0');
 
-            $sheet->getStyle("F2:F{$lastRow}")
+            $sheet->getStyle("G2:G{$lastRow}")
                 ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
             $sheet->getStyle("C2:C{$lastRow}")
                 ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            $sheet->getStyle("F2:F{$lastRow}")
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         }
 
-        $sheet->getStyle("A1:G{$lastRow}")->applyFromArray([
+        $sheet->getStyle("A1:H{$lastRow}")->applyFromArray([
             'borders' => ['outline' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '059669']]],
         ]);
 
