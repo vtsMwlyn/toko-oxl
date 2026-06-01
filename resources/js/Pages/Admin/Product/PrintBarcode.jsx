@@ -5,14 +5,13 @@ import Popup from "@/Components/Popup"
 import PrimaryButton from "@/Components/PrimaryButton"
 import TextInput from "@/Components/TextInput"
 
-import formatPrice from "@/Helpers/formatPrice"
-
-export default function PrintBarcode({ variant, product, isOpen, onClose }) {
+export default function PrintBarcode({ variant, isOpen, onClose }) {
     const [printSettings, setPrintSettings] = useState({
         qty: 1,
         widthCm: 4,
         heightCm: 1.5,
         gapMm: 4,
+        marginMm: 8,
     });
 
     const handleInputChange = (e) => {
@@ -24,15 +23,17 @@ export default function PrintBarcode({ variant, product, isOpen, onClose }) {
     };
 
     const executePrint = () => {
-        const qty = parseInt(printSettings.qty, 10);
-        const widthCm = parseFloat(printSettings.widthCm);
+        const qty      = parseInt(printSettings.qty, 10);
+        const widthCm  = parseFloat(printSettings.widthCm);
         const heightCm = parseFloat(printSettings.heightCm);
-        const gapMm = parseFloat(printSettings.gapMm);
+        const gapMm    = parseFloat(printSettings.gapMm);
+        const marginMm = parseFloat(printSettings.marginMm);
 
-        if (isNaN(qty) || qty <= 0) return alert("Jumlah copy tidak valid.");
+        if (isNaN(qty) || qty <= 0)         return alert("Jumlah copy tidak valid.");
         if (isNaN(widthCm) || widthCm <= 0) return alert("Ukuran lebar tidak valid.");
         if (isNaN(heightCm) || heightCm <= 0) return alert("Ukuran tinggi tidak valid.");
-        if (isNaN(gapMm) || gapMm < 0) return alert("Ukuran gap tidak valid.");
+        if (isNaN(gapMm) || gapMm < 0)     return alert("Ukuran gap tidak valid.");
+        if (isNaN(marginMm) || marginMm < 0) return alert("Ukuran margin tidak valid.");
 
         onClose();
 
@@ -45,8 +46,6 @@ export default function PrintBarcode({ variant, product, isOpen, onClose }) {
         const labels = copies.map((v, i) => `
             <div class="label">
                 <svg class="barcode" id="bc-${i}" data-barcode="${v.barcode}"></svg>
-                <p class="name">${product.name}${v.variant ? ` — ${v.variant}` : ''}</p>
-                <p class="price">${formatPrice(product.normal_price ?? 0)}</p>
             </div>
         `).join('');
 
@@ -58,15 +57,13 @@ export default function PrintBarcode({ variant, product, isOpen, onClose }) {
                 <title>Cetak Barcode Produk</title>
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"><\/script>
                 <style>
-                    @page { size: A4; margin: 8mm; }
+                    @page { size: A4; margin: ${marginMm}mm; }
                     * { box-sizing: border-box; margin: 0; padding: 0; }
                     body { font-family: Arial, sans-serif; background: #fff; }
 
                     .grid { display: flex; flex-wrap: wrap; gap: ${gapMm}mm; }
                     .label {
-                        border: 1px solid #ccc;
-                        border-radius: 4px;
-                        padding: 4mm 3mm 3mm;
+                        padding: 2mm;
                         text-align: center;
                         break-inside: avoid;
                         page-break-inside: avoid;
@@ -79,9 +76,6 @@ export default function PrintBarcode({ variant, product, isOpen, onClose }) {
                         width: ${widthCm}cm !important;
                         height: ${heightCm}cm !important;
                     }
-
-                    .name { font-size: 7pt; color: #555; margin-top: 1mm; max-width: ${widthCm}cm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-                    .price { font-size: 8pt; font-weight: 700; color: #000; margin-top: 1mm; }
                 </style>
             </head>
             <body>
@@ -111,13 +105,12 @@ export default function PrintBarcode({ variant, product, isOpen, onClose }) {
             </html>
         `;
 
-        const doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(htmlContent);
-        doc.close();
+        iframe.srcdoc = htmlContent;
 
-        iframe.contentWindow.onafterprint = () => {
-            document.body.removeChild(iframe);
+        iframe.onload = () => {
+            iframe.contentWindow.onafterprint = () => {
+                document.body.removeChild(iframe);
+            };
         };
     };
 
@@ -172,6 +165,18 @@ export default function PrintBarcode({ variant, product, isOpen, onClose }) {
                             onChange={handleInputChange}
                             className=" w-full"
                             step="0.5"
+                            min="0"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Margin Halaman (mm)</label>
+                        <TextInput
+                            type="number"
+                            name="marginMm"
+                            value={printSettings.marginMm}
+                            onChange={handleInputChange}
+                            className=" w-full"
+                            step="1"
                             min="0"
                         />
                     </div>
