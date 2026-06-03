@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BarcodePrintConfigController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -86,6 +87,10 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/{return}',      [ReturnController::class, 'update'])->name('update');
             Route::delete('/{return}',   [ReturnController::class, 'destroy'])->name('destroy');
         });
+
+        // Barcode Print Config
+        Route::get('/barcode-print-config', [BarcodePrintConfigController::class, 'show'])->name('barcode-print-config.show');
+        Route::post('/barcode-print-config', [BarcodePrintConfigController::class, 'update'])->name('barcode-print-config.update');
 
         // Report
         Route::get('/report', [ReportController::class, 'index'])->name('report.index');

@@ -1,5 +1,5 @@
 import { Printer } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import Popup from "@/Components/Popup"
 import PrimaryButton from "@/Components/PrimaryButton"
@@ -17,18 +17,41 @@ function FieldNum({ label, name, value, onChange, step = "1", min = "0" }) {
     );
 }
 
+const DEFAULTS = {
+    qty:           1,
+    widthCm:       4,
+    heightCm:      1.5,
+    gapXMm:        4,
+    gapYMm:        4,
+    marginTopMm:   8,
+    marginRightMm: 8,
+    marginBottomMm:8,
+    marginLeftMm:  8,
+};
+
+function apiToState(c) {
+    return {
+        qty:            c.qty           ?? DEFAULTS.qty,
+        widthCm:        c.width_cm      ?? DEFAULTS.widthCm,
+        heightCm:       c.height_cm     ?? DEFAULTS.heightCm,
+        gapXMm:         c.gap_x_mm      ?? DEFAULTS.gapXMm,
+        gapYMm:         c.gap_y_mm      ?? DEFAULTS.gapYMm,
+        marginTopMm:    c.margin_top_mm    ?? DEFAULTS.marginTopMm,
+        marginRightMm:  c.margin_right_mm  ?? DEFAULTS.marginRightMm,
+        marginBottomMm: c.margin_bottom_mm ?? DEFAULTS.marginBottomMm,
+        marginLeftMm:   c.margin_left_mm   ?? DEFAULTS.marginLeftMm,
+    };
+}
+
 export default function PrintBarcode({ variant, isOpen, onClose }) {
-    const [s, setS] = useState({
-        qty:           1,
-        widthCm:       4,
-        heightCm:      1.5,
-        gapXMm:        4,
-        gapYMm:        4,
-        marginTopMm:   8,
-        marginRightMm: 8,
-        marginBottomMm:8,
-        marginLeftMm:  8,
-    });
+    const [s, setS] = useState(DEFAULTS);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        axios.get(route('admin.barcode-print-config.show'))
+            .then(res => setS(apiToState(res.data)))
+            .catch(() => {});
+    }, [isOpen]);
 
     const set = (e) => {
         const { name, value } = e.target;
@@ -53,6 +76,18 @@ export default function PrintBarcode({ variant, isOpen, onClose }) {
         if (isNaN(gapYMm) || gapYMm < 0)        return alert("Gap Y tidak valid.");
         if ([marginTopMm, marginRightMm, marginBottomMm, marginLeftMm].some(v => isNaN(v) || v < 0))
             return alert("Margin tidak valid.");
+
+        axios.post(route('admin.barcode-print-config.update'), {
+            qty,
+            width_cm:          widthCm,
+            height_cm:         heightCm,
+            gap_x_mm:          gapXMm,
+            gap_y_mm:          gapYMm,
+            margin_top_mm:     marginTopMm,
+            margin_right_mm:   marginRightMm,
+            margin_bottom_mm:  marginBottomMm,
+            margin_left_mm:    marginLeftMm,
+        }).catch(() => {});
 
         onClose();
 
