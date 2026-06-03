@@ -27,6 +27,31 @@ function computeTotal(items) {
     }, 0);
 }
 
+function recalcItemPrices(items, products, customerName) {
+    const variantProductMap = {};
+    products.forEach(p => p.variants.forEach(v => { variantProductMap[v.id] = p; }));
+
+    const productQtyMap = {};
+    items.forEach(item => {
+        const product = variantProductMap[item.variant_id];
+        if (!product) return;
+        productQtyMap[product.id] = (productQtyMap[product.id] || 0) + (Number(item.qty) || 0);
+    });
+
+    return items.map(item => {
+        const product = variantProductMap[item.variant_id];
+        if (!product) return item;
+        const totalQty   = productQtyMap[product.id] || 0;
+        const sorted     = [...(product.discounts ?? [])].sort((a, b) => b.min_qty - a.min_qty);
+        const tier       = sorted.find(d => totalQty >= d.min_qty) ?? null;
+        const isCustomer = !!customerName?.trim();
+        const newPrice   = tier
+            ? (isCustomer ? tier.customer_price : tier.normal_price)
+            : (isCustomer ? product.customer_price : product.normal_price);
+        return { ...item, price: newPrice };
+    });
+}
+
 export default function CreateEdit({ mode, isOpen, onClose, sale, products, customers }) {
     const { auth } = usePage().props;
     const isCashier          = auth?.user?.role !== 'Admin';
@@ -77,17 +102,17 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
     function handleItemSave(type, item) {
         const setter = type === 'Sell' ? setSoldItems : setReturnItems;
         setter(prev => {
-            const exists = prev.some(i => i._localId === item._localId);
-            if (exists) {
-                return prev.map(i => i._localId === item._localId ? item : i);
-            }
-            return [...prev, { ...item, _localId: Date.now() }];
+            const exists  = prev.some(i => i._localId === item._localId);
+            const updated = exists
+                ? prev.map(i => i._localId === item._localId ? item : i)
+                : [...prev, { ...item, _localId: Date.now() }];
+            return recalcItemPrices(updated, products, data.customer_name);
         });
     }
 
     function handleItemRemove(type, localId) {
         const setter = type === 'Sell' ? setSoldItems : setReturnItems;
-        setter(prev => prev.filter(i => i._localId !== localId));
+        setter(prev => recalcItemPrices(prev.filter(i => i._localId !== localId), products, data.customer_name));
     }
 
     const submit = (e) => {
@@ -312,6 +337,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                     item={itemPopup.item}
                     products={products}
                     customerName={data.customer_name}
+                    existingItems={itemPopup.type === 'Sell' ? soldItems : returnItems}
                     onClose={() => setItemPopup(null)}
                     onSave={(item) => {
                         handleItemSave(itemPopup.type, item);

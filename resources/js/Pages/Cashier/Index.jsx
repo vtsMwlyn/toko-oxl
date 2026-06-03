@@ -31,11 +31,35 @@ function resolveAutoPrice(variant, discountTier, customerName) {
     return isCustomer ? variant.product.customer_price : variant.product.normal_price;
 }
 
+function recalcItemPrices(items, products, customerName) {
+    const variantProductMap = {};
+    products.forEach(p => p.variants.forEach(v => { variantProductMap[v.id] = p; }));
+
+    const productQtyMap = {};
+    items.forEach(item => {
+        const product = variantProductMap[item.variant_id];
+        if (!product) return;
+        productQtyMap[product.id] = (productQtyMap[product.id] || 0) + (Number(item.qty) || 0);
+    });
+
+    return items.map(item => {
+        const product = variantProductMap[item.variant_id];
+        if (!product) return item;
+        const totalQty  = productQtyMap[product.id] || 0;
+        const tier      = resolveDiscount(product.discounts, totalQty);
+        const isCustomer = !!customerName?.trim();
+        const newPrice  = tier
+            ? (isCustomer ? tier.customer_price : tier.normal_price)
+            : (isCustomer ? product.customer_price : product.normal_price);
+        return { ...item, price: newPrice };
+    });
+}
+
 function blankItem() {
     return { selectedOption: null, qty: 1, price: 0, discount: 0, priceTouched: false };
 }
 
-function ItemInputRow({ label, type, products, customerName, onAdd }) {
+function ItemInputRow({ label, type, products, customerName, onAdd, existingItems = [] }) {
     const [field,      setField]      = useState(blankItem());
     const [errors,     setErrors]     = useState({});
     const [barcodeVal, setBarcodeVal] = useState('');
@@ -52,21 +76,32 @@ function ItemInputRow({ label, type, products, customerName, onAdd }) {
         }))
     );
 
-    const matched      = field.selectedOption?.variant ?? null;
-    const discountTier = resolveDiscount(matched?.product?.discounts, field.qty);
+    const matched = field.selectedOption?.variant ?? null;
+
+    const effectiveQty = (() => {
+        if (!matched) return Number(field.qty) || 0;
+        const productId = matched.product.id;
+        const otherQty = existingItems
+            .filter(i => products.find(p => p.id === productId)?.variants.some(v => v.id === i.variant_id))
+            .reduce((sum, i) => sum + (Number(i.qty) || 0), 0);
+        return otherQty + (Number(field.qty) || 0);
+    })();
+
+    const discountTier = resolveDiscount(matched?.product?.discounts, effectiveQty);
 
     useEffect(() => {
         if (field.priceTouched) return;
         const auto = resolveAutoPrice(matched, discountTier, customerName);
         setField(f => ({ ...f, price: auto ?? '' }));
-    }, [matched, field.qty, customerName, field.priceTouched]);
+    }, [matched, field.qty, customerName, field.priceTouched, existingItems]);
 
     const priceHint = (() => {
         if (!matched || field.priceTouched) return null;
         const isCustomer = !!customerName?.trim();
+        const totalNote  = effectiveQty > (Number(field.qty) || 0) ? ` (total ${effectiveQty} pcs)` : '';
         if (discountTier) return isCustomer
-            ? `Harga diskon langganan (min. ${discountTier.min_qty} pcs)`
-            : `Harga diskon normal (min. ${discountTier.min_qty} pcs)`;
+            ? `Harga diskon langganan (min. ${discountTier.min_qty} pcs${totalNote})`
+            : `Harga diskon normal (min. ${discountTier.min_qty} pcs${totalNote})`;
         return isCustomer ? 'Harga langganan' : 'Harga normal';
     })();
 
@@ -326,12 +361,12 @@ export default function Index({ products, customers, auth }) {
 
     function addItem(type, item) {
         const setter = type === 'Sell' ? setSoldItems : setReturnItems;
-        setter(prev => [...prev, item]);
+        setter(prev => recalcItemPrices([...prev, item], products, data.customer_name));
     }
 
     function removeItem(type, localId) {
         const setter = type === 'Sell' ? setSoldItems : setReturnItems;
-        setter(prev => prev.filter(i => i._localId !== localId));
+        setter(prev => recalcItemPrices(prev.filter(i => i._localId !== localId), products, data.customer_name));
     }
 
     function resetForm() {
@@ -434,6 +469,7 @@ export default function Index({ products, customers, auth }) {
                             type="Sell"
                             products={products}
                             customerName={data.customer_name}
+                            existingItems={soldItems}
                             onAdd={item => addItem('Sell', item)}
                         />
                         {soldItems.length > 0 && (
@@ -473,6 +509,7 @@ export default function Index({ products, customers, auth }) {
                                     type="Return"
                                     products={products}
                                     customerName={data.customer_name}
+                                    existingItems={returnItems}
                                     onAdd={item => addItem('Return', item)}
                                 />
                                 {returnItems.length > 0 && (

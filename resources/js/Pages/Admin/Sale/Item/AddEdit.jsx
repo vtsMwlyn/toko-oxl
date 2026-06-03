@@ -26,7 +26,7 @@ function resolvePrice(variant, discountTier, customerName) {
         : variant.product.normal_price;
 }
 
-export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, products, customerName }) {
+export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, products, customerName, existingItems = [] }) {
     const [errors, setErrors] = useState({});
 
     const variantOptions = products.flatMap(product =>
@@ -48,8 +48,19 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
 
     const [priceTouched, setPriceTouched] = useState(false);
 
-    const matched      = selectedOption?.variant ?? null;
-    const discountTier = resolveDiscount(matched?.product?.discounts, qty);
+    const matched = selectedOption?.variant ?? null;
+
+    const effectiveQty = (() => {
+        if (!matched) return Number(qty) || 0;
+        const productId = matched.product.id;
+        const otherQty = existingItems
+            .filter(i => i._localId !== item?._localId)
+            .filter(i => products.find(p => p.id === productId)?.variants.some(v => v.id === i.variant_id))
+            .reduce((sum, i) => sum + (Number(i.qty) || 0), 0);
+        return otherQty + (Number(qty) || 0);
+    })();
+
+    const discountTier = resolveDiscount(matched?.product?.discounts, effectiveQty);
 
     useEffect(() => {
         if (!matched) {
@@ -59,7 +70,7 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
         if (!priceTouched) {
             setPrice(resolvePrice(matched, discountTier, customerName) ?? '');
         }
-    }, [matched, qty, customerName]);
+    }, [matched, qty, customerName, existingItems]);
 
     function handleVariantChange(option) {
         setSelectedOption(option);
@@ -109,10 +120,11 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
     const priceHint = (() => {
         if (!matched || priceTouched) return null;
         const isCustomer = !!customerName?.trim();
+        const totalNote  = effectiveQty > (Number(qty) || 0) ? ` (total ${effectiveQty} pcs)` : '';
         if (discountTier) {
             return isCustomer
-                ? `Harga diskon langganan (min. ${discountTier.min_qty} pcs)`
-                : `Harga diskon normal (min. ${discountTier.min_qty} pcs)`;
+                ? `Harga diskon langganan (min. ${discountTier.min_qty} pcs${totalNote})`
+                : `Harga diskon normal (min. ${discountTier.min_qty} pcs${totalNote})`;
         }
         return isCustomer ? 'Harga langganan diterapkan' : 'Harga normal diterapkan';
     })();
