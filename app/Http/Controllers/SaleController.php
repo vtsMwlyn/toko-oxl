@@ -218,6 +218,33 @@ class SaleController extends Controller
         return back()->with('success', 'Status penjualan diubah menjadi Fixed.');
     }
 
+    public function destroyByRange(Request $request)
+    {
+        $validated = $request->validate([
+            'from'          => ['required', 'date'],
+            'to'            => ['required', 'date', 'after_or_equal:from'],
+            'customer_name' => ['nullable', 'string'],
+        ]);
+
+        $sales = Sale::with('items')
+            ->whereDate('date', '>=', $validated['from'])
+            ->whereDate('date', '<=', $validated['to'])
+            ->when($validated['customer_name'] ?? null, fn ($q, $name) => $q->where('customer_name', $name))
+            ->get();
+
+        $count = $sales->count();
+
+        foreach ($sales as $sale) {
+            if ($sale->status === 'Fixed') {
+                $this->applyStockDelta($sale->items, -1);
+            }
+            $sale->items()->delete();
+            $sale->delete();
+        }
+
+        return back()->with('success', "{$count} penjualan berhasil dihapus.");
+    }
+
     public function exportByProduct(Request $request)
     {
         $percent  = (float) $request->input('qty_percent', 100);

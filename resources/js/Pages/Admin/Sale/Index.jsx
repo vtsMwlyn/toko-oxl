@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage, router } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Eye, ClipboardCheck } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, ClipboardCheck, CalendarX } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 
 import Table from '@/Components/Table';
@@ -11,6 +11,7 @@ import Show from './Show';
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
 import BatchDelete from './BatchDelete';
+import BatchDeleteByRange from './BatchDeleteByRange';
 
 import PrintReceipt from '@/Pages/PrintReceipt';
 import SetFixed from './SetFixed';
@@ -215,10 +216,11 @@ function DateSalesModal({
 export default function Index({ today_sales, history_sales, from: initialFrom, to: initialTo, products, customers }) {
     const { auth } = usePage().props;
 
-    const [isViewing,  setIsViewing]  = useState(null);
-    const [isCreating, setIsCreating] = useState(false);
-    const [isEditing,  setIsEditing]  = useState(null);
-    const [isDeleting, setIsDeleting] = useState(null);
+    const [isViewing,          setIsViewing]          = useState(null);
+    const [isCreating,         setIsCreating]         = useState(false);
+    const [isEditing,          setIsEditing]          = useState(null);
+    const [isDeleting,         setIsDeleting]         = useState(null);
+    const [isDeletingByRange,  setIsDeletingByRange]  = useState(false);
 
     const [isSettingFixed, setIsSettingFixed] = useState(false);
 
@@ -337,6 +339,13 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                             <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                                 Tambah Penjualan
                             </PrimaryButton>
+                            <PrimaryButton
+                                icon={<CalendarX className="size-4" />} type="button"
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                                onClick={() => setIsDeletingByRange(true)}
+                            >
+                                Hapus Rentang
+                            </PrimaryButton>
 
                             {selectedIds.length > 0 && selectedTab !== 'All' && (
                                 <PrimaryButton
@@ -355,7 +364,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                                     className="bg-red-600 hover:bg-red-700 text-white"
                                     onClick={() => openBatchDelete(selectedDateGroupIds)}
                                 >
-                                    Hapus {selectedDates.length}h / {selectedDateGroupIds.length}tx
+                                    Hapus {selectedDates.length}/{selectedDateGroupIds.length}
                                 </PrimaryButton>
                             )}
                         </div>
@@ -599,6 +608,12 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                     onClose={() => { closeBatchDelete(); reload(); }}
                     saleIds={batchIds}
                     onSuccess={() => { setSelectedIds([]); setSelectedDates([]); }}
+                />
+            )}
+            {isDeletingByRange && (
+                <BatchDeleteByRange
+                    isOpen={isDeletingByRange}
+                    onClose={() => { setIsDeletingByRange(false); reload(); }}
                 />
             )}
         </AuthenticatedLayout>

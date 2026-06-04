@@ -168,6 +168,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                             type="date"
                             value={dateFrom}
                             onChange={e => setDateFrom(e.target.value)}
+                            onClick={e => { try { e.target.showPicker(); } catch {} }}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                         />
                     </div>
@@ -177,6 +178,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                             type="date"
                             value={dateTo}
                             onChange={e => setDateTo(e.target.value)}
+                            onClick={e => { try { e.target.showPicker(); } catch {} }}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                         />
                     </div>

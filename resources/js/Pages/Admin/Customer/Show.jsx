@@ -8,6 +8,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 
 import Delete from '@/Pages/Admin/Sale/Delete';
 import BatchDelete from '@/Pages/Admin/Sale/BatchDelete';
+import BatchDeleteByRange from '@/Pages/Admin/Sale/BatchDeleteByRange';
 
 import formatPrice from '@/Helpers/formatPrice';
 import formatDate from '@/Helpers/formatDate';
@@ -43,9 +44,10 @@ function StatCard({ label, value }) {
 }
 
 export default function Show({ isOpen, onClose, customer, sales, totalOmzet, totalSales }) {
-    const [selectedIds,     setSelectedIds]     = useState([]);
-    const [isDeleting,      setIsDeleting]      = useState(null);  // single sale
-    const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+    const [selectedIds,          setSelectedIds]          = useState([]);
+    const [isDeleting,           setIsDeleting]           = useState(null);
+    const [isBatchDeleting,      setIsBatchDeleting]      = useState(false);
+    const [isDeletingByRange,    setIsDeletingByRange]    = useState(false);
 
     if (!customer) return null;
 
@@ -96,16 +98,26 @@ export default function Show({ isOpen, onClose, customer, sales, totalOmzet, tot
                         </span>
                     </SectionTitle>
 
-                    {selectedIds.length > 0 && (
+                    <div className="flex items-center gap-2">
+                        {selectedIds.length > 0 && (
+                            <PrimaryButton
+                                icon={<Trash2 className="size-4" />}
+                                type="button"
+                                className="bg-red-600 hover:bg-red-700 text-white text-xs py-1 px-3"
+                                onClick={() => setIsBatchDeleting(true)}
+                            >
+                                Hapus ({selectedIds.length})
+                            </PrimaryButton>
+                        )}
                         <PrimaryButton
                             icon={<Trash2 className="size-4" />}
                             type="button"
                             className="bg-red-600 hover:bg-red-700 text-white text-xs py-1 px-3"
-                            onClick={() => setIsBatchDeleting(true)}
+                            onClick={() => setIsDeletingByRange(true)}
                         >
-                            Hapus ({selectedIds.length})
+                            Hapus Rentang
                         </PrimaryButton>
-                    )}
+                    </div>
                 </div>
 
                 <Table
@@ -165,13 +177,22 @@ export default function Show({ isOpen, onClose, customer, sales, totalOmzet, tot
                 />
             )}
 
-            {/* Batch delete */}
+            {/* Batch delete by selection */}
             {isBatchDeleting && (
                 <BatchDelete
                     isOpen={isBatchDeleting}
                     onClose={() => setIsBatchDeleting(false)}
                     saleIds={selectedIds}
                     onSuccess={() => setSelectedIds([])}
+                />
+            )}
+
+            {/* Batch delete by date range */}
+            {isDeletingByRange && (
+                <BatchDeleteByRange
+                    isOpen={isDeletingByRange}
+                    onClose={() => setIsDeletingByRange(false)}
+                    customerName={customer.name}
                 />
             )}
         </>

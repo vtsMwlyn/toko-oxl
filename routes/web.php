@@ -72,8 +72,9 @@ Route::middleware(['auth'])->group(function () {
         // Sale
         Route::prefix('/sale')->name('sale.')->group(function(){
             Route::post('/', [SaleController::class, 'store'])->name('store');
-            Route::delete('/{sale}', [SaleController::class, 'destroy'])->name('destroy');
             Route::delete('/', [SaleController::class, 'destroyBatch'])->name('destroyBatch');
+            Route::delete('/by-range', [SaleController::class, 'destroyByRange'])->name('destroyByRange');
+            Route::delete('/{sale}', [SaleController::class, 'destroy'])->name('destroy');
 
             Route::get('/export/by-product',                  [SaleController::class, 'exportByProduct'])->name('export.byProduct');
             Route::get('/export/by-sale',                     [SaleController::class, 'exportBySale'])->name('export.bySale');
