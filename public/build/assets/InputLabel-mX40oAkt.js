@@ -1,0 +1,1 @@
+import{j as e}from"./app-RU9vQ0i5.js";function x({value:t,className:s="",required:r=!0,children:a,...n}){return e.jsxs("label",{...n,className:"block text-sm font-medium text-gray-700 "+s,children:[t||a,r&&e.jsx("span",{className:"text-red-500",children:"*"})]})}export{x as I};
