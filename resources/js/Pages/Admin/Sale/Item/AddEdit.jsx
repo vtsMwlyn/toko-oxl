@@ -32,7 +32,7 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
     const variantOptions = products.flatMap(product =>
         product.variants.map(variant => ({
             value: variant.id,
-            label: `${variant.code} — ${product.name}${variant.name ? ` (${variant.name})` : ''}`,
+            label: `[${variant.code}] — ${product.name}${variant.name ? ` ${variant.name}` : ''}`,
             variant: { ...variant, product },
         }))
     );
