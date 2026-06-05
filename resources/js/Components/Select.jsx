@@ -2,6 +2,12 @@ import { forwardRef } from "react";
 import ReactSelect from "react-select";
 import CreatableSelect from "react-select/creatable";
 
+const wordAnywhereFilter = (option, inputValue) => {
+    if (!inputValue) return true;
+    const label = option.label.toLowerCase();
+    return inputValue.toLowerCase().trim().split(/\s+/).every(word => label.includes(word));
+};
+
 export default forwardRef(function Select(
     {
         options = [],
@@ -19,6 +25,7 @@ export default forwardRef(function Select(
         creatable = false,
         formatCreateLabel,
         noOptionsMessage,
+        filterOption = wordAnywhereFilter,
         ...props
     },
     ref
@@ -65,6 +72,7 @@ export default forwardRef(function Select(
             className={className}
             formatCreateLabel={formatCreateLabel ?? ((val) => `Gunakan: "${val}"`)}
             noOptionsMessage={noOptionsMessage ?? (() => 'Tidak ada pilihan')}
+            filterOption={filterOption}
             classNames={{
                 control: (state) =>
                     `bg-white border-2 rounded-2xl shadow-sm px-1 py-0.5 transition ${
