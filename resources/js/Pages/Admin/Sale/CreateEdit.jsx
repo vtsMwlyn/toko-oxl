@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 
@@ -93,6 +93,11 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         status:        sale?.status        ?? 'Draft',
         type:          sale?.type          ?? 'Offline',
     });
+
+    useEffect(() => {
+        setSoldItems(prev => recalcItemPrices(prev, products, data.customer_name));
+        setReturnItems(prev => recalcItemPrices(prev, products, data.customer_name));
+    }, [data.customer_name]);
 
     function handleCustomerChange(option) {
         setCustomerOption(option);

@@ -354,6 +354,11 @@ export default function Index({ products, customers, auth }) {
         };
     }, [reload]);
 
+    useEffect(() => {
+        setSoldItems(prev => recalcItemPrices(prev, products, data.customer_name));
+        setReturnItems(prev => recalcItemPrices(prev, products, data.customer_name));
+    }, [data.customer_name]);
+
     function handleCustomerChange(option) {
         setCustomerOption(option);
         setData('customer_name', option?.value ?? '');
