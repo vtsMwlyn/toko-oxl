@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { TrendingUp, TrendingDown, BarChart2, Search, FileDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -113,12 +113,13 @@ function OmzetChart({ data }) {
     );
 }
 
-export default function Index({ from, to, omzet_per_day, summary, variant_stats, products }) {
+export default function Index({ from, to, search: initialSearch, omzet_per_day, summary, variant_stats, products }) {
     const [dateFrom, setDateFrom] = useState(from);
     const [dateTo,   setDateTo]   = useState(to);
-    const [search,   setSearch]   = useState('');
+    const [search,   setSearch]   = useState(initialSearch ?? '');
+    const isFirstRender = useRef(true);
 
-    const [exportType,               setExportType]               = useState(null);
+    const [exportType,                setExportType]                = useState(null);
     const [isExportingSpecificProduct, setIsExportingSpecificProduct] = useState(false);
     const [statsPage, setStatsPage] = useState(1);
 
@@ -135,25 +136,26 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
         };
     }, [reload]);
 
+    useEffect(() => {
+        if (isFirstRender.current) { isFirstRender.current = false; return; }
+        setStatsPage(1);
+        const timer = setTimeout(() => {
+            router.get(route('admin.report.index'), { from: dateFrom, to: dateTo, ...(search ? { search } : {}) }, { preserveState: true, preserveScroll: true });
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [search]);
+
     function handleFilter(e) {
         e.preventDefault();
-        router.get(route('admin.report.index'), { from: dateFrom, to: dateTo }, {
+        router.get(route('admin.report.index'), { from: dateFrom, to: dateTo, ...(search ? { search } : {}) }, {
             preserveState: true,
             preserveScroll: true,
         });
     }
 
-    useEffect(() => { setStatsPage(1); }, [search]);
-
-    const filteredStats = variant_stats.filter(p =>
-        p.product_name.toLowerCase().includes(search.toLowerCase()) ||
-        p.variant_name.toLowerCase().includes(search.toLowerCase()) ||
-        p.code.toLowerCase().includes(search.toLowerCase())
-    );
-
     const STATS_PER_PAGE = 20;
-    const statsTotalPages = Math.ceil(filteredStats.length / STATS_PER_PAGE);
-    const paginatedStats  = filteredStats.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE);
+    const statsTotalPages = Math.ceil(variant_stats.length / STATS_PER_PAGE);
+    const paginatedStats  = variant_stats.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE);
 
     return (
         <AuthenticatedLayout title="Laporan">
@@ -231,7 +233,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                 </div>
 
                 <Table
-                    isEmpty={filteredStats.length === 0}
+                    isEmpty={variant_stats.length === 0}
                     headers={['Kode', 'Nama Produk', 'Varian', 'Terjual', 'Retur', 'Net Qty', 'Pendapatan']}
                     disableHeight={true}
                 >
@@ -267,7 +269,7 @@ export default function Index({ from, to, omzet_per_day, summary, variant_stats,
                 {statsTotalPages > 1 && (
                     <div className="flex items-center justify-between mt-4 px-1">
                         <p className="text-xs text-slate-400">
-                            {(statsPage - 1) * STATS_PER_PAGE + 1}–{Math.min(statsPage * STATS_PER_PAGE, filteredStats.length)} dari {filteredStats.length} data
+                            {(statsPage - 1) * STATS_PER_PAGE + 1}–{Math.min(statsPage * STATS_PER_PAGE, variant_stats.length)} dari {variant_stats.length} data
                         </p>
                         <div className="flex items-center gap-2">
                             <button type="button" onClick={() => setStatsPage(p => Math.max(1, p - 1))} disabled={statsPage === 1}

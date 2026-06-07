@@ -12,9 +12,16 @@ use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $customers = Customer::orderBy('name')->paginate(20)->through(function ($customer) {
+        $search = $request->input('search');
+
+        $customers = Customer::orderBy('name')
+            ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
+                $q->where('name',  'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            }))
+            ->paginate(20)->through(function ($customer) {
             $sales = Sale::where('customer_name', $customer->name)
                 ->where('status', 'Fixed')
                 ->with('items')
@@ -37,6 +44,7 @@ class CustomerController extends Controller
 
         return Inertia::render('Admin/Customer/Index', [
             'customers' => $customers,
+            'search'    => $search,
         ]);
     }
 

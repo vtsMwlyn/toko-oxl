@@ -13,8 +13,9 @@ class ReportController extends Controller
 {
     public function index(Request $request)
     {
-        $from = $request->input('from', now()->startOfMonth()->toDateString());
-        $to   = $request->input('to',   now()->toDateString());
+        $from   = $request->input('from', now()->startOfMonth()->toDateString());
+        $to     = $request->input('to',   now()->toDateString());
+        $search = $request->input('search');
 
         // ── Omzet per day in range ────────────────────────────────────────────
         $sales = Sale::where('status', 'Fixed')
@@ -75,11 +76,20 @@ class ReportController extends Controller
             ];
         })
         ->sortByDesc('net_revenue')
+        ->when($search, function ($c) use ($search) {
+            $s = strtolower($search);
+            return $c->filter(fn ($row) =>
+                str_contains(strtolower($row['product_name']), $s) ||
+                str_contains(strtolower($row['variant_name']), $s) ||
+                str_contains(strtolower($row['code']),         $s)
+            );
+        })
         ->values();
 
         return Inertia::render('Admin/Report/Index', [
             'from'          => $from,
             'to'            => $to,
+            'search'        => $search,
             'omzet_per_day' => $omzetPerDay,
             'summary' => [
                 'total_omzet'   => $totalOmzet,

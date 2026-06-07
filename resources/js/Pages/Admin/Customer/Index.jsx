@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -12,16 +12,25 @@ import CreateEdit from './CreateEdit';
 import Delete from './Delete';
 import Pagination from '@/Components/Pagination';
 
-export default function Index({ customers }) {
+export default function Index({ customers, search: initialSearch }) {
     const [isViewing,  setIsViewing]  = useState(null);
     const [isCreating, setIsCreating] = useState(false);
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
-    const [search,     setSearch]     = useState('');
+    const [search,     setSearch]     = useState(initialSearch ?? '');
+    const isFirstRender = useRef(true);
 
     const reload = useCallback(() => {
         router.reload({ only: ['customers'], preserveScroll: true, preserveState: true });
     }, []);
+
+    useEffect(() => {
+        if (isFirstRender.current) { isFirstRender.current = false; return; }
+        const timer = setTimeout(() => {
+            router.get(route('admin.customer.index'), search ? { search } : {}, { preserveState: true, preserveScroll: true });
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [search]);
 
     // Keep the open customer popup in sync when customers prop refreshes
     useEffect(() => {
@@ -40,11 +49,6 @@ export default function Index({ customers }) {
         };
     }, [reload]);
 
-    const filtered = customers.data.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        (c.phone ?? '').includes(search)
-    );
-
     return (
         <AuthenticatedLayout title="Pelanggan">
             <Head title="Pelanggan" />
@@ -62,11 +66,11 @@ export default function Index({ customers }) {
             </div>
 
             <Table
-                isEmpty={filtered.length === 0}
+                isEmpty={customers.data.length === 0}
                 headers={['Nama', 'Telepon', 'Alamat', 'Catatan', 'Aksi']}
                 className="mt-4"
             >
-                {filtered.map((customer, index) => (
+                {customers.data.map((customer, index) => (
                     <tr key={index} className="hover:bg-slate-200">
                         <td className="font-medium">{customer.name}</td>
                         <td>{customer.phone || <span className="text-slate-400">—</span>}</td>

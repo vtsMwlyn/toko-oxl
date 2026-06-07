@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -16,10 +16,20 @@ const roleBadge = {
     User:  'bg-slate-100 text-slate-600',
 };
 
-export default function Index({ users }) {
+export default function Index({ users, search: initialSearch }) {
     const [isCreating, setIsCreating] = useState(false);
-    const [isEditing, setIsEditing] = useState(null);
+    const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
+    const [search,     setSearch]     = useState(initialSearch ?? '');
+    const isFirstRender = useRef(true);
+
+    useEffect(() => {
+        if (isFirstRender.current) { isFirstRender.current = false; return; }
+        const timer = setTimeout(() => {
+            router.get(route('admin.user.index'), search ? { search } : {}, { preserveState: true, preserveScroll: true });
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [search]);
 
     const reload = useCallback(() => {
         router.reload({ only: ['users'], preserveScroll: true, preserveState: true });
@@ -42,7 +52,7 @@ export default function Index({ users }) {
                 <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
                     Tambah Pengguna
                 </PrimaryButton>
-                <TextInput placeholder="Cari pengguna..." className="w-full sm:w-auto" />
+                <TextInput placeholder="Cari pengguna..." value={search} onChange={e => setSearch(e.target.value)} className="w-full sm:w-auto" />
             </div>
 
             <Table
