@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
 import { Plus, Trash2, ScanBarcode, ChevronDown, ChevronUp } from 'lucide-react';
@@ -68,13 +68,18 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
     const qtyRef     = useRef(null);
     const barcodeRef = useRef(null);
 
-    const variantOptions = products.flatMap(product =>
+    const variantOptionsKey = products
+        .map(p => p.id + ':' + p.variants.map(v => `${v.id}:${v.code}:${v.name}:${v.stock}`).join(','))
+        .join('|');
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const variantOptions = useMemo(() => products.flatMap(product =>
         product.variants.map(variant => ({
             value:   variant.id,
             label:   `[${variant.code}] — ${product.name}${variant.name ? ` ${variant.name}` : ''}`,
             variant: { ...variant, product },
         }))
-    );
+    ), [variantOptionsKey]);
 
     const matched = field.selectedOption?.variant ?? null;
 
