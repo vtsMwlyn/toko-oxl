@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Traits\DeductsStock;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,7 @@ use Inertia\Inertia;
 
 class CashierController extends Controller
 {
+    use DeductsStock;
     public function index()
     {
         return Inertia::render('Cashier/Index', [
@@ -56,6 +58,10 @@ class CashierController extends Controller
                 'qty'        => $item['qty'],
                 'type'       => $item['type'],
             ]);
+        }
+
+        if ($validatedData['status'] === 'Fixed') {
+            $this->applyStockDelta($validatedData['items'] ?? [], +1, $sale);
         }
 
         return back()->with('queue_number', $sale->queue_number);

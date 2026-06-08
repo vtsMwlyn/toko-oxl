@@ -13,6 +13,7 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Variant;
+use App\Traits\DeductsStock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -20,6 +21,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SaleController extends Controller
 {
+    use DeductsStock;
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -43,10 +45,29 @@ class SaleController extends Controller
             ->get()
             ->map($mapSale);
 
-        $historyQuery = $baseQuery()->orderByDesc('date')->orderByDesc('time');
-        if ($from) $historyQuery->where('date', '>=', $from);
-        if ($to)   $historyQuery->where('date', '<=', $to);
-        $historySales = $historyQuery->paginate(20)->through($mapSale);
+        // Paginate by distinct dates (20 dates per page)
+        $paginatedDates = Sale::select('date')
+            ->when($user->role !== 'Admin', fn ($q) => $q->where('user_id', $user->id))
+            ->when($from, fn ($q) => $q->where('date', '>=', $from))
+            ->when($to,   fn ($q) => $q->where('date', '<=', $to))
+            ->groupBy('date')
+            ->orderByDesc('date')
+            ->paginate(20);
+
+        // Load all sales for the current page's dates
+        $dateValues = collect($paginatedDates->items())->pluck('date');
+
+        $salesForPage = $baseQuery()
+            ->whereIn('date', $dateValues)
+            ->orderByDesc('time')
+            ->get()
+            ->map($mapSale)
+            ->groupBy('date');
+
+        $historySales = $paginatedDates->through(fn ($row) => [
+            'date'  => $row->date,
+            'sales' => ($salesForPage[$row->date] ?? collect())->values(),
+        ]);
 
         return Inertia::render('Admin/Sale/Index', [
             'today_sales'   => $todaySales,
@@ -89,7 +110,7 @@ class SaleController extends Controller
         $this->syncItems($sale, $request->items ?? []);
 
         if ($validatedData['status'] === 'Fixed') {
-            $this->applyStockDelta($request->items ?? [], +1);
+            $this->applyStockDelta($request->items ?? [], +1, $sale);
         }
 
         return back()->with('success', 'Penjualan berhasil disimpan.');
@@ -152,7 +173,7 @@ class SaleController extends Controller
         $this->syncItems($sale, $validatedData['items'] ?? []);
 
         if ($newStatus === 'Fixed') {
-            $this->applyStockDelta($validatedData['items'] ?? [], +1);
+            $this->applyStockDelta($validatedData['items'] ?? [], +1, $sale);
         }
 
         // 4. Log
@@ -206,7 +227,7 @@ class SaleController extends Controller
     public function set_fixed(Sale $sale)
     {
         $sale->load('items');
-        $this->applyStockDelta($sale->items, +1);
+        $this->applyStockDelta($sale->items, +1, $sale);
 
         $sale->update(['status' => 'Fixed']);
 
@@ -304,16 +325,5 @@ class SaleController extends Controller
         }
     }
 
-    // $sign = +1 to apply (store), -1 to reverse (update/delete)
-    private function applyStockDelta(iterable $items, int $sign): void
-    {
-        foreach ($items as $item) {
-            [$variantId, $qty, $type] = is_array($item)
-                ? [$item['variant_id'], $item['qty'], $item['type']]
-                : [$item->variant_id,  $item->qty,   $item->type];
-
-            $delta = ($type === 'Sell' ? -$qty : $qty) * $sign;
-            Variant::where('id', $variantId)->increment('stock', $delta);
-        }
-    }
 }
+

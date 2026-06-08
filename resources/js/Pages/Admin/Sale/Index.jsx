@@ -267,13 +267,11 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
         };
     }, [reload]);
 
-    const salesByDate = (history_sales.data ?? []).reduce((acc, sale) => {
-        const dateKey = sale.date?.slice(0, 10) ?? 'Unknown';
-        if (!acc[dateKey]) acc[dateKey] = [];
-        acc[dateKey].push(sale);
-        return acc;
-    }, {});
-    const sortedDates = Object.keys(salesByDate).sort((a, b) => b.localeCompare(a));
+    // history_sales.data is [{date, sales:[...]}, ...] — already sorted desc by the backend
+    const salesByDate = Object.fromEntries(
+        (history_sales.data ?? []).map(group => [group.date, group.sales ?? []])
+    );
+    const sortedDates = (history_sales.data ?? []).map(group => group.date);
 
     const visibleSales = selectedTab === 'All'
         ? []
@@ -408,7 +406,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                         )}
                     </div>
 
-                    <div className="w-full sm:w-auto grid grid-cols-3 mt-6 gap-1">
+                    <div className="w-full sm:w-1/3 grid grid-cols-3 mt-6 gap-1">
                         <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Fixed' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('Fixed')}>Fixed</button>
                         <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Draft' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('Draft')}>Draft</button>
                         <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'All' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('All')}>Riwayat</button>
@@ -585,7 +583,10 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
                 <Show
                     isOpen={!!isViewing}
                     onClose={() => setIsViewing(null)}
-                    sale={[...today_sales, ...(history_sales.data ?? [])].find(s => s.id === isViewing) ?? null}
+                    sale={[
+                        ...today_sales,
+                        ...(history_sales.data ?? []).flatMap(g => g.sales ?? []),
+                    ].find(s => s.id === isViewing) ?? null}
                     products={products}
                 />
             )}

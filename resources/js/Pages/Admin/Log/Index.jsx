@@ -71,6 +71,7 @@ function ChangesPills({ changes }) {
         added:   changes?.filter(c => c.type === 'added') ?? [],
         removed: changes?.filter(c => c.type === 'removed') ?? [],
         updated: changes?.filter(c => c.type === 'updated') ?? [],
+        stock:   changes?.filter(c => c.type === 'stock') ?? [],
     };
 
     const hasChanges = Object.values(grouped).some(g => g.length > 0);
@@ -78,6 +79,27 @@ function ChangesPills({ changes }) {
 
     return (
         <div className="border-t border-gray-100 pt-3 mt-1 flex flex-col gap-3">
+
+            {grouped.stock.length > 0 && (
+                <div>
+                    <SectionLabel>Perubahan stok</SectionLabel>
+                    <div className="flex flex-wrap gap-1.5">
+                        {grouped.stock.map((c, i) => (
+                            <span
+                                key={`stock-${i}`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200"
+                            >
+                                {c.product_name ?? '?'} · {c.variant_name ?? '?'}
+                                <span className="opacity-60 mx-0.5">stok:</span>
+                                {c.old} → {c.new}
+                                <span className={`font-semibold ml-0.5 ${c.delta < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                    ({c.delta > 0 ? '+' : ''}{c.delta})
+                                </span>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {grouped.fields.length > 0 && (
                 <div>
