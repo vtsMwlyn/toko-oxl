@@ -196,11 +196,12 @@ export default function PrintReceipt({ icon = false, sale, products, onPrinted }
         `);
         win.document.close();
         win.focus();
-        // Small delay so fonts and layout settle before the print dialog opens
         setTimeout(() => {
+            win.onafterprint = () => {
+                win.close();
+                onPrinted?.();
+            };
             win.print();
-            win.close();
-            onPrinted?.();
         }, 250);
     }
 
