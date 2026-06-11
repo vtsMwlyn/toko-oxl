@@ -325,9 +325,12 @@ export default function Index({ products, customers, auth }) {
         type:          'Offline',
     });
 
-    const customerOptions = (customers ?? []).map(c => ({
-        value: c.name, label: c.name, customer: c,
-    }));
+    const customersKey = (customers ?? []).map(c => `${c.id}:${c.name}`).join('|');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const customerOptions = useMemo(
+        () => (customers ?? []).map(c => ({ value: c.name, label: c.name, customer: c })),
+        [customersKey]
+    );
 
     const [customerOption, setCustomerOption] = useState(null);
 
@@ -573,7 +576,6 @@ export default function Index({ products, customers, auth }) {
                                 onChange={handleCustomerChange}
                                 onInputChange={(val, { action }) => {
                                     if (action === 'input-change') {
-                                        setCustomerOption({ value: val, label: val });
                                         setData('customer_name', val);
                                     }
                                 }}

@@ -47,7 +47,7 @@ export default forwardRef(function Select(
         }),
         option: (base, { isFocused, isSelected }) => ({
             ...base,
-            backgroundColor: isSelected ? '#00bc7d' : isFocused ? '#dbeafe' : 'white',
+            backgroundColor: isSelected ? '#00bc7d' : isFocused ? '#d1fae5' : 'white',
             color: isSelected ? 'white' : '#111827',
             padding: '6px 12px',
             fontSize: '11pt',
@@ -83,6 +83,7 @@ export default forwardRef(function Select(
                 placeholder: () => "text-gray-500",
             }}
             menuPortalTarget={document.body}
+            menuPosition="fixed"
             styles={sharedStyles}
         />
     );
