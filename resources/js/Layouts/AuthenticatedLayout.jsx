@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/react';
 import Navbar  from '@/Layouts/partials/Navbar';
 import Sidebar from '@/Layouts/partials/Sidebar';
 import Toast  from '@/Components/Toast';
+import LoadingOverlay from '@/Components/LoadingOverlay';
 
 export default function AuthenticatedLayout({ children, title = 'Toko OXL' }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -41,6 +42,7 @@ export default function AuthenticatedLayout({ children, title = 'Toko OXL' }) {
             </div>
 
             <Toast messages={toasts} onDismiss={dismiss} />
+            <LoadingOverlay />
         </div>
     );
 }
