@@ -141,7 +141,7 @@ export default function Index({ from, to, search: initialSearch, omzet_per_day, 
         setStatsPage(1);
         const timer = setTimeout(() => {
             router.get(route('admin.report.index'), { from: dateFrom, to: dateTo, ...(search ? { search } : {}) }, { preserveState: true, preserveScroll: true });
-        }, 350);
+        }, 1000);
         return () => clearTimeout(timer);
     }, [search]);
 

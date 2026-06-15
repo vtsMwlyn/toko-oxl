@@ -45,7 +45,7 @@ export default function Index({ products, search: initialSearch }) {
         if (isFirstRender.current) { isFirstRender.current = false; return; }
         const timer = setTimeout(() => {
             router.get(route('admin.product.index'), search ? { search } : {}, { preserveState: true, preserveScroll: true });
-        }, 350);
+        }, 1000);
         return () => clearTimeout(timer);
     }, [search]);
 
