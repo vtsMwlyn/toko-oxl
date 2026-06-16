@@ -39,14 +39,17 @@ function ImagePreview({ src, onClose }) {
 
 export default function Index({ products, search: initialSearch }) {
     const [search, setSearch] = useState(initialSearch ?? '');
-    const isFirstRender = useRef(true);
+    const isFirstRender  = useRef(true);
+    const searchPending  = useRef(false);
 
     useEffect(() => {
         if (isFirstRender.current) { isFirstRender.current = false; return; }
+        searchPending.current = true;
         const timer = setTimeout(() => {
             router.get(route('admin.product.index'), search ? { search } : {}, { preserveState: true, preserveScroll: true });
-        }, 1000);
-        return () => clearTimeout(timer);
+            searchPending.current = false;
+        }, 500);
+        return () => { clearTimeout(timer); searchPending.current = false; };
     }, [search]);
 
     const [hoveredProductId, setHoveredProductId] = useState(null);
@@ -58,6 +61,7 @@ export default function Index({ products, search: initialSearch }) {
     const [isSettingWarning, setIsSettingWarning] = useState(false);
 
     const reload = useCallback(() => {
+        if (searchPending.current) return;
         router.reload({ only: ['products', 'stock_warning_threshold'], preserveScroll: true, preserveState: true });
     }, []);
 

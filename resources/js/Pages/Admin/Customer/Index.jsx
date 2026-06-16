@@ -18,18 +18,22 @@ export default function Index({ customers, search: initialSearch }) {
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
     const [search,     setSearch]     = useState(initialSearch ?? '');
-    const isFirstRender = useRef(true);
+    const isFirstRender  = useRef(true);
+    const searchPending  = useRef(false);
 
     const reload = useCallback(() => {
+        if (searchPending.current) return;
         router.reload({ only: ['customers'], preserveScroll: true, preserveState: true });
     }, []);
 
     useEffect(() => {
         if (isFirstRender.current) { isFirstRender.current = false; return; }
+        searchPending.current = true;
         const timer = setTimeout(() => {
             router.get(route('admin.customer.index'), search ? { search } : {}, { preserveState: true, preserveScroll: true });
-        }, 1000);
-        return () => clearTimeout(timer);
+            searchPending.current = false;
+        }, 500);
+        return () => { clearTimeout(timer); searchPending.current = false; };
     }, [search]);
 
     // Keep the open customer popup in sync when customers prop refreshes

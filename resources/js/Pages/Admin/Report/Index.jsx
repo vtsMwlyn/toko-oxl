@@ -117,13 +117,15 @@ export default function Index({ from, to, search: initialSearch, omzet_per_day, 
     const [dateFrom, setDateFrom] = useState(from);
     const [dateTo,   setDateTo]   = useState(to);
     const [search,   setSearch]   = useState(initialSearch ?? '');
-    const isFirstRender = useRef(true);
+    const isFirstRender  = useRef(true);
+    const searchPending  = useRef(false);
 
     const [exportType,                setExportType]                = useState(null);
     const [isExportingSpecificProduct, setIsExportingSpecificProduct] = useState(false);
     const [statsPage, setStatsPage] = useState(1);
 
     const reload = useCallback(() => {
+        if (searchPending.current) return;
         router.reload({ only: ['omzet_per_day', 'summary', 'variant_stats'], preserveScroll: true, preserveState: true });
     }, []);
 
@@ -139,10 +141,12 @@ export default function Index({ from, to, search: initialSearch, omzet_per_day, 
     useEffect(() => {
         if (isFirstRender.current) { isFirstRender.current = false; return; }
         setStatsPage(1);
+        searchPending.current = true;
         const timer = setTimeout(() => {
             router.get(route('admin.report.index'), { from: dateFrom, to: dateTo, ...(search ? { search } : {}) }, { preserveState: true, preserveScroll: true });
-        }, 1000);
-        return () => clearTimeout(timer);
+            searchPending.current = false;
+        }, 500);
+        return () => { clearTimeout(timer); searchPending.current = false; };
     }, [search]);
 
     function handleFilter(e) {

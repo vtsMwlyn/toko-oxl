@@ -161,49 +161,52 @@ export default function PrintReceipt({ icon = false, sale, products, onPrinted }
     const printRef = useRef(null);
 
     function handlePrint() {
-        const content = printRef.current?.innerHTML;
-        if (!content) return;
+    const content = printRef.current?.innerHTML;
+    if (!content) return;
 
-        const win = window.open('', '_blank', 'width=900,height=700');
-        win.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="utf-8" />
-                <title>Struk Penjualan</title>
-                <style>
-                    @page {
-                        size: 80mm auto;
-                        margin: 0;
-                    }
-                    * { box-sizing: border-box; }
-                    body {
-                        margin: 0;
-                        padding: 4mm;
-                        font-family: 'Courier New', Courier, monospace;
-                        font-size: 11px;
-                        color: #000;
-                        background: #fff;
-                        width: 80mm;
-                    }
-                    @media print {
-                        body { width: 80mm; }
-                    }
-                </style>
-            </head>
-            <body>${content}</body>
-            </html>
-        `);
-        win.document.close();
+    const html = `<!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>Struk Penjualan</title>
+        <style>
+            @page { size: 80mm auto; margin: 0; }
+            * { box-sizing: border-box; }
+            body {
+                margin: 0;
+                padding: 4mm;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 11px;
+                color: #000;
+                background: #fff;
+                width: 80mm;
+            }
+            @media print { body { width: 80mm; } }
+        </style>
+    </head>
+    <body>${content}</body>
+    </html>`;
+
+    // Encode as UTF-8 Blob — this is what fixes the garbled characters
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, '_blank', 'width=900,height=700');
+
+    if (!win) return; // blocked by popup blocker
+
+    win.onload = () => {
         win.focus();
         setTimeout(() => {
             win.onafterprint = () => {
                 win.close();
+                URL.revokeObjectURL(url); // clean up memory
                 onPrinted?.();
             };
             win.print();
         }, 250);
-    }
+    };
+}
 
     return (
         <>

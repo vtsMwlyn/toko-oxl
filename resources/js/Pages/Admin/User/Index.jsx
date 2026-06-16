@@ -21,17 +21,21 @@ export default function Index({ users, search: initialSearch }) {
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
     const [search,     setSearch]     = useState(initialSearch ?? '');
-    const isFirstRender = useRef(true);
+    const isFirstRender  = useRef(true);
+    const searchPending  = useRef(false);
 
     useEffect(() => {
         if (isFirstRender.current) { isFirstRender.current = false; return; }
+        searchPending.current = true;
         const timer = setTimeout(() => {
             router.get(route('admin.user.index'), search ? { search } : {}, { preserveState: true, preserveScroll: true });
-        }, 1000);
-        return () => clearTimeout(timer);
+            searchPending.current = false;
+        }, 500);
+        return () => { clearTimeout(timer); searchPending.current = false; };
     }, [search]);
 
     const reload = useCallback(() => {
+        if (searchPending.current) return;
         router.reload({ only: ['users'], preserveScroll: true, preserveState: true });
     }, []);
 
