@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import Pagination from '@/Components/Pagination';
+import Pagination, { isNavigating } from '@/Components/Pagination';
 
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
@@ -35,7 +35,7 @@ export default function Index({ users, search: initialSearch }) {
     }, [search]);
 
     const reload = useCallback(() => {
-        if (searchPending.current) return;
+        if (searchPending.current || isNavigating()) return;
         router.reload({ only: ['users'], preserveScroll: true, preserveState: true });
     }, []);
 

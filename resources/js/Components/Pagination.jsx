@@ -1,6 +1,14 @@
 import { router } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+// Module-level flag: true while any Inertia navigation is in flight.
+// Auto-reload intervals should check this before firing.
+let _navigating = false;
+router.on('start',  () => { _navigating = true;  });
+router.on('finish', () => { _navigating = false; });
+router.on('error',  () => { _navigating = false; });
+export const isNavigating = () => _navigating;
+
 export default function Pagination({ paginator, search }) {
     if (!paginator || paginator.last_page <= 1) return null;
 

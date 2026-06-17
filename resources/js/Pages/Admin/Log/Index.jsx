@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useCallback } from 'react';
-import Pagination from '@/Components/Pagination';
+import Pagination, { isNavigating } from '@/Components/Pagination';
 
 const roleBadge = {
     Admin: 'bg-emerald-100 text-emerald-700',
@@ -205,6 +205,7 @@ function LogCard({ log }) {
 
 export default function Index({ logs }) {
     const reload = useCallback(() => {
+        if (isNavigating()) return;
         router.reload({ only: ['logs'], preserveScroll: true, preserveState: true });
     }, []);
 

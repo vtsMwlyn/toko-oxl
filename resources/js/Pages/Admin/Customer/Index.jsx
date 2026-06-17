@@ -10,7 +10,7 @@ import TextInput from '@/Components/TextInput';
 import Show from './Show';
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
-import Pagination from '@/Components/Pagination';
+import Pagination, { isNavigating } from '@/Components/Pagination';
 
 export default function Index({ customers, search: initialSearch }) {
     const [isViewing,  setIsViewing]  = useState(null);
@@ -22,7 +22,7 @@ export default function Index({ customers, search: initialSearch }) {
     const searchPending  = useRef(false);
 
     const reload = useCallback(() => {
-        if (searchPending.current) return;
+        if (searchPending.current || isNavigating()) return;
         router.reload({ only: ['customers'], preserveScroll: true, preserveState: true });
     }, []);
 

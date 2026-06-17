@@ -19,7 +19,7 @@ import SetFixed from './SetFixed';
 import formatPrice from '@/Helpers/formatPrice';
 import formatDate from '@/Helpers/formatDate';
 import formatTime from '@/Helpers/formatTime';
-import Pagination from '@/Components/Pagination';
+import Pagination, { isNavigating } from '@/Components/Pagination';
 
 const statusBadge = {
     Draft: 'bg-amber-100 text-amber-700',
@@ -255,6 +255,7 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
 
     // Reload page props every 10 seconds and whenever the tab regains focus
     const reload = useCallback(() => {
+        if (isNavigating()) return;
         router.reload({ only: ['today_sales', 'history_sales', 'products'], preserveScroll: true, preserveState: true });
     }, []);
 

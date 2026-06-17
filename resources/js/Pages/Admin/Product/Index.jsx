@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import Pagination from '@/Components/Pagination';
+import Pagination, { isNavigating } from '@/Components/Pagination';
 
 import CreateEdit from './CreateEdit';
 import Show from './Show';
@@ -61,7 +61,7 @@ export default function Index({ products, search: initialSearch }) {
     const [isSettingWarning, setIsSettingWarning] = useState(false);
 
     const reload = useCallback(() => {
-        if (searchPending.current) return;
+        if (searchPending.current || isNavigating()) return;
         router.reload({ only: ['products', 'stock_warning_threshold'], preserveScroll: true, preserveState: true });
     }, []);
 

@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { TrendingUp, TrendingDown, BarChart2, Search, FileDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { isNavigating } from '@/Components/Pagination';
 import { Line } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -125,7 +126,7 @@ export default function Index({ from, to, search: initialSearch, omzet_per_day, 
     const [statsPage, setStatsPage] = useState(1);
 
     const reload = useCallback(() => {
-        if (searchPending.current) return;
+        if (searchPending.current || isNavigating()) return;
         router.reload({ only: ['omzet_per_day', 'summary', 'variant_stats'], preserveScroll: true, preserveState: true });
     }, []);
 

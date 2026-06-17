@@ -6,7 +6,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import Pagination from '@/Components/Pagination';
+import Pagination, { isNavigating } from '@/Components/Pagination';
 
 import CreateEdit from './CreateEdit';
 import Delete from './Delete';
@@ -29,6 +29,7 @@ export default function Index({ returns, products, from: initialFrom, to: initia
     }, [initialFrom, initialTo]);
 
     const reload = useCallback(() => {
+        if (isNavigating()) return;
         router.reload({ only: ['returns', 'products'], preserveScroll: true, preserveState: true });
     }, []);
 
