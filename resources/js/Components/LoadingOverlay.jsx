@@ -11,12 +11,16 @@ export default function LoadingOverlay() {
         const startLoading = (event) => {
             const visit = event.detail.visit;
 
-            // Partial reloads are background data fetches (visit.only is non-empty).
-            // Only show the overlay for full navigations or form submissions.
+            // Partial reloads (visit.only non-empty) are silent background refreshes — skip.
             const isPartialReload = visit.only && visit.only.length > 0;
-            const isFormSubmit    = visit.method !== 'get';
 
-            if (isPartialReload && !isFormSubmit) return;
+            // preserveState=true on a GET means it's an in-page filter/search update — skip.
+            // Real page navigations (sidebar links) and form submissions never set preserveState.
+            const isFilterNav = visit.method === 'get' && visit.preserveState === true;
+
+            const isFormSubmit = visit.method !== 'get';
+
+            if (isPartialReload || (isFilterNav && !isFormSubmit)) return;
 
             // Small delay so instant navigations don't flash the overlay
             showTimer = setTimeout(() => {

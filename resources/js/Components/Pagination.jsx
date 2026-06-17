@@ -1,12 +1,16 @@
 import { router } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function Pagination({ paginator }) {
+export default function Pagination({ paginator, search }) {
     if (!paginator || paginator.last_page <= 1) return null;
 
     const navigate = (url) => {
         if (!url) return;
-        router.visit(url, { preserveState: true, preserveScroll: false });
+        const page = new URL(url).searchParams.get('page');
+        const params = {};
+        if (page)   params.page   = page;
+        if (search) params.search = search;
+        router.get(paginator.path, params, { preserveState: true, preserveScroll: false });
     };
 
     const numberedLinks = paginator.links?.slice(1, -1) ?? [];

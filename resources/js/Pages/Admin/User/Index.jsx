@@ -94,7 +94,7 @@ export default function Index({ users, search: initialSearch }) {
                     </tr>
                 ))}
             </Table>
-            <Pagination paginator={users} />
+            <Pagination paginator={users} search={search} />
 
             {isCreating && (
                 <CreateEdit mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)} />

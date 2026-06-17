@@ -195,7 +195,7 @@ export default function Index({ products, search: initialSearch }) {
                 })}
             </Table>
 
-            <Pagination paginator={products} />
+            <Pagination paginator={products} search={search} />
 
             {isCreating && (
                 <CreateEdit mode="Create" isOpen={isCreating} onClose={() => setIsCreating(false)} />
