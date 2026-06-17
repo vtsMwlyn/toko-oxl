@@ -151,7 +151,7 @@ export default function Show({ isOpen, onClose, product }) {
                 isEmpty={product.discounts.length === 0} disableHeight={true}
                 headers={['Min. Pembelian', 'Normal', 'Langganan', 'Aksi']}
             >
-                {product.discounts.map((discount, index) => (
+                {[...product.discounts].sort((a, b) => a.min_qty - b.min_qty).map((discount, index) => (
                     <tr key={index} className="hover:bg-slate-200">
                         <td>{discount.min_qty}</td>
                         <td>{formatPrice(discount.normal_price)}</td>

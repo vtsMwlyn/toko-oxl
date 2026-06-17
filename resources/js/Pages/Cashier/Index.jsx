@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { isNavigating } from '@/Components/Pagination';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
@@ -318,12 +319,26 @@ export default function Index({ products, customers, auth }) {
     const [hasPrinted,        setHasPrinted]        = useState(false);
 
     const { data, setData, errors, setError, reset } = useForm({
-        date:          new Date().toISOString().slice(0, 10),
-        time:          new Date().toTimeString().slice(0, 8),
         customer_name: '',
         status:        'Fixed',
         type:          'Offline',
     });
+
+    // Clock ticks in its own local state — keeps useForm free from per-second updates
+    // that caused sidebar navigation clicks to be swallowed during re-renders.
+    const [clock, setClock] = useState(() => {
+        const now = new Date();
+        return { date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 8) };
+    });
+
+    useEffect(() => {
+        const tick = () => {
+            const now = new Date();
+            setClock({ date: now.toISOString().slice(0, 10), time: now.toTimeString().slice(0, 8) });
+        };
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, []);
 
     const customersKey = (customers ?? []).map(c => `${c.id}:${c.name}`).join('|');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -334,22 +349,8 @@ export default function Index({ products, customers, auth }) {
 
     const [customerOption, setCustomerOption] = useState(null);
 
-    useEffect(() => {
-        const tick = () => {
-            const now = new Date();
-            setData(prev => ({
-                ...prev,
-                date: now.toISOString().slice(0, 10),
-                time: now.toTimeString().slice(0, 8),
-            }));
-        };
-
-        tick();
-        const id = setInterval(tick, 1000);
-        return () => clearInterval(id);
-    }, []);
-
     const reload = useCallback(() => {
+        if (isNavigating()) return;
         router.reload({ only: ['products', 'customers'], preserveScroll: true, preserveState: true });
     }, []);
 
@@ -396,6 +397,7 @@ export default function Index({ products, customers, auth }) {
     function submit(status) {
         setLoading(true);
 
+        // Read the clock at submission time (not from useForm, to avoid stale data)
         const now  = new Date();
         const date = now.toISOString().slice(0, 10);
         const time = now.toTimeString().slice(0, 8);
@@ -549,7 +551,7 @@ export default function Index({ products, customers, auth }) {
                         <div>
                             <h2 className="text-sm font-bold text-emerald-900 mb-1">Ringkasan</h2>
                             <p className="text-xs text-slate-400">
-                                {formatDate(data.date)} · {data.time.slice(0, 5)}
+                                {formatDate(clock.date)} · {clock.time.slice(0, 5)}
                             </p>
                         </div>
 
