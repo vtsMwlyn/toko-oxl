@@ -37,16 +37,18 @@ export default function LoadingOverlay() {
             setTimeout(() => setLoading(false), 300);
         };
 
-        const removeStart   = router.on('start',   startLoading);
-        const removeFinish  = router.on('finish',  stopLoading);
-        const removeError   = router.on('error',   stopLoading);
-        const removeInvalid = router.on('invalid', stopLoading);
+        const removeStart     = router.on('start',     startLoading);
+        const removeFinish    = router.on('finish',    stopLoading);
+        const removeCancel    = router.on('cancel',    stopLoading); // same-URL clicks: Inertia fires cancel, not finish
+        const removeError     = router.on('error',     stopLoading);
+        const removeInvalid   = router.on('invalid',   stopLoading);
         const removeException = router.on('exception', stopLoading);
 
         return () => {
             clearTimeout(showTimer);
             removeStart();
             removeFinish();
+            removeCancel();
             removeError();
             removeInvalid();
             removeException();
