@@ -572,18 +572,11 @@ export default function Index({ products, customers, auth }) {
                         <div className="grid gap-1">
                             <InputLabel value="Pelanggan" required={false} />
                             <Select
-                                creatable
                                 options={customerOptions}
                                 value={customerOption}
                                 onChange={handleCustomerChange}
-                                onInputChange={(val, { action }) => {
-                                    if (action === 'input-change') {
-                                        setData('customer_name', val);
-                                    }
-                                }}
                                 isClearable
-                                placeholder="Pilih atau ketik nama..."
-                                formatCreateLabel={(val) => `Gunakan nama: "${val}"`}
+                                placeholder="Pilih pelanggan..."
                                 noOptionsMessage={() => 'Tidak ada pelanggan'}
                             />
                             <InputError message={errors.customer_name} />
