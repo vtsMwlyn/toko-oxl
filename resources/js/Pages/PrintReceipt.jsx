@@ -82,7 +82,7 @@ function ReceiptContent({ sale, products }) {
                         const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
                         return (
                             <div key={index} style={{ marginBottom: '4px' }}>
-                                <p style={{ margin: '0', fontWeight: '600', fontSize: '11px' }}>
+                                <p style={{ margin: '0', fontWeight: '700', fontSize: '11px' }}>
                                     {product?.name ?? '—'}{variant?.name ? ` (${variant.name})` : ''}
                                 </p>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#333' }}>
@@ -90,7 +90,7 @@ function ReceiptContent({ sale, products }) {
                                         {item.qty} x {formatPrice(item.price)}
                                         {item.discount > 0 ? ` - ${formatPrice(item.discount)}` : ''}
                                     </span>
-                                    <span style={{ fontWeight: '600' }}>{formatPrice(subtotal)}</span>
+                                    <span style={{ fontWeight: '700' }}>{formatPrice(subtotal)}</span>
                                 </div>
                             </div>
                         );
@@ -111,7 +111,7 @@ function ReceiptContent({ sale, products }) {
                         const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
                         return (
                             <div key={index} style={{ marginBottom: '4px' }}>
-                                <p style={{ margin: '0', fontWeight: '600', fontSize: '11px' }}>
+                                <p style={{ margin: '0', fontWeight: '700', fontSize: '11px' }}>
                                     {product?.name ?? '—'}{variant?.name ? ` (${variant.name})` : ''}
                                 </p>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#333' }}>
@@ -119,7 +119,7 @@ function ReceiptContent({ sale, products }) {
                                         {item.qty} x {formatPrice(item.price)}
                                         {item.discount > 0 ? ` - ${formatPrice(item.discount)}` : ''}
                                     </span>
-                                    <span style={{ fontWeight: '600' }}>- {formatPrice(subtotal)}</span>
+                                    <span style={{ fontWeight: '700' }}>- {formatPrice(subtotal)}</span>
                                 </div>
                             </div>
                         );

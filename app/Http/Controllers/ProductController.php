@@ -20,17 +20,22 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $searchWords = $search ? array_filter(explode(' ', trim($search))) : [];
 
         return Inertia::render('Admin/Product/Index', [
             'search'   => $search,
             'products' => Product::with(['variants' => fn ($q) => $q->orderBy('name', 'asc'), 'discounts'])
-                ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhereHas('variants', fn ($vq) => $vq
-                          ->where('name', 'like', "%{$search}%")
-                          ->orWhere('code', 'like', "%{$search}%")
-                      );
-                }))
+                ->when(count($searchWords) > 0, function ($q) use ($searchWords) {
+                    foreach ($searchWords as $word) {
+                        $q->where(function ($query) use ($word) {
+                            $query->where('name', 'like', "%{$word}%")
+                                  ->orWhereHas('variants', function ($vq) use ($word) {
+                                      $vq->where('name', 'like', "%{$word}%")
+                                         ->orWhere('code', 'like', "%{$word}%");
+                                  });
+                        });
+                    }
+                })
                 ->orderBy('name', 'asc')
                 ->paginate(20)
                 ->through(function ($product) {
