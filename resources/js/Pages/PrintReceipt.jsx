@@ -82,15 +82,15 @@ function ReceiptContent({ sale, products }) {
                         const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
                         return (
                             <div key={index} style={{ marginBottom: '4px' }}>
-                                <p style={{ margin: '0', fontWeight: '700', fontSize: '11px' }}>
+                                <p style={{ margin: '0', fontWeight: '800', fontSize: '11px' }}>
                                     {product?.name ?? '—'}{variant?.name ? ` (${variant.name})` : ''}
                                 </p>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#333' }}>
+                                <div style={{ display: 'flex', fontWeight: '800', justifyContent: 'space-between', fontSize: '10px', color: '#333' }}>
                                     <span>
                                         {item.qty} x {formatPrice(item.price)}
                                         {item.discount > 0 ? ` - ${formatPrice(item.discount)}` : ''}
                                     </span>
-                                    <span style={{ fontWeight: '700' }}>{formatPrice(subtotal)}</span>
+                                    <span style={{ fontWeight: '800' }}>{formatPrice(subtotal)}</span>
                                 </div>
                             </div>
                         );
@@ -104,22 +104,22 @@ function ReceiptContent({ sale, products }) {
             {returnItems.length > 0 && (
                 <>
                     <ReceiptDivider dashed />
-                    <p style={{ fontSize: '10px', fontWeight: '700', margin: '3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Produk Retur</p>
+                    <p style={{ fontSize: '10px', fontWeight: '800', margin: '3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Produk Retur</p>
                     {returnItems.map((item, index) => {
                         const variant  = products.flatMap(p => p.variants).find(v => v.id === item.variant_id);
                         const product  = products.find(p => p.id === variant?.product_id);
                         const subtotal = (item.price - (item.discount ?? 0)) * item.qty;
                         return (
                             <div key={index} style={{ marginBottom: '4px' }}>
-                                <p style={{ margin: '0', fontWeight: '700', fontSize: '11px' }}>
+                                <p style={{ margin: '0', fontWeight: '800', fontSize: '11px' }}>
                                     {product?.name ?? '—'}{variant?.name ? ` (${variant.name})` : ''}
                                 </p>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#333' }}>
+                                <div style={{ display: 'flex', fontWeight: '800', justifyContent: 'space-between', fontSize: '10px', color: '#333' }}>
                                     <span>
                                         {item.qty} x {formatPrice(item.price)}
                                         {item.discount > 0 ? ` - ${formatPrice(item.discount)}` : ''}
                                     </span>
-                                    <span style={{ fontWeight: '700' }}>- {formatPrice(subtotal)}</span>
+                                    <span style={{ fontWeight: '800' }}>- {formatPrice(subtotal)}</span>
                                 </div>
                             </div>
                         );

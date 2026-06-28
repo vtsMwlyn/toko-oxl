@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Head, usePage, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import axios from 'axios';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import Table from '@/Components/Table';
@@ -13,7 +14,15 @@ import Delete from './Delete';
 
 import formatDate from '@/Helpers/formatDate';
 
-export default function Index({ returns, products, from: initialFrom, to: initialTo }) {
+export default function Index({ returns: initialReturns, products: initialProducts, from: initialFrom, to: initialTo }) {
+    const [returns, setReturns] = useState(initialReturns);
+    const [products, setProducts] = useState(initialProducts);
+
+    useEffect(() => {
+        setReturns(initialReturns);
+        setProducts(initialProducts);
+    }, [initialReturns, initialProducts]);
+
     const { auth } = usePage().props;
 
     const [isCreating, setIsCreating] = useState(false);
@@ -28,19 +37,24 @@ export default function Index({ returns, products, from: initialFrom, to: initia
         setDateTo(initialTo   ?? '');
     }, [initialFrom, initialTo]);
 
-    const reload = useCallback(() => {
-        if (isNavigating()) return;
-        router.reload({ only: ['returns', 'products'], preserveScroll: true, preserveState: true });
-    }, []);
-
     useEffect(() => {
-        const id = setInterval(reload, 3000);
-        document.addEventListener('visibilitychange', reload);
+        const doReload = () => {
+            if (document.visibilityState === 'hidden') return;
+            axios.get(window.location.href, { headers: { 'X-Inertia': 'true' } })
+                .then(res => {
+                    setReturns(res.data.props.returns);
+                    setProducts(res.data.props.products);
+                })
+                .catch(console.error);
+        };
+
+        const id = setInterval(doReload, 15000);
+        document.addEventListener('visibilitychange', doReload);
         return () => {
             clearInterval(id);
-            document.removeEventListener('visibilitychange', reload);
+            document.removeEventListener('visibilitychange', doReload);
         };
-    }, [reload]);
+    }, []);
 
     return (
         <AuthenticatedLayout title="Retur Produk">

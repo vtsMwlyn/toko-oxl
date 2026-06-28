@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useCallback } from 'react';
 import Pagination, { isNavigating } from '@/Components/Pagination';
+import axios from 'axios';
 
 const roleBadge = {
     Admin: 'bg-emerald-100 text-emerald-700',
@@ -203,20 +204,30 @@ function LogCard({ log }) {
     );
 }
 
-export default function Index({ logs }) {
-    const reload = useCallback(() => {
-        if (isNavigating()) return;
-        router.reload({ only: ['logs'], preserveScroll: true, preserveState: true });
-    }, []);
+export default function Index({ logs: initialLogs }) {
+    const [logs, setLogs] = useState(initialLogs);
 
     useEffect(() => {
-        const id = setInterval(reload, 3000);
-        document.addEventListener('visibilitychange', reload);
+        setLogs(initialLogs);
+    }, [initialLogs]);
+
+    useEffect(() => {
+        const doReload = () => {
+            if (document.visibilityState === 'hidden') return;
+            axios.get(window.location.href, { headers: { 'X-Inertia': 'true' } })
+                .then(res => {
+                    setLogs(res.data.props.logs);
+                })
+                .catch(console.error);
+        };
+
+        const id = setInterval(doReload, 15000);
+        document.addEventListener('visibilitychange', doReload);
         return () => {
             clearInterval(id);
-            document.removeEventListener('visibilitychange', reload);
+            document.removeEventListener('visibilitychange', doReload);
         };
-    }, [reload]);
+    }, []);
 
     return (
         <AuthenticatedLayout title="Log Aksi Sistem">

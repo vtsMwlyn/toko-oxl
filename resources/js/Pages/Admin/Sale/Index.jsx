@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, Eye, ClipboardCheck, CalendarX } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -213,7 +214,17 @@ function DateSalesModal({
     );
 }
 
-export default function Index({ today_sales, history_sales, from: initialFrom, to: initialTo, products, customers }) {
+export default function Index({ today_sales: initialToday_sales, history_sales: initialHistory_sales, from: initialFrom, to: initialTo, products: initialProducts, customers }) {
+    const [today_sales, setToday_sales] = useState(initialToday_sales);
+    const [history_sales, setHistory_sales] = useState(initialHistory_sales);
+    const [products, setProducts] = useState(initialProducts);
+
+    useEffect(() => {
+        setToday_sales(initialToday_sales);
+        setHistory_sales(initialHistory_sales);
+        setProducts(initialProducts);
+    }, [initialToday_sales, initialHistory_sales, initialProducts]);
+
     const { auth } = usePage().props;
 
     const [isViewing,          setIsViewing]          = useState(null);
@@ -254,19 +265,25 @@ export default function Index({ today_sales, history_sales, from: initialFrom, t
     const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
     // Reload page props every 10 seconds and whenever the tab regains focus
-    const reload = useCallback(() => {
-        if (isNavigating()) return;
-        router.reload({ only: ['today_sales', 'history_sales', 'products'], preserveScroll: true, preserveState: true });
-    }, []);
-
     useEffect(() => {
-        const id = setInterval(reload, 3000);
-        document.addEventListener('visibilitychange', reload);
+        const doReload = () => {
+            if (document.visibilityState === 'hidden') return;
+            axios.get(window.location.href, { headers: { 'X-Inertia': 'true' } })
+                .then(res => {
+                    setToday_sales(res.data.props.today_sales);
+                    setHistory_sales(res.data.props.history_sales);
+                    setProducts(res.data.props.products);
+                })
+                .catch(console.error);
+        };
+
+        const id = setInterval(doReload, 15000);
+        document.addEventListener('visibilitychange', doReload);
         return () => {
             clearInterval(id);
-            document.removeEventListener('visibilitychange', reload);
+            document.removeEventListener('visibilitychange', doReload);
         };
-    }, [reload]);
+    }, []);
 
     // history_sales.data is [{date, sales:[...]}, ...] — already sorted desc by the backend
     const salesByDate = Object.fromEntries(

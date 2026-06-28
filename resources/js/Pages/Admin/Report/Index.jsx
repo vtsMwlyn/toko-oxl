@@ -2,8 +2,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { TrendingUp, TrendingDown, BarChart2, Search, FileDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { isNavigating } from '@/Components/Pagination';
 import { Line } from 'react-chartjs-2';
+import axios from 'axios';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -114,7 +114,17 @@ function OmzetChart({ data }) {
     );
 }
 
-export default function Index({ from, to, search: initialSearch, omzet_per_day, summary, variant_stats, products }) {
+export default function Index({ from, to, search: initialSearch, omzet_per_day: initialOmzet_per_day, summary: initialSummary, variant_stats: initialVariant_stats, products }) {
+    const [omzet_per_day, setOmzet_per_day] = useState(initialOmzet_per_day);
+    const [summary, setSummary] = useState(initialSummary);
+    const [variant_stats, setVariant_stats] = useState(initialVariant_stats);
+
+    useEffect(() => {
+        setOmzet_per_day(initialOmzet_per_day);
+        setSummary(initialSummary);
+        setVariant_stats(initialVariant_stats);
+    }, [initialOmzet_per_day, initialSummary, initialVariant_stats]);
+
     const [dateFrom, setDateFrom] = useState(from);
     const [dateTo,   setDateTo]   = useState(to);
     const [search,   setSearch]   = useState(initialSearch ?? '');
@@ -125,19 +135,25 @@ export default function Index({ from, to, search: initialSearch, omzet_per_day, 
     const [isExportingSpecificProduct, setIsExportingSpecificProduct] = useState(false);
     const [statsPage, setStatsPage] = useState(1);
 
-    const reload = useCallback(() => {
-        if (searchPending.current || isNavigating()) return;
-        router.reload({ only: ['omzet_per_day', 'summary', 'variant_stats'], preserveScroll: true, preserveState: true });
-    }, []);
-
     useEffect(() => {
-        const id = setInterval(reload, 3000);
-        document.addEventListener('visibilitychange', reload);
+        const doReload = () => {
+            if (document.visibilityState === 'hidden') return;
+            axios.get(window.location.href, { headers: { 'X-Inertia': 'true' } })
+                .then(res => {
+                    setOmzet_per_day(res.data.props.omzet_per_day);
+                    setSummary(res.data.props.summary);
+                    setVariant_stats(res.data.props.variant_stats);
+                })
+                .catch(console.error);
+        };
+
+        const id = setInterval(doReload, 15000);
+        document.addEventListener('visibilitychange', doReload);
         return () => {
             clearInterval(id);
-            document.removeEventListener('visibilitychange', reload);
+            document.removeEventListener('visibilitychange', doReload);
         };
-    }, [reload]);
+    }, []);
 
     useEffect(() => {
         if (isFirstRender.current) { isFirstRender.current = false; return; }

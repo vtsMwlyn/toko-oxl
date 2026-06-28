@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, X, Eye } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -37,7 +38,13 @@ function ImagePreview({ src, onClose }) {
     );
 }
 
-export default function Index({ products, search: initialSearch }) {
+export default function Index({ products: initialProducts, search: initialSearch }) {
+    const [products, setProducts] = useState(initialProducts);
+
+    useEffect(() => {
+        setProducts(initialProducts);
+    }, [initialProducts]);
+
     const [search, setSearch] = useState(initialSearch ?? '');
     const isFirstRender  = useRef(true);
     const searchPending  = useRef(false);
@@ -60,19 +67,23 @@ export default function Index({ products, search: initialSearch }) {
     const [previewImage, setPreviewImage] = useState(null);
     const [isSettingWarning, setIsSettingWarning] = useState(false);
 
-    const reload = useCallback(() => {
-        if (searchPending.current || isNavigating()) return;
-        router.reload({ only: ['products', 'stock_warning_threshold'], preserveScroll: true, preserveState: true });
-    }, []);
-
     useEffect(() => {
-        const id = setInterval(reload, 3000);
-        document.addEventListener('visibilitychange', reload);
+        const doReload = () => {
+            if (document.visibilityState === 'hidden') return;
+            axios.get(window.location.href, { headers: { 'X-Inertia': 'true' } })
+                .then(res => {
+                    setProducts(res.data.props.products);
+                })
+                .catch(console.error);
+        };
+
+        const id = setInterval(doReload, 15000);
+        document.addEventListener('visibilitychange', doReload);
         return () => {
             clearInterval(id);
-            document.removeEventListener('visibilitychange', reload);
+            document.removeEventListener('visibilitychange', doReload);
         };
-    }, [reload]);
+    }, []);
 
     return (
         <AuthenticatedLayout title="Daftar Produk">

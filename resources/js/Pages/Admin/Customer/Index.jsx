@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -12,7 +13,13 @@ import CreateEdit from './CreateEdit';
 import Delete from './Delete';
 import Pagination, { isNavigating } from '@/Components/Pagination';
 
-export default function Index({ customers, search: initialSearch }) {
+export default function Index({ customers: initialCustomers, search: initialSearch }) {
+    const [customers, setCustomers] = useState(initialCustomers);
+
+    useEffect(() => {
+        setCustomers(initialCustomers);
+    }, [initialCustomers]);
+
     const [isViewing,  setIsViewing]  = useState(null);
     const [isCreating, setIsCreating] = useState(false);
     const [isEditing,  setIsEditing]  = useState(null);
@@ -21,37 +28,23 @@ export default function Index({ customers, search: initialSearch }) {
     const isFirstRender  = useRef(true);
     const searchPending  = useRef(false);
 
-    const reload = useCallback(() => {
-        if (searchPending.current || isNavigating()) return;
-        router.reload({ only: ['customers'], preserveScroll: true, preserveState: true });
-    }, []);
-
     useEffect(() => {
-        if (isFirstRender.current) { isFirstRender.current = false; return; }
-        searchPending.current = true;
-        const timer = setTimeout(() => {
-            router.get(route('admin.customer.index'), search ? { search } : {}, { preserveState: true, preserveScroll: true });
-            searchPending.current = false;
-        }, 500);
-        return () => { clearTimeout(timer); searchPending.current = false; };
-    }, [search]);
+        const doReload = () => {
+            if (document.visibilityState === 'hidden') return;
+            axios.get(window.location.href, { headers: { 'X-Inertia': 'true' } })
+                .then(res => {
+                    setCustomers(res.data.props.customers);
+                })
+                .catch(console.error);
+        };
 
-    // Keep the open customer popup in sync when customers prop refreshes
-    useEffect(() => {
-        if (isViewing) {
-            const updated = customers.data.find(c => c.id === isViewing.id);
-            if (updated) setIsViewing(updated);
-        }
-    }, [customers]);
-
-    useEffect(() => {
-        const id = setInterval(reload, 3000);
-        document.addEventListener('visibilitychange', reload);
+        const id = setInterval(doReload, 15000);
+        document.addEventListener('visibilitychange', doReload);
         return () => {
             clearInterval(id);
-            document.removeEventListener('visibilitychange', reload);
+            document.removeEventListener('visibilitychange', doReload);
         };
-    }, [reload]);
+    }, []);
 
     return (
         <AuthenticatedLayout title="Pelanggan">

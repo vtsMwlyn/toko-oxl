@@ -3,7 +3,8 @@ import { isNavigating } from '@/Components/Pagination';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Head } from '@inertiajs/react';
-import { Plus, Trash2, ScanBarcode, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, ScanBarcode, ChevronDown, ChevronUp, X } from 'lucide-react';
+import axios from 'axios';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputLabel from '@/Components/InputLabel';
@@ -148,8 +149,16 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
         const newErrors = {};
         if (!matched)                                      newErrors.product = 'Pilih produk.';
         if (!field.qty || Number(field.qty) <= 0)          newErrors.qty     = 'Qty > 0.';
-        else if (type === 'Sell' && matched && Number(field.qty) > matched.stock)
-            newErrors.qty = `Stok tidak cukup. Tersedia: ${matched.stock}`;
+        else if (type === 'Sell' && matched) {
+            const variantOtherQty = existingItems
+                .filter(i => i.variant_id === matched.id)
+                .reduce((sum, i) => sum + (Number(i.qty) || 0), 0);
+            if (variantOtherQty + Number(field.qty) > matched.stock) {
+                newErrors.qty = variantOtherQty > 0 
+                    ? `Stok tidak cukup. Tersedia: ${matched.stock} (telah diinput: ${variantOtherQty})`
+                    : `Stok tidak cukup. Tersedia: ${matched.stock}`;
+            }
+        }
         if (type === 'Sell' && (field.price === '' || Number(field.price) < 0)) newErrors.price = 'Harga tidak valid.';
         setErrors(newErrors);
         if (Object.keys(newErrors).length) return;
@@ -309,7 +318,15 @@ function ItemTable({ items, products, onRemove }) {
     );
 }
 
-export default function Index({ products, customers, auth }) {
+export default function Index({ products: initialProducts, customers: initialCustomers, auth }) {
+    const [products, setProducts] = useState(initialProducts);
+    const [customers, setCustomers] = useState(initialCustomers);
+
+    useEffect(() => {
+        setProducts(initialProducts);
+        setCustomers(initialCustomers);
+    }, [initialProducts, initialCustomers]);
+
     const [loading,           setLoading]           = useState(false);
     const [success,           setSuccess]           = useState(false);
     const [savedSale,         setSavedSale]         = useState(null);
@@ -349,19 +366,24 @@ export default function Index({ products, customers, auth }) {
 
     const [customerOption, setCustomerOption] = useState(null);
 
-    const reload = useCallback(() => {
-        if (isNavigating()) return;
-        router.reload({ only: ['products', 'customers'], preserveScroll: true, preserveState: true });
-    }, []);
-
     useEffect(() => {
-        const id = setInterval(reload, 3000);
-        document.addEventListener('visibilitychange', reload);
+        const doReload = () => {
+            if (document.visibilityState === 'hidden') return;
+            axios.get(window.location.href, { headers: { 'X-Inertia': 'true' } })
+                .then(res => {
+                    setProducts(res.data.props.products);
+                    setCustomers(res.data.props.customers);
+                })
+                .catch(console.error);
+        };
+
+        const id = setInterval(doReload, 15000);
+        document.addEventListener('visibilitychange', doReload);
         return () => {
             clearInterval(id);
-            document.removeEventListener('visibilitychange', reload);
+            document.removeEventListener('visibilitychange', doReload);
         };
-    }, [reload]);
+    }, []);
 
     useEffect(() => {
         setSoldItems(prev => recalcItemPrices(prev, products, data.customer_name));
@@ -437,7 +459,14 @@ export default function Index({ products, customers, auth }) {
             {/* ── Success overlay ── */}
             {success && savedSale && (
                 <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 flex flex-col items-center gap-5 text-center">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 flex flex-col items-center gap-5 text-center relative">
+                        <button 
+                            onClick={resetForm}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+                            aria-label="Tutup"
+                        >
+                            <X size={20} />
+                        </button>
                         <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
                                 stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

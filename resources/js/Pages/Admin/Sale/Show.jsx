@@ -1,5 +1,6 @@
+import axios from 'axios';
+import { useState, useEffect } from 'react';
 import { Eye } from 'lucide-react';
-import { useEffect } from 'react';
 import { router } from '@inertiajs/react';
 
 import Popup from '@/Components/Popup';
@@ -75,17 +76,28 @@ function ItemsTable({ items, products, emptyText }) {
     );
 }
 
-export default function Show({ isOpen, onClose, sale, products }) {
+export default function Show({ isOpen, onClose, sale: initialSale, products }) {
+    const [sale, setSale] = useState(initialSale);
+    useEffect(() => {
+        setSale(initialSale);
+    }, [initialSale]);
+
     if (!sale) return null;
 
     useEffect(() => {
         if (!isOpen) return;
-        const reload = () => router.reload({ only: ['sales'], preserveScroll: true, preserveState: true });
-        const id = setInterval(reload, 3000);
-        document.addEventListener('visibilitychange', reload);
+
+        const doReload = () => {
+            if (document.visibilityState === 'hidden') return;
+            axios.get(window.location.href, { headers: { 'X-Inertia': 'true' } })
+                .then(res => setSale(res.data.props.sale))
+                .catch(console.error);
+        };
+        const id = setInterval(doReload, 15000);
+        document.addEventListener('visibilitychange', doReload);
         return () => {
             clearInterval(id);
-            document.removeEventListener('visibilitychange', reload);
+            document.removeEventListener('visibilitychange', doReload);
         };
     }, [isOpen]);
 

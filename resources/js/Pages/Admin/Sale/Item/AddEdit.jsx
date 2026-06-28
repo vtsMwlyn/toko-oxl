@@ -91,8 +91,17 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
         const newErrors = {};
         if (!matched)                    newErrors.variant  = 'Pilih produk terlebih dahulu.';
         if (!qty || Number(qty) <= 0)    newErrors.qty      = 'Qty harus lebih dari 0.';
-        else if (type === 'Sell' && matched && Number(qty) > matched.stock)
-            newErrors.qty = `Stok tidak cukup. Tersedia: ${matched.stock}`;
+        else if (type === 'Sell' && matched) {
+            const variantOtherQty = existingItems
+                .filter(i => i._localId !== item?._localId)
+                .filter(i => i.variant_id === matched.id)
+                .reduce((sum, i) => sum + (Number(i.qty) || 0), 0);
+            if (variantOtherQty + Number(qty) > matched.stock) {
+                newErrors.qty = variantOtherQty > 0 
+                    ? `Stok tidak cukup. Tersedia: ${matched.stock} (telah diinput: ${variantOtherQty})`
+                    : `Stok tidak cukup. Tersedia: ${matched.stock}`;
+            }
+        }
         if (type === 'Sell' && (!price || Number(price) < 0)) newErrors.price = 'Harga tidak valid.';
         if (type === 'Sell' && discount !== '' && Number(discount) < 0) newErrors.discount = 'Diskon tidak boleh negatif.';
         setErrors(newErrors);

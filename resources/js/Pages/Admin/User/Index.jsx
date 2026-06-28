@@ -2,6 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
 
 import Table from '@/Components/Table';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -16,7 +17,13 @@ const roleBadge = {
     User:  'bg-slate-100 text-slate-600',
 };
 
-export default function Index({ users, search: initialSearch }) {
+export default function Index({ users: initialUsers, search: initialSearch }) {
+    const [users, setUsers] = useState(initialUsers);
+
+    useEffect(() => {
+        setUsers(initialUsers);
+    }, [initialUsers]);
+
     const [isCreating, setIsCreating] = useState(false);
     const [isEditing,  setIsEditing]  = useState(null);
     const [isDeleting, setIsDeleting] = useState(null);
@@ -34,19 +41,23 @@ export default function Index({ users, search: initialSearch }) {
         return () => { clearTimeout(timer); searchPending.current = false; };
     }, [search]);
 
-    const reload = useCallback(() => {
-        if (searchPending.current || isNavigating()) return;
-        router.reload({ only: ['users'], preserveScroll: true, preserveState: true });
-    }, []);
-
     useEffect(() => {
-        const id = setInterval(reload, 3000);
-        document.addEventListener('visibilitychange', reload);
+        const doReload = () => {
+            if (document.visibilityState === 'hidden') return;
+            axios.get(window.location.href, { headers: { 'X-Inertia': 'true' } })
+                .then(res => {
+                    setUsers(res.data.props.users);
+                })
+                .catch(console.error);
+        };
+
+        const id = setInterval(doReload, 15000);
+        document.addEventListener('visibilitychange', doReload);
         return () => {
             clearInterval(id);
-            document.removeEventListener('visibilitychange', reload);
+            document.removeEventListener('visibilitychange', doReload);
         };
-    }, [reload]);
+    }, []);
 
     return (
         <AuthenticatedLayout title="Daftar Pengguna">
