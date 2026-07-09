@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import Pagination, { isNavigating } from '@/Components/Pagination';
 import axios from 'axios';
 
@@ -204,12 +204,29 @@ function LogCard({ log }) {
     );
 }
 
-export default function Index({ logs: initialLogs }) {
+export default function Index({ logs: initialLogs, filters }) {
     const [logs, setLogs] = useState(initialLogs);
+    const [dateStart, setDateStart] = useState(filters?.date_start ?? '');
+    const [dateEnd, setDateEnd] = useState(filters?.date_end ?? '');
+    const isFirstRender = useRef(true);
+    const searchPending = useRef(false);
 
     useEffect(() => {
         setLogs(initialLogs);
     }, [initialLogs]);
+
+    useEffect(() => {
+        if (isFirstRender.current) { isFirstRender.current = false; return; }
+        searchPending.current = true;
+        const timer = setTimeout(() => {
+            const params = {};
+            if (dateStart) params.date_start = dateStart;
+            if (dateEnd) params.date_end = dateEnd;
+            router.get(route('admin.log.index'), params, { preserveState: true, preserveScroll: true });
+            searchPending.current = false;
+        }, 500);
+        return () => { clearTimeout(timer); searchPending.current = false; };
+    }, [dateStart, dateEnd]);
 
     useEffect(() => {
         const doReload = () => {
@@ -232,6 +249,33 @@ export default function Index({ logs: initialLogs }) {
     return (
         <AuthenticatedLayout title="Log Aksi Sistem">
             <Head title="Log" />
+
+            <div className="w-full flex justify-end items-center mb-4">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <input
+                        type="date"
+                        className="border-gray-300 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm w-full sm:w-auto"
+                        value={dateStart}
+                        onChange={e => setDateStart(e.target.value)}
+                    />
+                    <span className="text-gray-400 text-sm px-1">sampai</span>
+                    <input
+                        type="date"
+                        className="border-gray-300 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500 text-sm w-full sm:w-auto"
+                        value={dateEnd}
+                        onChange={e => setDateEnd(e.target.value)}
+                    />
+                    {(dateStart || dateEnd) && (
+                        <button
+                            type="button"
+                            onClick={() => { setDateStart(''); setDateEnd(''); }}
+                            className="text-xs text-red-500 hover:text-red-700 ml-1 font-medium"
+                        >
+                            Reset
+                        </button>
+                    )}
+                </div>
+            </div>
 
             {logs.data.length === 0 ? (
                 <div className="text-center py-16 text-gray-400 text-sm">

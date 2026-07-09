@@ -14,10 +14,13 @@ export default function Pagination({ paginator, search }) {
 
     const navigate = (url) => {
         if (!url) return;
-        const page = new URL(url).searchParams.get('page');
-        const params = {};
-        if (page)   params.page   = page;
-        if (search) params.search = search;
+        const parsedUrl = new URL(url);
+        const params = Object.fromEntries(parsedUrl.searchParams.entries());
+        
+        if (search && !params.search) {
+            params.search = search;
+        }
+        
         router.get(paginator.path, params, { preserveState: true, preserveScroll: false });
     };
 
