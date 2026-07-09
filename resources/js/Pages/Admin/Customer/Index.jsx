@@ -29,6 +29,16 @@ export default function Index({ customers: initialCustomers, search: initialSear
     const searchPending  = useRef(false);
 
     useEffect(() => {
+        if (isFirstRender.current) { isFirstRender.current = false; return; }
+        searchPending.current = true;
+        const timer = setTimeout(() => {
+            router.get(route('admin.customer.index'), search ? { search } : {}, { preserveState: true, preserveScroll: true });
+            searchPending.current = false;
+        }, 500);
+        return () => { clearTimeout(timer); searchPending.current = false; };
+    }, [search]);
+
+    useEffect(() => {
         const doReload = () => {
             if (document.visibilityState === 'hidden') return;
             axios.get(window.location.href, { headers: { 'X-Inertia': 'true' } })
