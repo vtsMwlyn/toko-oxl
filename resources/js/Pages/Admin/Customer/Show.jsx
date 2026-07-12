@@ -130,7 +130,7 @@ export default function Show({ isOpen, onClose, customer, sales, totalOmzet, tot
                             className="accent-emerald-600 cursor-pointer"
                             title="Pilih semua"
                         />,
-                        'Tanggal', 'Waktu', 'Status', 'Total', 'Aksi',
+                        'Tanggal', 'Waktu', 'Antrian', 'Status', 'Total', 'Aksi',
                     ]}
                     disableHeight={true}
                 >
@@ -149,6 +149,7 @@ export default function Show({ isOpen, onClose, customer, sales, totalOmzet, tot
                             </td>
                             <td>{formatDate(sale.date)}</td>
                             <td>{formatTime(sale.time)}</td>
+                            <td className="text-center font-medium text-slate-700">{sale.queue_number}</td>
                             <td>
                                 <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${statusBadge[sale.status] ?? statusBadge.Fixed}`}>
                                     {sale.status}

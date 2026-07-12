@@ -13,6 +13,7 @@ export default function BatchDeleteByRange({ isOpen, onClose, customerName = nul
     const [to,      setTo]      = useState('');
     const [errors,  setErrors]  = useState({});
     const [loading, setLoading] = useState(false);
+    const [preserveStock, setPreserveStock] = useState(true);
 
     function validate() {
         const e = {};
@@ -29,7 +30,7 @@ export default function BatchDeleteByRange({ isOpen, onClose, customerName = nul
         setLoading(true);
 
         router.delete(route('admin.sale.destroyByRange'), {
-            data: { from, to, ...(customerName ? { customer_name: customerName } : {}) },
+            data: { from, to, preserve_stock: preserveStock, ...(customerName ? { customer_name: customerName } : {}) },
             preserveState: true,
             onSuccess: () => { onClose(); },
             onError: (serverErrors) => setErrors(serverErrors),
@@ -48,7 +49,7 @@ export default function BatchDeleteByRange({ isOpen, onClose, customerName = nul
                             ? `Semua penjualan atas nama "${customerName}" dalam rentang tanggal ini akan dihapus permanen.`
                             : 'Semua penjualan dalam rentang tanggal ini akan dihapus permanen.'
                         }
-                        {' '}Stok akan dikembalikan untuk transaksi yang sudah Fixed. Tindakan ini tidak dapat dibatalkan.
+                        {' '}Tindakan ini tidak dapat dibatalkan.
                     </p>
                 </div>
 
@@ -74,6 +75,16 @@ export default function BatchDeleteByRange({ isOpen, onClose, customerName = nul
                         <InputError message={errors.to} />
                     </div>
                 </div>
+
+                <label className="flex items-center gap-2 cursor-pointer mt-2">
+                    <input
+                        type="checkbox"
+                        checked={preserveStock}
+                        onChange={(e) => setPreserveStock(e.target.checked)}
+                        className="rounded border-slate-300 text-emerald-600 shadow-sm focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-700">Pertahankan jumlah stok varian yang terkait</span>
+                </label>
 
                 <div className="flex justify-end gap-3 pt-2 border-t border-slate-100 mt-2">
                     <button

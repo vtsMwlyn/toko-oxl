@@ -191,9 +191,11 @@ class SaleController extends Controller
         return back()->with('success', 'Penjualan berhasil diperbarui.');
     }
 
-    public function destroy(Sale $sale)
+    public function destroy(Request $request, Sale $sale)
     {
-        if ($sale->status === 'Fixed') {
+        $preserveStock = filter_var($request->input('preserve_stock', false), FILTER_VALIDATE_BOOLEAN);
+
+        if ($sale->status === 'Fixed' && !$preserveStock) {
             $sale->load('items');
             $this->applyStockDelta($sale->items, -1);
         }
@@ -209,12 +211,15 @@ class SaleController extends Controller
         $validated = $request->validate([
             'ids'   => ['required', 'array', 'min:1'],
             'ids.*' => ['integer', 'exists:sales,id'],
+            'preserve_stock' => ['nullable', 'boolean'],
         ]);
+
+        $preserveStock = filter_var($request->input('preserve_stock', false), FILTER_VALIDATE_BOOLEAN);
 
         $sales = Sale::with('items')->whereIn('id', $validated['ids'])->get();
 
         foreach ($sales as $sale) {
-            if ($sale->status === 'Fixed') {
+            if ($sale->status === 'Fixed' && !$preserveStock) {
                 $this->applyStockDelta($sale->items, -1);
             }
             $sale->items()->delete();
@@ -245,7 +250,10 @@ class SaleController extends Controller
             'from'          => ['required', 'date'],
             'to'            => ['required', 'date', 'after_or_equal:from'],
             'customer_name' => ['nullable', 'string'],
+            'preserve_stock' => ['nullable', 'boolean'],
         ]);
+
+        $preserveStock = filter_var($request->input('preserve_stock', false), FILTER_VALIDATE_BOOLEAN);
 
         $sales = Sale::with('items')
             ->whereDate('date', '>=', $validated['from'])
@@ -256,7 +264,7 @@ class SaleController extends Controller
         $count = $sales->count();
 
         foreach ($sales as $sale) {
-            if ($sale->status === 'Fixed') {
+            if ($sale->status === 'Fixed' && !$preserveStock) {
                 $this->applyStockDelta($sale->items, -1);
             }
             $sale->items()->delete();
