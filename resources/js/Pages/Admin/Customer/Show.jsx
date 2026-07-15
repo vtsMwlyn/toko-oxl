@@ -5,6 +5,7 @@ import Popup from '@/Components/Popup';
 import Table from '@/Components/Table';
 import SectionTitle from '@/Components/SectionTitle';
 import PrimaryButton from '@/Components/PrimaryButton';
+import TextInput from '@/Components/TextInput';
 
 import Delete from '@/Pages/Admin/Sale/Delete';
 import BatchDelete from '@/Pages/Admin/Sale/BatchDelete';
@@ -48,13 +49,21 @@ export default function Show({ isOpen, onClose, customer, sales, totalOmzet, tot
     const [isDeleting,           setIsDeleting]           = useState(null);
     const [isBatchDeleting,      setIsBatchDeleting]      = useState(false);
     const [isDeletingByRange,    setIsDeletingByRange]    = useState(false);
+    const [dateFrom,             setDateFrom]             = useState('');
+    const [dateTo,               setDateTo]               = useState('');
 
     if (!customer) return null;
 
-    const allSelected = sales.length > 0 && sales.every(s => selectedIds.includes(s.id));
+    const filteredSales = sales.filter(s => {
+        if (dateFrom && s.date < dateFrom) return false;
+        if (dateTo && s.date > dateTo) return false;
+        return true;
+    });
+
+    const allSelected = filteredSales.length > 0 && filteredSales.every(s => selectedIds.includes(s.id));
 
     const toggleAll = () => {
-        setSelectedIds(allSelected ? [] : sales.map(s => s.id));
+        setSelectedIds(allSelected ? [] : filteredSales.map(s => s.id));
     };
 
     const toggleOne = (id) => {
@@ -99,6 +108,23 @@ export default function Show({ isOpen, onClose, customer, sales, totalOmzet, tot
                     </SectionTitle>
 
                     <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                            <TextInput
+                                type="date"
+                                value={dateFrom}
+                                onChange={e => setDateFrom(e.target.value)}
+                                className="w-32"
+                                title="Dari Tanggal"
+                            />
+                            <span className="text-slate-400 text-sm">-</span>
+                            <TextInput
+                                type="date"
+                                value={dateTo}
+                                onChange={e => setDateTo(e.target.value)}
+                                className="w-32"
+                                title="Sampai Tanggal"
+                            />
+                        </div>
                         {selectedIds.length > 0 && (
                             <PrimaryButton
                                 icon={<Trash2 className="size-4" />}
@@ -121,7 +147,7 @@ export default function Show({ isOpen, onClose, customer, sales, totalOmzet, tot
                 </div>
 
                 <Table
-                    isEmpty={sales.length === 0}
+                    isEmpty={filteredSales.length === 0}
                     headers={[
                         <input
                             type="checkbox"
@@ -134,7 +160,7 @@ export default function Show({ isOpen, onClose, customer, sales, totalOmzet, tot
                     ]}
                     disableHeight={true}
                 >
-                    {sales.map((sale, index) => (
+                    {filteredSales.map((sale, index) => (
                         <tr
                             key={index}
                             className={`hover:bg-slate-50 ${selectedIds.includes(sale.id) ? 'bg-emerald-50' : ''}`}
