@@ -113,6 +113,20 @@ class SaleController extends Controller
             $this->applyStockDelta($request->items ?? [], +1, $sale);
         }
 
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Membuat penjualan ' . $sale->date . ' ' . $sale->time . ' antrian ' . $sale->queue_number
+                . ($sale->customer_name ? ' a.n. ' . $sale->customer_name : '') . ' (status: ' . $sale->status . ')',
+            'changes' => [
+                ['field' => 'date',          'old' => null, 'new' => $sale->date],
+                ['field' => 'time',          'old' => null, 'new' => $sale->time],
+                ['field' => 'queue_number',  'old' => null, 'new' => $sale->queue_number],
+                ['field' => 'status',        'old' => null, 'new' => $sale->status],
+                ['field' => 'type',          'old' => null, 'new' => $sale->type],
+                ['field' => 'customer_name', 'old' => null, 'new' => $sale->customer_name],
+            ],
+        ]);
+
         return back()->with('success', 'Penjualan berhasil disimpan.');
     }
 
@@ -158,7 +172,7 @@ class SaleController extends Controller
 
         if ($oldStatus === 'Fixed') {
             $sale->load('items');
-            $this->applyStockDelta($sale->items, -1);
+            $this->applyStockDelta($sale->items, -1, $sale);
         }
 
         $sale->update([
@@ -197,8 +211,22 @@ class SaleController extends Controller
 
         if ($sale->status === 'Fixed' && !$preserveStock) {
             $sale->load('items');
-            $this->applyStockDelta($sale->items, -1);
+            $this->applyStockDelta($sale->items, -1, $sale);
         }
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menghapus penjualan ' . $sale->date . ' ' . $sale->time . ' antrian ' . $sale->queue_number
+                . ($sale->customer_name ? ' a.n. ' . $sale->customer_name : ''),
+            'changes' => [
+                ['field' => 'date',          'old' => $sale->date,          'new' => null],
+                ['field' => 'time',          'old' => $sale->time,          'new' => null],
+                ['field' => 'queue_number',  'old' => $sale->queue_number,  'new' => null],
+                ['field' => 'status',        'old' => $sale->status,        'new' => null],
+                ['field' => 'type',          'old' => $sale->type,          'new' => null],
+                ['field' => 'customer_name', 'old' => $sale->customer_name, 'new' => null],
+            ],
+        ]);
 
         $sale->items()->delete();
         $sale->delete();
@@ -220,11 +248,23 @@ class SaleController extends Controller
 
         foreach ($sales as $sale) {
             if ($sale->status === 'Fixed' && !$preserveStock) {
-                $this->applyStockDelta($sale->items, -1);
+                $this->applyStockDelta($sale->items, -1, $sale);
             }
             $sale->items()->delete();
             $sale->delete();
         }
+
+        $ids = implode(', ', $validated['ids']);
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menghapus ' . count($validated['ids']) . ' penjualan sekaligus (IDs: ' . $ids . ')',
+            'changes' => $sales->map(fn ($s) => [
+                'field' => $s->date . ' ' . $s->time . ' antrian ' . $s->queue_number
+                    . ($s->customer_name ? ' a.n. ' . $s->customer_name : ''),
+                'old'   => $s->status,
+                'new'   => null,
+            ])->values()->toArray(),
+        ]);
 
         return back()->with('success', 'Penjualan berhasil dihapus.');
     }
@@ -265,11 +305,23 @@ class SaleController extends Controller
 
         foreach ($sales as $sale) {
             if ($sale->status === 'Fixed' && !$preserveStock) {
-                $this->applyStockDelta($sale->items, -1);
+                $this->applyStockDelta($sale->items, -1, $sale);
             }
             $sale->items()->delete();
             $sale->delete();
         }
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menghapus ' . $count . ' penjualan rentang ' . $validated['from'] . ' s/d ' . $validated['to']
+                . ($validated['customer_name'] ? ' a.n. ' . $validated['customer_name'] : ''),
+            'changes' => $sales->map(fn ($s) => [
+                'field' => $s->date . ' ' . $s->time . ' antrian ' . $s->queue_number
+                    . ($s->customer_name ? ' a.n. ' . $s->customer_name : ''),
+                'old'   => $s->status,
+                'new'   => null,
+            ])->values()->toArray(),
+        ]);
 
         return back()->with('success', "{$count} penjualan berhasil dihapus.");
     }

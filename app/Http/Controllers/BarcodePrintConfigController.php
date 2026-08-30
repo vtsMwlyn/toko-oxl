@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActionLog;
 use App\Models\BarcodePrintConfig;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BarcodePrintConfigController extends Controller
 {
@@ -41,7 +43,26 @@ class BarcodePrintConfigController extends Controller
         ]);
 
         $config = BarcodePrintConfig::first() ?? new BarcodePrintConfig();
+
+        // Build changes diff from old vs new values
+        $oldValues = $config->exists ? $config->only(array_keys($validated)) : self::$defaults;
+        $changes = [];
+        foreach ($validated as $field => $newValue) {
+            $oldValue = $oldValues[$field] ?? null;
+            if ((string) $oldValue !== (string) $newValue) {
+                $changes[] = ['field' => $field, 'old' => $oldValue, 'new' => $newValue];
+            }
+        }
+
         $config->fill($validated)->save();
+
+        if (!empty($changes)) {
+            ActionLog::create([
+                'user_id' => Auth::id(),
+                'message' => 'Memperbarui konfigurasi cetak barcode',
+                'changes' => $changes,
+            ]);
+        }
 
         return response()->json($config);
     }

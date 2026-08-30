@@ -10,11 +10,39 @@ const roleBadge = {
 };
 
 const fieldLabels = {
-    date:          'Date',
-    time:          'Time',
-    status:        'Status',
-    customer_name: 'Customer',
-    queue_number:  'Queue',
+    // Sale
+    date:            'Tanggal',
+    time:            'Waktu',
+    status:          'Status',
+    type:            'Tipe',
+    customer_name:   'Pelanggan',
+    queue_number:    'Antrian',
+    // Product / Variant / Discount
+    name:            'Nama',
+    normal_price:    'Harga Normal',
+    customer_price:  'Harga Customer',
+    code:            'Kode',
+    stock:           'Stok',
+    low_stock_warning: 'Batas Stok Rendah',
+    min_qty:         'Min Qty',
+    // Customer
+    phone:           'Telepon',
+    address:         'Alamat',
+    notes:           'Catatan',
+    // User
+    email:           'Email',
+    role:            'Role',
+    password:        'Password',
+    // Barcode config
+    qty:             'Qty',
+    width_cm:        'Lebar (cm)',
+    height_cm:       'Tinggi (cm)',
+    gap_x_mm:        'Gap X (mm)',
+    gap_y_mm:        'Gap Y (mm)',
+    margin_top_mm:    'Margin Atas (mm)',
+    margin_right_mm:  'Margin Kanan (mm)',
+    margin_bottom_mm: 'Margin Bawah (mm)',
+    margin_left_mm:   'Margin Kiri (mm)',
 };
 
 function formatDateTime(datetime) {
@@ -68,10 +96,12 @@ function SectionLabel({ children }) {
 
 function ChangesPills({ changes }) {
     const grouped = {
-        fields:  changes?.filter(c => c.field && !c.type) ?? [],
+        created: changes?.filter(c => c.field && !c.type && c.old === null && c.new !== null) ?? [],
+        deleted: changes?.filter(c => c.field && !c.type && c.new === null && c.old !== null) ?? [],
+        updated: changes?.filter(c => c.field && !c.type && c.old !== null && c.new !== null) ?? [],
         added:   changes?.filter(c => c.type === 'added') ?? [],
         removed: changes?.filter(c => c.type === 'removed') ?? [],
-        updated: changes?.filter(c => c.type === 'updated') ?? [],
+        itemUpdated: changes?.filter(c => c.type === 'updated') ?? [],
         stock:   changes?.filter(c => c.type === 'stock') ?? [],
     };
 
@@ -102,11 +132,49 @@ function ChangesPills({ changes }) {
                 </div>
             )}
 
-            {grouped.fields.length > 0 && (
+            {grouped.created.length > 0 && (
                 <div>
-                    <SectionLabel>Sale fields</SectionLabel>
+                    <SectionLabel>Data dibuat</SectionLabel>
                     <div className="flex flex-wrap gap-1.5">
-                        {grouped.fields.map(c => (
+                        {grouped.created.map(c => (
+                            <span
+                                key={`created-${c.field}`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            >
+                                {fieldLabels[c.field] ?? c.field}:
+                                <span className="font-semibold">
+                                    {c.new !== null && c.new !== '' && c.new !== undefined ? String(c.new) : <span className="opacity-40 italic">—</span>}
+                                </span>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {grouped.deleted.length > 0 && (
+                <div>
+                    <SectionLabel>Data sebelum dihapus</SectionLabel>
+                    <div className="flex flex-wrap gap-1.5">
+                        {grouped.deleted.map(c => (
+                            <span
+                                key={`deleted-${c.field}`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200"
+                            >
+                                {fieldLabels[c.field] ?? c.field}:
+                                <span className="font-semibold">
+                                    {c.old !== null && c.old !== '' && c.old !== undefined ? String(c.old) : <span className="opacity-40 italic">—</span>}
+                                </span>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {grouped.updated.length > 0 && (
+                <div>
+                    <SectionLabel>Perubahan data</SectionLabel>
+                    <div className="flex flex-wrap gap-1.5">
+                        {grouped.updated.map(c => (
                             <span
                                 key={`field-${c.field}`}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-700 border border-violet-200"
@@ -153,11 +221,11 @@ function ChangesPills({ changes }) {
                 </div>
             )}
 
-            {grouped.updated.length > 0 && (
+            {grouped.itemUpdated.length > 0 && (
                 <div>
                     <SectionLabel>Items updated</SectionLabel>
                     <div className="flex flex-wrap gap-1.5">
-                        {grouped.updated.map(c => (
+                        {grouped.itemUpdated.map(c => (
                             <span
                                 key={`updated-${c.variant_id}-${c.field ?? ''}`}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-700 border border-sky-200"

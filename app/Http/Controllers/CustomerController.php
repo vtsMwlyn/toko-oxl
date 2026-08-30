@@ -57,7 +57,18 @@ class CustomerController extends Controller
             'notes'   => 'nullable|string|max:1000',
         ]);
 
-        Customer::create($request->only('name', 'phone', 'address', 'notes'));
+        $customer = Customer::create($request->only('name', 'phone', 'address', 'notes'));
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menambahkan pelanggan ' . $customer->name,
+            'changes' => [
+                ['field' => 'name',    'old' => null, 'new' => $customer->name],
+                ['field' => 'phone',   'old' => null, 'new' => $customer->phone],
+                ['field' => 'address', 'old' => null, 'new' => $customer->address],
+                ['field' => 'notes',   'old' => null, 'new' => $customer->notes],
+            ],
+        ]);
 
         return back()->with('success', 'Pelanggan berhasil ditambahkan.');
     }
@@ -112,6 +123,17 @@ class CustomerController extends Controller
 
     public function destroy(Customer $customer)
     {
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menghapus pelanggan ' . $customer->name,
+            'changes' => [
+                ['field' => 'name',    'old' => $customer->name,    'new' => null],
+                ['field' => 'phone',   'old' => $customer->phone,   'new' => null],
+                ['field' => 'address', 'old' => $customer->address, 'new' => null],
+                ['field' => 'notes',   'old' => $customer->notes,   'new' => null],
+            ],
+        ]);
+
         $customer->delete();
 
         return back()->with('success', 'Pelanggan berhasil dihapus.');

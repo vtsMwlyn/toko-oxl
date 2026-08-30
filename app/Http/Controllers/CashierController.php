@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActionLog;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
@@ -63,6 +64,20 @@ class CashierController extends Controller
         if ($validatedData['status'] === 'Fixed') {
             $this->applyStockDelta($validatedData['items'] ?? [], +1, $sale);
         }
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Membuat penjualan kasir ' . $sale->date . ' ' . $sale->time . ' antrian ' . $sale->queue_number
+                . ($sale->customer_name ? ' a.n. ' . $sale->customer_name : '') . ' (status: ' . $sale->status . ')',
+            'changes' => [
+                ['field' => 'date',          'old' => null, 'new' => $sale->date],
+                ['field' => 'time',          'old' => null, 'new' => $sale->time],
+                ['field' => 'queue_number',  'old' => null, 'new' => $sale->queue_number],
+                ['field' => 'status',        'old' => null, 'new' => $sale->status],
+                ['field' => 'type',          'old' => null, 'new' => $sale->type],
+                ['field' => 'customer_name', 'old' => null, 'new' => $sale->customer_name],
+            ],
+        ]);
 
         return back()->with('queue_number', $sale->queue_number);
     }

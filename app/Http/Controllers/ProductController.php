@@ -60,7 +60,17 @@ class ProductController extends Controller
             'customer_price'   => 'required|numeric|min:0',
         ]);
 
-        Product::create($validatedData);
+        $product = Product::create($validatedData);
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menambahkan produk ' . $product->name,
+            'changes' => [
+                ['field' => 'name',           'old' => null, 'new' => $product->name],
+                ['field' => 'normal_price',   'old' => null, 'new' => $product->normal_price],
+                ['field' => 'customer_price', 'old' => null, 'new' => $product->customer_price],
+            ],
+        ]);
 
         return back()->with('success', 'Produk berhasil ditambahkan.');
     }
@@ -97,6 +107,16 @@ class ProductController extends Controller
             }
         }
 
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menghapus produk ' . $product->name,
+            'changes' => [
+                ['field' => 'name',           'old' => $product->name,           'new' => null],
+                ['field' => 'normal_price',   'old' => $product->normal_price,   'new' => null],
+                ['field' => 'customer_price', 'old' => $product->customer_price, 'new' => null],
+            ],
+        ]);
+
         $product->delete();
 
         return back()->with('success', 'Produk berhasil dihapus.');
@@ -122,7 +142,19 @@ class ProductController extends Controller
         $validatedData['barcode'] = BarcodeHelper::generate();
         $validatedData['product_id'] = $product->id;
 
-        Variant::create($validatedData);
+        $variant = Variant::create($validatedData);
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menambahkan varian ' . $product->name . ' ' . $variant->name
+                . ($variant->code ? ' (' . $variant->code . ')' : ''),
+            'changes' => [
+                ['field' => 'name',              'old' => null, 'new' => $variant->name],
+                ['field' => 'code',              'old' => null, 'new' => $variant->code],
+                ['field' => 'stock',             'old' => null, 'new' => $variant->stock],
+                ['field' => 'low_stock_warning', 'old' => null, 'new' => $variant->low_stock_warning],
+            ],
+        ]);
 
         return back()->with('success', 'Varian berhasil ditambahkan.');
     }
@@ -171,6 +203,18 @@ class ProductController extends Controller
         if ($variant->image) {
             Storage::disk('public')->delete($variant->image);
         }
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menghapus varian ' . $variant->product->name . ' ' . $variant->name
+                . ($variant->code ? ' (' . $variant->code . ')' : ''),
+            'changes' => [
+                ['field' => 'name',              'old' => $variant->name,              'new' => null],
+                ['field' => 'code',              'old' => $variant->code,              'new' => null],
+                ['field' => 'stock',             'old' => $variant->stock,             'new' => null],
+                ['field' => 'low_stock_warning', 'old' => $variant->low_stock_warning, 'new' => null],
+            ],
+        ]);
 
         $variant->delete();
 
@@ -222,7 +266,15 @@ class ProductController extends Controller
             'threshold' => 'required|integer|min:0',
         ]);
 
+        $oldThreshold = $variant->low_stock_warning;
         $variant->update(['low_stock_warning' => $request->threshold]);
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Mengatur batas stok rendah ' . $variant->product->name . ' ' . $variant->name
+                . ($variant->code ? ' (' . $variant->code . ')' : '')
+                . ' dari ' . $oldThreshold . ' menjadi ' . $request->threshold,
+        ]);
 
         return back()->with('success', 'Batas stok rendah berhasil diatur.');
     }
@@ -238,7 +290,17 @@ class ProductController extends Controller
 
         $validatedData['product_id'] = $product->id;
 
-        Discount::create($validatedData);
+        $discount = Discount::create($validatedData);
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menambahkan harga spesial untuk produk ' . $product->name . ' (min qty: ' . $discount->min_qty . ')',
+            'changes' => [
+                ['field' => 'min_qty',        'old' => null, 'new' => $discount->min_qty],
+                ['field' => 'normal_price',   'old' => null, 'new' => $discount->normal_price],
+                ['field' => 'customer_price', 'old' => null, 'new' => $discount->customer_price],
+            ],
+        ]);
 
         return back()->with('success', 'Harga spesial berhasil ditambahkan.');
     }
@@ -250,12 +312,32 @@ class ProductController extends Controller
             'customer_price' => 'required|numeric|min:0',
         ]);
 
+        $changes = ModelChangeLogger::getChanges($discount, $validatedData);
+
         $discount->update($validatedData);
+
+        if (!empty($changes)) {
+            ActionLog::create([
+                'user_id' => Auth::id(),
+                'message' => 'Memperbarui harga spesial untuk produk ' . $discount->product->name . ' (min qty: ' . $discount->min_qty . ')',
+                'changes' => $changes,
+            ]);
+        }
 
         return back()->with('success', 'Harga spesial berhasil diperbarui.');
     }
 
     public function destroy_discount(Discount $discount){
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Menghapus harga spesial untuk produk ' . $discount->product->name . ' (min qty: ' . $discount->min_qty . ')',
+            'changes' => [
+                ['field' => 'min_qty',        'old' => $discount->min_qty,        'new' => null],
+                ['field' => 'normal_price',   'old' => $discount->normal_price,   'new' => null],
+                ['field' => 'customer_price', 'old' => $discount->customer_price, 'new' => null],
+            ],
+        ]);
+
         $discount->delete();
 
         return back()->with('success', 'Harga spesial berhasil dihapus.');

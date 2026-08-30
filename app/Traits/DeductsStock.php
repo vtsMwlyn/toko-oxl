@@ -13,7 +13,7 @@ trait DeductsStock
      * Apply stock delta for all items in a sale.
      *
      * $sign = +1 to apply (sale created/fixed), -1 to reverse (sale updated/deleted).
-     * Pass $sale to trigger an ActionLog entry recording before/after stocks (only for +1).
+     * Pass $sale to trigger an ActionLog entry recording before/after stocks (for both signs).
      */
     protected function applyStockDelta(iterable $items, int $sign, ?Sale $sale = null): void
     {
@@ -30,8 +30,8 @@ trait DeductsStock
 
         if (empty($deltas)) return;
 
-        // When applying (+1) with a sale context, capture before/after for the audit log
-        if ($sign === 1 && $sale !== null) {
+        // When a sale context is provided, capture before/after for the audit log
+        if ($sale !== null) {
             $variants = Variant::with('product')
                 ->whereIn('id', array_keys($deltas))
                 ->get()
@@ -55,9 +55,11 @@ trait DeductsStock
                 Variant::where('id', $variantId)->increment('stock', $delta);
             }
 
+            $prefix = $sign === 1 ? 'Pengurangan stok dari penjualan' : 'Pemulihan stok dari penjualan';
+
             ActionLog::create([
                 'user_id' => Auth::id(),
-                'message' => 'Pengurangan stok dari penjualan '
+                'message' => $prefix . ' '
                     . $sale->date . ' ' . $sale->time
                     . ' antrian ' . $sale->queue_number
                     . ($sale->customer_name ? ' a.n. ' . $sale->customer_name : ''),
