@@ -6,6 +6,7 @@ use App\Exports\SaleByProductExport;
 use App\Exports\SaleBySaleExport;
 use App\Exports\SaleBySpecificProductExport;
 use App\Exports\SaleBySpecificVariantExport;
+use App\Helpers\DraftReservationHelper;
 use App\Helpers\ModelChangeLogger;
 use App\Helpers\SaleItemChangeLogger;
 use App\Models\ActionLog;
@@ -74,7 +75,9 @@ class SaleController extends Controller
             'history_sales' => $historySales,
             'from'          => $from,
             'to'            => $to,
-            'products'      => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
+            'products'      => DraftReservationHelper::augmentProducts(
+                                    Product::with(['variants', 'discounts'])->orderBy('name')->get()
+                                ),
             'customers'     => Customer::orderBy('name')->get(['id', 'name', 'phone']),
         ]);
     }
@@ -96,6 +99,12 @@ class SaleController extends Controller
         ]);
 
         $lastSale = Sale::where('date', $validatedData['date'])->orderBy('time', 'desc')->first();
+
+        // Guard: ensure requested Sell qty does not exceed stock minus reservations in other Draft sales
+        $stockError = DraftReservationHelper::validateStockAvailability($validatedData['items'] ?? []);
+        if ($stockError) {
+            return back()->withErrors(['items' => 'Stok tidak mencukupi: ' . $stockError])->withInput();
+        }
 
         $sale = Sale::create([
             'user_id'       => Auth::id(),
@@ -145,6 +154,16 @@ class SaleController extends Controller
             'items.*.discount'   => 'nullable|numeric|min:0',
             'items.*.type'       => 'required|in:Sell,Return',
         ]);
+
+        // Guard: ensure requested Sell qty does not exceed stock minus reservations in other Draft sales
+        // Exclude this sale's own items from the reservation count.
+        $stockError = DraftReservationHelper::validateStockAvailability(
+            $validatedData['items'] ?? [],
+            $sale->id
+        );
+        if ($stockError) {
+            return back()->withErrors(['items' => 'Stok tidak mencukupi: ' . $stockError])->withInput();
+        }
 
         // 1. Track sale field changes
         $changes = ModelChangeLogger::getChanges($sale, $validatedData);

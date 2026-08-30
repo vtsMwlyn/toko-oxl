@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\DraftReservationHelper;
 use App\Models\ActionLog;
 use App\Models\Customer;
 use App\Models\Product;
@@ -18,7 +19,9 @@ class CashierController extends Controller
     public function index()
     {
         return Inertia::render('Cashier/Index', [
-            'products'  => Product::with(['variants', 'discounts'])->orderBy('name')->get(),
+            'products'  => DraftReservationHelper::augmentProducts(
+                               Product::with(['variants', 'discounts'])->orderBy('name')->get()
+                           ),
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'phone']),
         ]);
     }
@@ -40,6 +43,12 @@ class CashierController extends Controller
         ]);
 
         $lastSale = Sale::where('date', Carbon::today()->format('Y-m-d'))->orderBy('time', 'desc')->first();
+
+        // Guard: ensure requested Sell qty does not exceed stock minus reservations in other Draft sales
+        $stockError = DraftReservationHelper::validateStockAvailability($validatedData['items'] ?? []);
+        if ($stockError) {
+            return back()->withErrors(['items' => 'Stok tidak mencukupi: ' . $stockError])->withInput();
+        }
 
         $sale = Sale::create([
             'user_id'       => Auth::id(),

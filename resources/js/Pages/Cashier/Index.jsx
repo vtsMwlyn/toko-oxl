@@ -153,10 +153,15 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
             const variantOtherQty = existingItems
                 .filter(i => i.variant_id === matched.id)
                 .reduce((sum, i) => sum + (Number(i.qty) || 0), 0);
-            if (variantOtherQty + Number(field.qty) > matched.stock) {
-                newErrors.qty = variantOtherQty > 0 
-                    ? `Stok tidak cukup. Tersedia: ${matched.stock} (telah diinput: ${variantOtherQty})`
-                    : `Stok tidak cukup. Tersedia: ${matched.stock}`;
+            // For a new cashier sale there is no existing sale to exclude, so:
+            // available = physical stock - qty reserved by all Draft sales
+            const draftReserved = matched.draft_reserved ?? 0;
+            const available = matched.stock - draftReserved;
+            if (variantOtherQty + Number(field.qty) > available) {
+                const hint = draftReserved > 0
+                    ? ` (${draftReserved} direservasi draft lain)`
+                    : (variantOtherQty > 0 ? ` (telah diinput: ${variantOtherQty})` : '');
+                newErrors.qty = `Stok tidak cukup. Tersedia: ${available}${hint}`;
             }
         }
         if (field.price === '' || Number(field.price) < 0) newErrors.price = 'Harga tidak valid.';
@@ -228,9 +233,18 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
                         onChange={e => setField(f => ({ ...f, qty: e.target.value }))}
                         onKeyDown={handleQtyKeyDown}
                     />
-                    {type === 'Sell' && matched && !errors.qty && (
-                        <p className="text-[10px] text-slate-400">Stok: {matched.stock}</p>
-                    )}
+                    {type === 'Sell' && matched && !errors.qty && (() => {
+                        const draftReserved = matched.draft_reserved ?? 0;
+                        const available = matched.stock - draftReserved;
+                        return (
+                            <p className="text-[10px] text-slate-400">
+                                Stok tersedia: <span className="font-medium">{available}</span>
+                                {draftReserved > 0 && (
+                                    <span className="text-amber-500 ml-1">({draftReserved} direservasi draft lain)</span>
+                                )}
+                            </p>
+                        );
+                    })()}
                     <InputError message={errors.qty} />
                 </div>
 

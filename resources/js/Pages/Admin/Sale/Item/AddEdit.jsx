@@ -92,14 +92,23 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
         if (!matched)                    newErrors.variant  = 'Pilih produk terlebih dahulu.';
         if (!qty || Number(qty) <= 0)    newErrors.qty      = 'Qty harus lebih dari 0.';
         else if (type === 'Sell' && matched) {
+            // How much of this variant is in the current sale's OTHER items (not the one being edited)
             const variantOtherQty = existingItems
                 .filter(i => i._localId !== item?._localId)
                 .filter(i => i.variant_id === matched.id)
                 .reduce((sum, i) => sum + (Number(i.qty) || 0), 0);
-            if (variantOtherQty + Number(qty) > matched.stock) {
-                newErrors.qty = variantOtherQty > 0 
-                    ? `Stok tidak cukup. Tersedia: ${matched.stock} (telah diinput: ${variantOtherQty})`
-                    : `Stok tidak cukup. Tersedia: ${matched.stock}`;
+            // How much of this variant is in the current sale's ALL items (including the one being edited)
+            const myVariantQty = existingItems
+                .filter(i => i.variant_id === matched.id)
+                .reduce((sum, i) => sum + (Number(i.qty) || 0), 0);
+            // Net reservation by OTHER draft sales (subtract this sale's own contribution)
+            const draftReservedByOthers = Math.max(0, (matched.draft_reserved ?? 0) - myVariantQty);
+            const available = matched.stock - draftReservedByOthers;
+            if (variantOtherQty + Number(qty) > available) {
+                const hint = draftReservedByOthers > 0
+                    ? ` (${draftReservedByOthers} direservasi draft lain)`
+                    : (variantOtherQty > 0 ? ` (telah diinput: ${variantOtherQty})` : '');
+                newErrors.qty = `Stok tidak cukup. Tersedia: ${available}${hint}`;
             }
         }
         if (!price || Number(price) < 0) newErrors.price = 'Harga tidak valid.';
@@ -173,9 +182,21 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
                         className="block w-full"
                         onChange={handleQtyChange}
                     />
-                    {type === 'Sell' && matched && !errors.qty && (
-                        <p className="text-[11px] text-slate-400 mt-0.5">Stok tersedia: {matched.stock}</p>
-                    )}
+                    {type === 'Sell' && matched && !errors.qty && (() => {
+                        const myVariantQty = existingItems
+                            .filter(i => i.variant_id === matched.id)
+                            .reduce((sum, i) => sum + (Number(i.qty) || 0), 0);
+                        const draftReservedByOthers = Math.max(0, (matched.draft_reserved ?? 0) - myVariantQty);
+                        const available = matched.stock - draftReservedByOthers;
+                        return (
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                                Stok tersedia: <span className="font-medium">{available}</span>
+                                {draftReservedByOthers > 0 && (
+                                    <span className="text-amber-500 ml-1">({draftReservedByOthers} direservasi draft lain)</span>
+                                )}
+                            </p>
+                        );
+                    })()}
                     <InputError message={errors.qty} />
                 </div>
 
