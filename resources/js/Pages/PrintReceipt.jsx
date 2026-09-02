@@ -34,7 +34,7 @@ function ReceiptContent({ sale, products }) {
 
     const soldTotal   = soldItems.reduce((sum, i)   => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
     const returnTotal = returnItems.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
-    const grandTotal  = soldTotal - returnTotal;
+    const grandTotal  = soldTotal - returnTotal - (Number(sale.discount) || 0);
 
     const base = {
         fontFamily: "'Courier New', Courier, monospace",
@@ -133,6 +133,9 @@ function ReceiptContent({ sale, products }) {
                     <ReceiptRow label="Total Penjualan" value={formatPrice(soldTotal)} />
                     <ReceiptRow label="Total Retur"     value={`- ${formatPrice(returnTotal)}`} />
                 </>
+            )}
+            {sale.discount > 0 && (
+                <ReceiptRow label="Diskon Tambahan" value={`- ${formatPrice(sale.discount)}`} />
             )}
             <ReceiptRow label="TOTAL" value={formatPrice(grandTotal)} bold />
 

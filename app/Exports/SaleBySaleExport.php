@@ -58,7 +58,7 @@ class SaleBySaleExport implements
 
     public function headings(): array
     {
-        return ['Tanggal', 'Waktu', 'Tipe Transaksi', 'Pelanggan', 'Nama Produk', 'Varian', 'Tipe Item', 'Qty', 'Harga'];
+        return ['Tanggal', 'Waktu', 'Tipe Transaksi', 'Pelanggan', 'Nama Produk', 'Varian', 'Tipe Item', 'Qty', 'Harga', 'Diskon Item', 'Diskon Keseluruhan', 'Net Item'];
     }
 
     public function map($row): array
@@ -73,6 +73,9 @@ class SaleBySaleExport implements
             $row['item']->type,
             (int) ceil($row['item']->qty * $this->qtyPercent),
             $row['item']->price,
+            $row['item']->discount ?? 0,
+            $row['sale']->discount ?? 0,
+            $row['item']->price - ($row['item']->discount ?? 0),
         ]];
     }
 
@@ -88,6 +91,9 @@ class SaleBySaleExport implements
             'G' => 10,  // Tipe Item
             'H' => 8,   // Qty
             'I' => 18,  // Harga
+            'J' => 14,  // Diskon Item
+            'K' => 18,  // Diskon Keseluruhan
+            'L' => 18,  // Net Item
         ];
     }
 
@@ -95,7 +101,7 @@ class SaleBySaleExport implements
     {
         $lastRow = $sheet->getHighestRow();
 
-        $sheet->getStyle('A1:I1')->applyFromArray([
+        $sheet->getStyle('A1:L1')->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11, 'name' => 'Arial'],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '059669']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -107,14 +113,14 @@ class SaleBySaleExport implements
         if ($lastRow >= 2) {
             for ($row = 2; $row <= $lastRow; $row++) {
                 $fill = ($row % 2 === 0) ? 'F0FDF4' : 'FFFFFF';
-                $sheet->getStyle("A{$row}:I{$row}")->applyFromArray([
+                $sheet->getStyle("A{$row}:L{$row}")->applyFromArray([
                     'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
                     'font'    => ['name' => 'Arial', 'size' => 10],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_HAIR, 'color' => ['rgb' => 'D1D5DB']]],
                 ]);
             }
 
-            $sheet->getStyle("I2:I{$lastRow}")
+            $sheet->getStyle("I2:L{$lastRow}")
                 ->getNumberFormat()->setFormatCode('"Rp "#,##0');
 
             $sheet->getStyle("H2:H{$lastRow}")
@@ -127,7 +133,7 @@ class SaleBySaleExport implements
                 ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         }
 
-        $sheet->getStyle("A1:I{$lastRow}")->applyFromArray([
+        $sheet->getStyle("A1:L{$lastRow}")->applyFromArray([
             'borders' => ['outline' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '059669']]],
         ]);
 

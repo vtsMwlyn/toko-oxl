@@ -349,6 +349,7 @@ export default function Index({ products: initialProducts, customers: initialCus
         customer_name: '',
         status:        'Fixed',
         type:          'Offline',
+        discount:      '',
     });
 
     // Clock ticks in its own local state — keeps useForm free from per-second updates
@@ -460,7 +461,7 @@ export default function Index({ products: initialProducts, customers: initialCus
 
     const soldTotal   = soldItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
     const returnTotal = returnItems.reduce((s, i) => s + (i.price - (i.discount ?? 0)) * i.qty, 0);
-    const grandTotal  = soldTotal - returnTotal;
+    const grandTotal  = soldTotal - returnTotal - (Number(data.discount) || 0);
 
     return (
         <AuthenticatedLayout title="Kasir">
@@ -638,6 +639,17 @@ export default function Index({ products: initialProducts, customers: initialCus
                                     <div className="border-t border-slate-100 mb-3" />
                                 </>
                             )}
+                            <div className="grid gap-1 mb-4">
+                                <InputLabel value="Diskon Tambahan (Rp)" required={false} />
+                                <TextInput
+                                    type="number" min="0"
+                                    value={data.discount}
+                                    className="block w-full text-right"
+                                    onChange={e => setData('discount', e.target.value)}
+                                    placeholder="0"
+                                />
+                                <InputError message={errors.discount} />
+                            </div>
                             <div className="flex justify-between items-end">
                                 <span className="text-xs text-slate-500">Total</span>
                                 <span className="text-2xl font-bold text-emerald-700">{formatPrice(grandTotal)}</span>

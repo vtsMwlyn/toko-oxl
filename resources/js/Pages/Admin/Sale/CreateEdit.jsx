@@ -92,6 +92,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         customer_name: sale?.customer_name ?? '',
         status:        sale?.status        ?? 'Draft',
         type:          sale?.type          ?? 'Offline',
+        discount:      sale?.discount      ?? '',
     });
 
     useEffect(() => {
@@ -155,10 +156,10 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         }
     };
 
-    // Total is based on sold items only — return items do not affect the total
+    // Total is based on sold items minus return items minus overall discount
     const soldTotal   = computeTotal(soldItems);
     const returnTotal = computeTotal(returnItems);
-    const grandTotal  = soldTotal - returnTotal;
+    const grandTotal  = soldTotal - returnTotal - (Number(data.discount) || 0);
 
     return (
         <Popup
@@ -314,10 +315,20 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                         </p>
                     </div>
 
-                    {/* ── Grand total ── */}
-                    <div className="mt-6 flex justify-end">
-                        <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right">
-                            <p className="text-xs text-emerald-500 mb-0.5">Total Penjualan</p>
+                    <div className="mt-6 flex justify-end gap-4">
+                        <div className="bg-white border border-emerald-100 rounded-xl px-4 py-3 flex flex-col justify-center">
+                            <InputLabel value="Diskon Tambahan (Rp)" className="text-xs mb-1" />
+                            <TextInput
+                                type="number" min="0"
+                                value={data.discount}
+                                className="block w-32 text-right"
+                                onChange={e => setData('discount', e.target.value)}
+                                placeholder="0"
+                            />
+                            <InputError message={errors.discount} />
+                        </div>
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-6 py-3 text-right flex flex-col justify-center">
+                            <p className="text-xs text-emerald-500 mb-0.5">Total Akhir</p>
                             <p className="text-xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
                         </div>
                     </div>

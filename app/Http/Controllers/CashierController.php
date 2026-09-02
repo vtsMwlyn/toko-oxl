@@ -40,6 +40,7 @@ class CashierController extends Controller
             'items.*.qty'        => 'required|integer|min:1',
             'items.*.discount'   => 'nullable|numeric|min:0',
             'items.*.type'       => 'required|in:Sell,Return',
+            'discount'           => 'nullable|numeric|min:0',
         ]);
 
         $lastSale = Sale::where('date', Carbon::today()->format('Y-m-d'))->orderBy('time', 'desc')->first();
@@ -57,6 +58,7 @@ class CashierController extends Controller
             'customer_name' => $validatedData['customer_name'],
             'status'        => $validatedData['status'],
             'type'          => $validatedData['type'],
+            'discount'      => $validatedData['discount'] ?? 0,
             'queue_number'  => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
         ]);
 
@@ -84,6 +86,7 @@ class CashierController extends Controller
                 ['field' => 'queue_number',  'old' => null, 'new' => $sale->queue_number],
                 ['field' => 'status',        'old' => null, 'new' => $sale->status],
                 ['field' => 'type',          'old' => null, 'new' => $sale->type],
+                ['field' => 'discount',      'old' => null, 'new' => $sale->discount],
                 ['field' => 'customer_name', 'old' => null, 'new' => $sale->customer_name],
             ],
         ]);

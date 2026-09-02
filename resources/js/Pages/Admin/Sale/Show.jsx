@@ -107,7 +107,7 @@ export default function Show({ isOpen, onClose, sale: initialSale, products }) {
     // Total subtracts return items from sold items
     const soldTotal   = soldItems.reduce((sum, i)   => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
     const returnTotal = returnItems.reduce((sum, i) => sum + (i.price - (i.discount ?? 0)) * i.qty, 0);
-    const grandTotal  = soldTotal - returnTotal;
+    const grandTotal  = soldTotal - returnTotal - (Number(sale.discount) || 0);
 
     return (
         <Popup
@@ -165,7 +165,13 @@ export default function Show({ isOpen, onClose, sale: initialSale, products }) {
                             </div>
                         </>
                     )}
-                    <p className="text-xs text-emerald-500 mb-0.5">Total</p>
+                    {sale.discount > 0 && (
+                        <div className="flex justify-between gap-8 text-xs text-emerald-500 mb-2">
+                            <span>Diskon Tambahan</span>
+                            <span>- {formatPrice(sale.discount)}</span>
+                        </div>
+                    )}
+                    <p className="text-xs text-emerald-500 mb-0.5">Total Akhir</p>
                     <p className="text-xl font-bold text-emerald-700">{formatPrice(grandTotal)}</p>
                 </div>
             </div>

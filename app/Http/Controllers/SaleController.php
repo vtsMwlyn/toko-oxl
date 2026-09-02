@@ -33,7 +33,7 @@ class SaleController extends Controller
             'total' => $sale->items->reduce(function ($carry, $item) {
                 $subtotal = ($item->price - ($item->discount ?? 0)) * $item->qty;
                 return $carry + ($item->type === 'Sell' ? $subtotal : -$subtotal);
-            }, 0),
+            }, 0) - ($sale->discount ?? 0),
             'cashier_name' => $sale->user?->name,
         ]);
 
@@ -96,6 +96,7 @@ class SaleController extends Controller
             'items.*.qty'        => 'required|integer|min:1',
             'items.*.discount'   => 'nullable|numeric|min:0',
             'items.*.type'       => 'required|in:Sell,Return',
+            'discount'           => 'nullable|numeric|min:0',
         ]);
 
         $lastSale = Sale::where('date', $validatedData['date'])->orderBy('time', 'desc')->first();
@@ -113,6 +114,7 @@ class SaleController extends Controller
             'customer_name' => $validatedData['customer_name'],
             'status'        => $validatedData['status'],
             'type'          => $validatedData['type'],
+            'discount'      => $validatedData['discount'] ?? 0,
             'queue_number'  => $lastSale ? ((int) $lastSale->queue_number + 1) : 1,
         ]);
 
@@ -132,6 +134,7 @@ class SaleController extends Controller
                 ['field' => 'queue_number',  'old' => null, 'new' => $sale->queue_number],
                 ['field' => 'status',        'old' => null, 'new' => $sale->status],
                 ['field' => 'type',          'old' => null, 'new' => $sale->type],
+                ['field' => 'discount',      'old' => null, 'new' => $sale->discount],
                 ['field' => 'customer_name', 'old' => null, 'new' => $sale->customer_name],
             ],
         ]);
@@ -153,6 +156,7 @@ class SaleController extends Controller
             'items.*.qty'        => 'required|integer|min:1',
             'items.*.discount'   => 'nullable|numeric|min:0',
             'items.*.type'       => 'required|in:Sell,Return',
+            'discount'           => 'nullable|numeric|min:0',
         ]);
 
         // Guard: ensure requested Sell qty does not exceed stock minus reservations in other Draft sales
@@ -200,6 +204,7 @@ class SaleController extends Controller
             'customer_name' => $validatedData['customer_name'],
             'status'        => $newStatus,
             'type'          => $validatedData['type'],
+            'discount'      => $validatedData['discount'] ?? 0,
         ]);
 
         $sale->items()->delete();
@@ -243,6 +248,7 @@ class SaleController extends Controller
                 ['field' => 'queue_number',  'old' => $sale->queue_number,  'new' => null],
                 ['field' => 'status',        'old' => $sale->status,        'new' => null],
                 ['field' => 'type',          'old' => $sale->type,          'new' => null],
+                ['field' => 'discount',      'old' => $sale->discount,      'new' => null],
                 ['field' => 'customer_name', 'old' => $sale->customer_name, 'new' => null],
             ],
         ]);
