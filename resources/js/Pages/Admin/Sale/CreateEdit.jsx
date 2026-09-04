@@ -101,7 +101,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
     }, [data.customer_name]);
 
     function handleCustomerChange(option) {
-        setCustomerOption(option);
+        setCustomerOption(option ?? null);
         setData('customer_name', option?.value ?? '');
     }
 

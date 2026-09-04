@@ -612,7 +612,7 @@ export default function Index({ today_sales: initialToday_sales, history_sales: 
                 <CreateEdit mode="Create" isOpen={isCreating} onClose={() => { setIsCreating(false); reload(); }} products={products} customers={customers} />
             )}
             {isEditing && (
-                <CreateEdit mode="Edit" isOpen={!!isEditing} onClose={() => { setIsEditing(null); reload(); }} sale={isEditing} products={products} customers={customers} />
+                <CreateEdit key={isEditing?.id} mode="Edit" isOpen={!!isEditing} onClose={() => { setIsEditing(null); reload(); }} sale={isEditing} products={products} customers={customers} />
             )}
             {isDeleting && (
                 <Delete isOpen={!!isDeleting} onClose={() => { setIsDeleting(null); reload(); }} sale={isDeleting} />
