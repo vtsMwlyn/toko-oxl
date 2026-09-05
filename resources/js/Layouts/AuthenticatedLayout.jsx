@@ -16,12 +16,12 @@ export default function AuthenticatedLayout({ children, title = 'Toko OXL' }) {
     useEffect(() => {
         if (!flashSuccess) return;
         setToasts(prev => [...prev, { id: Date.now(), text: flashSuccess, type: 'success' }]);
-    }, [flashSuccess]);
+    }, [flashSuccess, props]);
 
     useEffect(() => {
         if (!flashError) return;
         setToasts(prev => [...prev, { id: Date.now() + 1, text: flashError, type: 'error' }]);
-    }, [flashError]);
+    }, [flashError, props]);
 
     // Handle generic validation errors that aren't tied to a specific form field or when popup closes
     useEffect(() => {
@@ -31,7 +31,7 @@ export default function AuthenticatedLayout({ children, title = 'Toko OXL' }) {
                 setToasts(prev => [...prev, { id: Date.now() + 2 + idx, text: msg, type: 'error' }]);
             });
         }
-    }, [errors]);
+    }, [errors, props]);
 
     const dismiss = useCallback((id) => {
         setToasts(prev => prev.filter(t => t.id !== id));

@@ -60,9 +60,10 @@ class DraftReservationHelper
      *
      * @param  array    $items          The items array from the request (each with variant_id, qty, type).
      * @param  int|null $excludeSaleId  Exclude this sale when computing reservations (for updates).
+     * @param  array    $fixedItems     Existing items (if sale is Fixed) to add back to available stock.
      * @return string|null
      */
-    public static function validateStockAvailability(array $items, ?int $excludeSaleId = null): ?string
+    public static function validateStockAvailability(array $items, ?int $excludeSaleId = null, array $fixedItems = []): ?string
     {
         // Aggregate requested Sell qty per variant
         $requestedQty = [];
@@ -74,6 +75,14 @@ class DraftReservationHelper
 
         if (empty($requestedQty)) return null;
 
+        // Aggregate Fixed items qty to add back
+        $addBackQty = [];
+        foreach ($fixedItems as $item) {
+            if (($item['type'] ?? '') !== 'Sell') continue;
+            $vid = $item['variant_id'];
+            $addBackQty[$vid] = ($addBackQty[$vid] ?? 0) + (int) $item['qty'];
+        }
+
         $variantIds  = array_keys($requestedQty);
         $reservedMap = self::getReservedQty($variantIds, $excludeSaleId);
 
@@ -83,7 +92,8 @@ class DraftReservationHelper
         foreach ($requestedQty as $variantId => $qty) {
             $variant   = $variants[$variantId] ?? null;
             $reserved  = $reservedMap[$variantId] ?? 0;
-            $available = ($variant?->stock ?? 0) - $reserved;
+            $addedBack = $addBackQty[$variantId] ?? 0;
+            $available = ($variant?->stock ?? 0) + $addedBack - $reserved;
 
             if ($qty > $available) {
                 $label = $variant

@@ -163,9 +163,11 @@ class SaleController extends Controller
 
         // Guard: ensure requested Sell qty does not exceed stock minus reservations in other Draft sales
         // Exclude this sale's own items from the reservation count.
+        $sale->load('items');
         $stockError = DraftReservationHelper::validateStockAvailability(
             $validatedData['items'] ?? [],
-            $sale->id
+            $sale->id,
+            $sale->status === 'Fixed' ? $sale->items->toArray() : []
         );
         if ($stockError) {
             return back()->withErrors(['items' => 'Stok tidak mencukupi: ' . $stockError])->withInput();
