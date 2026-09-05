@@ -21,5 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->renderable(function (\Illuminate\Database\QueryException $e, \Illuminate\Http\Request $request) {
+            // Error 23000: Integrity constraint violation (e.g., foreign key constraint or duplicate entry)
+            if ($e->getCode() == 23000) {
+                return back()->with('error', 'Operasi gagal: Data tidak dapat dihapus/diubah karena sedang digunakan oleh data lain, atau data sudah ada.');
+            }
+        });
     })->create();

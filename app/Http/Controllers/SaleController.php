@@ -159,6 +159,8 @@ class SaleController extends Controller
             'discount'           => 'nullable|numeric|min:0',
         ]);
 
+        // return $validatedData;
+
         // Guard: ensure requested Sell qty does not exceed stock minus reservations in other Draft sales
         // Exclude this sale's own items from the reservation count.
         $stockError = DraftReservationHelper::validateStockAvailability(

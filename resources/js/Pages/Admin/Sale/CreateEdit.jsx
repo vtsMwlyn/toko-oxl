@@ -136,7 +136,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
         };
 
         const afterSubmission = {
-            onSuccess: () => {
+            onSuccess: (page) => {
                 if (isTransitioningToFixed) {
                     setBecameFixed(true);
                 } else {
@@ -146,7 +146,9 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
             onError: (serverErrors) => {
                 Object.entries(serverErrors).forEach(([key, message]) => setError(key, message));
             },
-            onFinish: () => setLoading(false),
+            onFinish: () => {
+                setLoading(false);
+            },
         };
 
         if (mode === 'Create') {
@@ -233,12 +235,6 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                                 options={customerOptions}
                                 value={customerOption}
                                 onChange={handleCustomerChange}
-                                onInputChange={(val, { action }) => {
-                                    if (action === 'input-change') {
-                                        setCustomerOption({ value: val, label: val });
-                                        setData('customer_name', val);
-                                    }
-                                }}
                                 isClearable
                                 placeholder="Pilih pelanggan atau ketik nama..."
                                 formatCreateLabel={(val) => `Gunakan nama: "${val}"`}
