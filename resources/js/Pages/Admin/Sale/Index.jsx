@@ -13,6 +13,7 @@ import CreateEdit from './CreateEdit';
 import Delete from './Delete';
 import BatchDelete from './BatchDelete';
 import BatchDeleteByRange from './BatchDeleteByRange';
+import SetDraft from './SetDraft';
 
 import PrintReceipt from '@/Pages/PrintReceipt';
 import SetFixed from './SetFixed';
@@ -233,7 +234,8 @@ export default function Index({ today_sales: initialToday_sales, history_sales: 
     const [isDeleting,         setIsDeleting]         = useState(null);
     const [isDeletingByRange,  setIsDeletingByRange]  = useState(false);
 
-    const [isSettingFixed, setIsSettingFixed] = useState(false);
+    const [isSettingFixed,    setIsSettingFixed]    = useState(false);
+    const [isRevertingDraft,  setIsRevertingDraft]  = useState(null);
 
     const [selectedTab, setSelectedTab] = useState(auth.user.role === 'Admin' ? 'All' : 'Draft');
 
@@ -432,6 +434,14 @@ export default function Index({ today_sales: initialToday_sales, history_sales: 
                 </>
             )}
 
+            {/* HeadCashier: simple Fixed / Draft tab switcher for today's sales */}
+            {auth.user.role === 'HeadCashier' && (
+                <div className="w-full sm:w-1/3 grid grid-cols-2 gap-1">
+                    <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Fixed' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('Fixed')}>Fixed</button>
+                    <button type="button" className={`border-b-4 pb-1 ${selectedTab === 'Draft' ? 'border-emerald-600' : 'border-transparent hover:border-slate-300'}`} onClick={() => handleTabChange('Draft')}>Draft</button>
+                </div>
+            )}
+
             {/* ALL TAB — grouped by date */}
             {selectedTab === 'All' ? (
                 <>
@@ -555,6 +565,15 @@ export default function Index({ today_sales: initialToday_sales, history_sales: 
                                             onClick={() => setIsSettingFixed(sale)}
                                         />
                                     )}
+                                    {/* HeadCashier: revert Fixed → Draft */}
+                                    {sale.status === 'Fixed' && auth.user.role === 'HeadCashier' && (
+                                        <PrimaryButton
+                                            styled={false} className="text-amber-500"
+                                            icon={<ClipboardCheck className="size-4 rotate-180" />} type="button"
+                                            title="Kembalikan ke Draft"
+                                            onClick={() => setIsRevertingDraft(sale)}
+                                        />
+                                    )}
                                     <PrintReceipt icon={true} sale={sale} products={products} />
                                     <PrimaryButton
                                         styled={false} className="text-emerald-600"
@@ -619,6 +638,10 @@ export default function Index({ today_sales: initialToday_sales, history_sales: 
             )}
             {isSettingFixed && (
                 <SetFixed isOpen={!!isSettingFixed} onClose={() => { setIsSettingFixed(false); reload(); }} sale={isSettingFixed} products={products} />
+            )}
+
+            {isRevertingDraft && (
+                <SetDraft isOpen={!!isRevertingDraft} onClose={() => { setIsRevertingDraft(null); reload(); }} sale={isRevertingDraft} />
             )}
 
             {isBatchDeleting && (

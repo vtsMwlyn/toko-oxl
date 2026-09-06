@@ -33,6 +33,25 @@ function resolveAutoPrice(variant, discountTier, customerName) {
     return isCustomer ? variant.product.customer_price : variant.product.normal_price;
 }
 
+/**
+ * Compute the allowed price range for HeadCashier.
+ * MIN: customer_price from the special-price tier with min_qty === 20,
+ *      or the smallest available tier's customer_price if 20 doesn't exist,
+ *      or the base product customer_price when no tiers exist.
+ * MAX: the product's base normal_price.
+ */
+function resolveHeadCashierPriceRange(variant) {
+    if (!variant) return null;
+    const tiers = [...(variant.product?.discounts ?? [])].sort((a, b) => a.min_qty - b.min_qty);
+    const tier20     = tiers.find(d => d.min_qty === 20);
+    const lowestTier = tiers[0];
+    const minPrice   = tier20
+        ? tier20.customer_price
+        : (lowestTier ? lowestTier.customer_price : variant.product.customer_price);
+    const maxPrice   = variant.product.normal_price;
+    return { min: minPrice, max: maxPrice };
+}
+
 function recalcItemPrices(items, products, customerName) {
     const variantProductMap = {};
     products.forEach(p => p.variants.forEach(v => { variantProductMap[v.id] = p; }));
@@ -61,7 +80,7 @@ function blankItem() {
     return { selectedOption: null, qty: 1, price: 0, discount: 0, priceTouched: false };
 }
 
-function ItemInputRow({ label, type, products, customerName, onAdd, existingItems = [] }) {
+function ItemInputRow({ label, type, products, customerName, onAdd, existingItems = [], canEditPrice = false }) {
     const [field,      setField]      = useState(blankItem());
     const [errors,     setErrors]     = useState({});
     const [barcodeVal, setBarcodeVal] = useState('');
@@ -97,13 +116,40 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
     const discountTier = resolveDiscount(matched?.product?.discounts, effectiveQty);
 
     useEffect(() => {
-        if (field.priceTouched) return;
+        if (field.priceTouched) {
+            // HeadCashier: auto-clamp if price goes out of allowed range
+            if (canEditPrice && matched) {
+                const range = resolveHeadCashierPriceRange(matched);
+                if (range) {
+                    const clamped = Math.max(range.min, Math.min(range.max, Number(field.price)));
+                    if (clamped !== Number(field.price)) {
+                        setField(f => ({ ...f, price: clamped }));
+                    }
+                }
+            }
+            return;
+        }
         const auto = resolveAutoPrice(matched, discountTier, customerName);
+        // HeadCashier: also clamp the auto price to the allowed range
+        if (canEditPrice && matched) {
+            const range = resolveHeadCashierPriceRange(matched);
+            if (range && auto !== '') {
+                const clamped = Math.max(range.min, Math.min(range.max, Number(auto)));
+                setField(f => ({ ...f, price: clamped }));
+                return;
+            }
+        }
         setField(f => ({ ...f, price: auto ?? '' }));
     }, [matched, field.qty, customerName, field.priceTouched, existingItems]);
 
+    const priceRange = canEditPrice && matched ? resolveHeadCashierPriceRange(matched) : null;
+
     const priceHint = (() => {
-        if (!matched || field.priceTouched) return null;
+        if (!matched) return null;
+        if (canEditPrice && priceRange) {
+            return `Kisaran harga: ${formatPrice(priceRange.min)} – ${formatPrice(priceRange.max)}`;
+        }
+        if (field.priceTouched) return null;
         const isCustomer = !!customerName?.trim();
         const totalNote  = effectiveQty > (Number(field.qty) || 0) ? ` (total ${effectiveQty} pcs)` : '';
         if (discountTier) return isCustomer
@@ -252,12 +298,15 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
                     <InputLabel htmlFor={`${label}-price`} value="Harga (Rp)" />
                     <TextInput
                         id={`${label}-price`}
-                        type="number" min="0"
+                        type="number" min={priceRange?.min ?? 0} max={priceRange?.max ?? undefined}
                         value={field.price}
-                        className="block w-full"
-                        onChange={e => setField(f => ({ ...f, price: e.target.value, priceTouched: true }))}
+                        className={`block w-full ${!canEditPrice ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : ''}`}
+                        disabled={!canEditPrice}
+                        onChange={canEditPrice ? (e => setField(f => ({ ...f, price: e.target.value, priceTouched: true }))) : undefined}
                     />
-                    {priceHint && <p className="text-[10px] text-emerald-600">{priceHint}</p>}
+                    {priceHint && (
+                        <p className={`text-[10px] ${canEditPrice ? 'text-amber-600' : 'text-emerald-600'}`}>{priceHint}</p>
+                    )}
                     <InputError message={errors.price} />
                 </div>
 
@@ -329,6 +378,7 @@ function ItemTable({ items, products, onRemove }) {
 }
 
 export default function Index({ products: initialProducts, customers: initialCustomers, auth }) {
+    const canEditPrice = auth?.user?.role === 'HeadCashier';
     const [products, setProducts] = useState(initialProducts);
     const [customers, setCustomers] = useState(initialCustomers);
 
@@ -526,6 +576,7 @@ export default function Index({ products: initialProducts, customers: initialCus
                             customerName={data.customer_name}
                             existingItems={soldItems}
                             onAdd={item => addItem('Sell', item)}
+                            canEditPrice={canEditPrice}
                         />
                         {soldItems.length > 0 && (
                             <div className="mt-4">
@@ -566,6 +617,7 @@ export default function Index({ products: initialProducts, customers: initialCus
                                     customerName={data.customer_name}
                                     existingItems={returnItems}
                                     onAdd={item => addItem('Return', item)}
+                                    canEditPrice={canEditPrice}
                                 />
                                 {returnItems.length > 0 && (
                                     <div className="mt-4">

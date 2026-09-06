@@ -8,7 +8,7 @@ import InputError from "@/Components/InputError"
 import PrimaryButton from "@/Components/PrimaryButton"
 import OperationSuccess from "@/Components/OperationSuccess"
 
-export default function AddStock({ isOpen, onClose, variant, product }) {
+export default function AddStock({ isOpen, onClose, variant, product, isHeadCashier = false }) {
     const [success, setSuccess] = useState(false);
 
     const { data, setData, post, processing, errors, setError } = useForm({
@@ -18,7 +18,10 @@ export default function AddStock({ isOpen, onClose, variant, product }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route('admin.product.variant.add-stock', { variant: variant.id }), {
+        post(route(
+            isHeadCashier ? 'head-cashier.product.variant.add-stock' : 'admin.product.variant.add-stock',
+            { variant: variant.id }
+        ), {
             onSuccess: () => {
                 setSuccess(true);
                 setTimeout(() => {

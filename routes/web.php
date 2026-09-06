@@ -30,6 +30,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sale', [SaleController::class, 'index'])   ->name('sale.index');
     Route::post('/sale/{sale}', [SaleController::class, 'update'])  ->name('sale.update');
     Route::post('/sale/{sale}/set-fixed', [SaleController::class, 'set_fixed'])  ->name('sale.set-fixed');
+    Route::post('/sale/{sale}/set-draft',  [SaleController::class, 'set_draft'])  ->name('sale.set-draft');
 
     // ==== ADMIN ==== //
     Route::prefix('/admin')->middleware('admin')->name('admin.')->group(function(){
@@ -111,6 +112,20 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('cashier')->name('cashier.')->group(function () {
         Route::get('/',    [CashierController::class, 'index'])->name('index');
         Route::post('/',   [CashierController::class, 'store'])->name('sale.store');
+    });
+
+    // ==== HEAD CASHIER ==== //
+    Route::prefix('head-cashier')->middleware('head_cashier')->name('head-cashier.')->group(function () {
+        // Product — read-only listing
+        Route::prefix('/product')->name('product.')->group(function () {
+            Route::get('/', [ProductController::class, 'index'])->name('index');
+
+            // Variant stock management
+            Route::prefix('/variant')->name('variant.')->group(function () {
+                Route::post('/{variant}/add-stock',    [ProductController::class, 'add_stock'])   ->name('add-stock');
+                Route::post('/{variant}/reduce-stock', [ProductController::class, 'reduce_stock'])->name('reduce-stock');
+            });
+        });
     });
 });
 

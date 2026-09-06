@@ -17,17 +17,34 @@ import {
     Undo2,
 } from 'lucide-react';
 
-const navItems = [
-    { label: 'Dashboard',      icon: LayoutDashboard, urlPrefix: '/dashboard',      href: route('dashboard') },
-    { label: 'Kasir',          icon: ShoppingCart,    urlPrefix: '/cashier',        href: route('cashier.index') },
-    { label: 'Produk',         icon: Landmark,        urlPrefix: '/admin/product',  href: route('admin.product.index') },
-    { label: 'Penjualan',      icon: ShoppingBag,     urlPrefix: '/sale',           href: route('sale.index') },
-    { label: 'Retur Produk',   icon: Undo2,           urlPrefix: '/admin/return',   href: route('admin.return.index') },
-    { label: 'Pelanggan',      icon: Star,            urlPrefix: '/admin/customer', href: route('admin.customer.index') },
-    { label: 'Laporan',        icon: BarChart2,       urlPrefix: '/admin/report',   href: route('admin.report.index') },
-    { label: 'Log',            icon: History,         urlPrefix: '/admin/log',      href: route('admin.log.index') },
-    { label: 'Pengguna',       icon: Users,           urlPrefix: '/admin/user',     href: route('admin.user.index') },
+const navItemsAdmin = [
+    { label: 'Dashboard',      icon: LayoutDashboard, urlPrefix: '/dashboard',          href: route('dashboard') },
+    { label: 'Kasir',          icon: ShoppingCart,    urlPrefix: '/cashier',            href: route('cashier.index') },
+    { label: 'Produk',         icon: Landmark,        urlPrefix: '/admin/product',      href: route('admin.product.index') },
+    { label: 'Penjualan',      icon: ShoppingBag,     urlPrefix: '/sale',               href: route('sale.index') },
+    { label: 'Retur Produk',   icon: Undo2,           urlPrefix: '/admin/return',       href: route('admin.return.index') },
+    { label: 'Pelanggan',      icon: Star,            urlPrefix: '/admin/customer',     href: route('admin.customer.index') },
+    { label: 'Laporan',        icon: BarChart2,       urlPrefix: '/admin/report',       href: route('admin.report.index') },
+    { label: 'Log',            icon: History,         urlPrefix: '/admin/log',          href: route('admin.log.index') },
+    { label: 'Pengguna',       icon: Users,           urlPrefix: '/admin/user',         href: route('admin.user.index') },
 ];
+
+const navItemsHeadCashier = [
+    { label: 'Kasir',    icon: ShoppingCart, urlPrefix: '/cashier',        href: route('cashier.index') },
+    { label: 'Penjualan', icon: ShoppingBag, urlPrefix: '/sale',           href: route('sale.index') },
+    { label: 'Produk',   icon: Landmark,    urlPrefix: '/head-cashier',   href: route('head-cashier.product.index') },
+];
+
+const navItemsCashier = [
+    { label: 'Kasir',     icon: ShoppingCart, urlPrefix: '/cashier', href: route('cashier.index') },
+    { label: 'Penjualan', icon: ShoppingBag,  urlPrefix: '/sale',    href: route('sale.index') },
+];
+
+const roleBadgeColor = {
+    Admin:       'bg-emerald-600',
+    HeadCashier: 'bg-amber-500',
+    User:        'bg-slate-400',
+};
 
 export default function Sidebar({ open, onClose }) {
     const { url, props } = usePage();
@@ -36,10 +53,11 @@ export default function Sidebar({ open, onClose }) {
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef(null);
 
-    // Filter nav items: Admin sees all, others see ONLY 'Kasir' and 'Penjualan'
-    const filteredNavItems = auth.user.role === 'Admin'
-        ? navItems
-        : navItems.filter(item => ['Kasir', 'Penjualan'].includes(item.label));
+    // Select nav items based on role
+    const filteredNavItems =
+        auth.user.role === 'Admin'       ? navItemsAdmin :
+        auth.user.role === 'HeadCashier' ? navItemsHeadCashier :
+        navItemsCashier;
 
     // Close popover on outside click
     useEffect(() => {
@@ -177,7 +195,7 @@ export default function Sidebar({ open, onClose }) {
                         `}
                     >
                         {/* Avatar */}
-                        <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                        <div className={`w-8 h-8 rounded-full ${roleBadgeColor[auth.user.role] ?? 'bg-slate-400'} flex items-center justify-center text-white text-xs font-semibold shrink-0`}>
                             {initials}
                         </div>
 

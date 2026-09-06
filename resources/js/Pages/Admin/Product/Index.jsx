@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Plus, Pencil, Trash2, X, Eye } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
@@ -39,6 +39,8 @@ function ImagePreview({ src, onClose }) {
 }
 
 export default function Index({ products: initialProducts, search: initialSearch }) {
+    const { auth } = usePage().props;
+    const isHeadCashier = auth?.user?.role === 'HeadCashier';
     const [products, setProducts] = useState(initialProducts);
 
     useEffect(() => {
@@ -52,8 +54,9 @@ export default function Index({ products: initialProducts, search: initialSearch
     useEffect(() => {
         if (isFirstRender.current) { isFirstRender.current = false; return; }
         searchPending.current = true;
+        const productIndexRoute = isHeadCashier ? route('head-cashier.product.index') : route('admin.product.index');
         const timer = setTimeout(() => {
-            router.get(route('admin.product.index'), search ? { search } : {}, { preserveState: true, preserveScroll: true });
+            router.get(productIndexRoute, search ? { search } : {}, { preserveState: true, preserveScroll: true });
             searchPending.current = false;
         }, 500);
         return () => { clearTimeout(timer); searchPending.current = false; };
@@ -95,9 +98,11 @@ export default function Index({ products: initialProducts, search: initialSearch
 
             <div className="mt-4 w-full flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                 <div className="flex gap-2">
-                    <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
-                        Tambah Produk
-                    </PrimaryButton>
+                    {!isHeadCashier && (
+                        <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsCreating(true)}>
+                            Tambah Produk
+                        </PrimaryButton>
+                    )}
                 </div>
                 <TextInput placeholder="Cari produk..." value={search} onChange={e => setSearch(e.target.value)} className="w-full sm:w-auto" />
             </div>
@@ -132,16 +137,20 @@ export default function Index({ products: initialProducts, search: initialSearch
                                             icon={<Eye className="size-4" />} type="button"
                                             onClick={() => setIsShowing(product.id)}
                                         />
-                                        <PrimaryButton
-                                            styled={false} className="text-emerald-600"
-                                            icon={<Pencil className="size-4" />} type="button"
-                                            onClick={() => setIsEditing(product)}
-                                        />
-                                        <PrimaryButton
-                                            styled={false} className="text-emerald-600"
-                                            icon={<Trash2 className="size-4" />} type="button"
-                                            onClick={() => setIsDeleting(product)}
-                                        />
+                                        {!isHeadCashier && (
+                                            <>
+                                                <PrimaryButton
+                                                    styled={false} className="text-emerald-600"
+                                                    icon={<Pencil className="size-4" />} type="button"
+                                                    onClick={() => setIsEditing(product)}
+                                                />
+                                                <PrimaryButton
+                                                    styled={false} className="text-emerald-600"
+                                                    icon={<Trash2 className="size-4" />} type="button"
+                                                    onClick={() => setIsDeleting(product)}
+                                                />
+                                            </>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -186,16 +195,20 @@ export default function Index({ products: initialProducts, search: initialSearch
                                                     icon={<Eye className="size-4" />} type="button"
                                                     onClick={() => setIsShowing(product.id)}
                                                 />
-                                                <PrimaryButton
-                                                    styled={false} className="text-emerald-600"
-                                                    icon={<Pencil className="size-4" />} type="button"
-                                                    onClick={() => setIsEditing(product)}
-                                                />
-                                                <PrimaryButton
-                                                    styled={false} className="text-emerald-600"
-                                                    icon={<Trash2 className="size-4" />} type="button"
-                                                    onClick={() => setIsDeleting(product)}
-                                                />
+                                                {!isHeadCashier && (
+                                                    <>
+                                                        <PrimaryButton
+                                                            styled={false} className="text-emerald-600"
+                                                            icon={<Pencil className="size-4" />} type="button"
+                                                            onClick={() => setIsEditing(product)}
+                                                        />
+                                                        <PrimaryButton
+                                                            styled={false} className="text-emerald-600"
+                                                            icon={<Trash2 className="size-4" />} type="button"
+                                                            onClick={() => setIsDeleting(product)}
+                                                        />
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
                                     </>
@@ -215,6 +228,7 @@ export default function Index({ products: initialProducts, search: initialSearch
                 <Show
                     isOpen={!!isShowing} onClose={() => setIsShowing(false)}
                     product={products.data.find(p => p.id === isShowing)}
+                    isHeadCashier={isHeadCashier}
                 />
             )}
             {isEditing && (

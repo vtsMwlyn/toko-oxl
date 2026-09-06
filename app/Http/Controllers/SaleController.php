@@ -38,7 +38,7 @@ class SaleController extends Controller
         ]);
 
         $baseQuery = fn () => Sale::with('items.variant.product', 'user')
-            ->when($user->role !== 'Admin', fn ($q) => $q->where('user_id', $user->id));
+            ->when($user->role === 'User', fn ($q) => $q->where('user_id', $user->id));
 
         $todaySales = $baseQuery()
             ->where('date', today()->toDateString())
@@ -48,7 +48,7 @@ class SaleController extends Controller
 
         // Paginate by distinct dates (20 dates per page)
         $paginatedDates = Sale::select('date')
-            ->when($user->role !== 'Admin', fn ($q) => $q->where('user_id', $user->id))
+            ->when($user->role === 'User', fn ($q) => $q->where('user_id', $user->id))
             ->when($from, fn ($q) => $q->where('date', '>=', $from))
             ->when($to,   fn ($q) => $q->where('date', '<=', $to))
             ->groupBy('date')
@@ -311,6 +311,36 @@ class SaleController extends Controller
         ]);
 
         return back()->with('success', 'Status penjualan diubah menjadi Fixed.');
+    }
+
+    public function set_draft(Sale $sale)
+    {
+        // Only HeadCashier can revert to Draft
+        if (Auth::user()->role !== 'HeadCashier') {
+            abort(403);
+        }
+
+        // Sale must currently be Fixed to revert
+        if ($sale->status !== 'Fixed') {
+            return back()->withErrors(['status' => 'Hanya penjualan Fixed yang dapat dikembalikan ke Draft.']);
+        }
+
+        $sale->load('items');
+        // Return stock back to inventory
+        $this->applyStockDelta($sale->items, -1, $sale);
+
+        $sale->update(['status' => 'Draft']);
+
+        ActionLog::create([
+            'user_id' => Auth::id(),
+            'message' => 'Mengembalikan status penjualan ' . $sale->date . ' ' . $sale->time . ' antrian ' . $sale->queue_number
+                . ($sale->customer_name ? ' a.n. ' . $sale->customer_name : '') . ' dari Fixed ke Draft.',
+            'changes' => [
+                ['field' => 'status', 'old' => 'Fixed', 'new' => 'Draft'],
+            ],
+        ]);
+
+        return back()->with('success', 'Status penjualan dikembalikan ke Draft.');
     }
 
     public function destroyByRange(Request $request)

@@ -13,8 +13,9 @@ import CreateEdit from './CreateEdit';
 import Delete from './Delete';
 
 const roleBadge = {
-    Admin: 'bg-emerald-100 text-emerald-700',
-    User:  'bg-slate-100 text-slate-600',
+    Admin:       'bg-emerald-100 text-emerald-700',
+    HeadCashier: 'bg-amber-100 text-amber-700',
+    User:        'bg-slate-100 text-slate-600',
 };
 
 export default function Index({ users: initialUsers, search: initialSearch }) {
@@ -81,7 +82,7 @@ export default function Index({ users: initialUsers, search: initialSearch }) {
                         <td>{user.email}</td>
                         <td>
                             <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${roleBadge[user.role] ?? roleBadge.User}`}>
-                                {user.role}
+                                {user.role === 'Admin' ? 'Admin' : (user.role === 'HeadCashier' ? 'Kepala Kasir' : 'Kasir')}
                             </span>
                         </td>
                         <td>

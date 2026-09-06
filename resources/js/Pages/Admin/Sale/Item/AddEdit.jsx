@@ -26,7 +26,26 @@ function resolvePrice(variant, discountTier, customerName) {
         : variant.product.normal_price;
 }
 
-export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, products, customerName, existingItems = [] }) {
+/**
+ * Compute the allowed price range for HeadCashier.
+ * MIN: customer_price from the special-price tier with min_qty === 20,
+ *      or the smallest available tier's customer_price if 20 doesn't exist,
+ *      or the base product customer_price when no tiers exist.
+ * MAX: the product's base normal_price.
+ */
+function resolveHeadCashierPriceRange(variant) {
+    if (!variant) return null;
+    const tiers = [...(variant.product?.discounts ?? [])].sort((a, b) => a.min_qty - b.min_qty);
+    const tier20     = tiers.find(d => d.min_qty === 20);
+    const lowestTier = tiers[0];
+    const minPrice   = tier20
+        ? tier20.customer_price
+        : (lowestTier ? lowestTier.customer_price : variant.product.customer_price);
+    const maxPrice   = variant.product.normal_price;
+    return { min: minPrice, max: maxPrice };
+}
+
+export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, products, customerName, existingItems = [], canEditPrice = false }) {
     const [errors, setErrors] = useState({});
 
     const variantOptions = products.flatMap(product =>
@@ -62,14 +81,31 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
 
     const discountTier = resolveDiscount(matched?.product?.discounts, effectiveQty);
 
+    const priceRange = canEditPrice && matched ? resolveHeadCashierPriceRange(matched) : null;
+
     useEffect(() => {
         if (!matched) {
             if (!priceTouched) setPrice('');
             return;
         }
-        if (!priceTouched) {
-            setPrice(resolvePrice(matched, discountTier, customerName) ?? '');
+        if (priceTouched) {
+            // HeadCashier: auto-clamp if price goes out of allowed range
+            if (canEditPrice && priceRange) {
+                const clamped = Math.max(priceRange.min, Math.min(priceRange.max, Number(price)));
+                if (clamped !== Number(price)) {
+                    setPrice(clamped);
+                }
+            }
+            return;
         }
+        const auto = resolvePrice(matched, discountTier, customerName) ?? '';
+        // HeadCashier: clamp auto price to allowed range
+        if (canEditPrice && priceRange && auto !== '') {
+            const clamped = Math.max(priceRange.min, Math.min(priceRange.max, Number(auto)));
+            setPrice(clamped);
+            return;
+        }
+        setPrice(auto);
     }, [matched, qty, customerName, existingItems]);
 
     function handleVariantChange(option) {
@@ -136,7 +172,11 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
     const subtotal    = (priceNum - discountNum) * qtyNum;
 
     const priceHint = (() => {
-        if (!matched || priceTouched) return null;
+        if (!matched) return null;
+        if (canEditPrice && priceRange) {
+            return `Kisaran harga: ${formatPrice(priceRange.min)} – ${formatPrice(priceRange.max)}`;
+        }
+        if (priceTouched) return null;
         const isCustomer = !!customerName?.trim();
         const totalNote  = effectiveQty > (Number(qty) || 0) ? ` (total ${effectiveQty} pcs)` : '';
         if (discountTier) {
@@ -206,14 +246,16 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
                     <TextInput
                         id="item-price"
                         type="number"
-                        min="0"
+                        min={priceRange?.min ?? 0}
+                        max={priceRange?.max ?? undefined}
                         value={price}
-                        className="block w-full"
+                        className={`block w-full ${!canEditPrice ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : ''}`}
                         placeholder="0"
-                        onChange={handlePriceChange}
+                        disabled={!canEditPrice}
+                        onChange={canEditPrice ? handlePriceChange : undefined}
                     />
                     {priceHint && (
-                        <p className="text-[11px] text-emerald-600 mt-0.5">{priceHint}</p>
+                        <p className={`text-[11px] mt-0.5 ${canEditPrice ? 'text-amber-600' : 'text-emerald-600'}`}>{priceHint}</p>
                     )}
                     <InputError message={errors.price} />
                 </div>

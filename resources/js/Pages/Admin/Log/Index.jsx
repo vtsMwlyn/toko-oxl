@@ -255,7 +255,7 @@ function LogCard({ log }) {
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="text-sm font-medium text-gray-800">{log.user.name}</span>
                         <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${roleBadge[log.user.role] ?? roleBadge.User}`}>
-                            {log.user.role}
+                            {log.user.role === 'Admin' ? 'Admin' : (log.user.role === 'HeadCashier' ? 'Kepala Kasir' : 'Kasir')}
                         </span>
                         <span className="text-xs text-gray-400 ml-auto">{date} · {time}</span>
                     </div>

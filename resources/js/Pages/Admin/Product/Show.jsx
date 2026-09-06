@@ -38,7 +38,7 @@ function ProductImage({ src, name, onClick }) {
     );
 }
 
-export default function Show({ isOpen, onClose, product }) {
+export default function Show({ isOpen, onClose, product, isHeadCashier = false }) {
     const [isAddingVariant, setIsAddingVariant] = useState(false);
     const [isEditingVariant, setIsEditingVariant] = useState(null);
     const [isRemovingVariant, setIsRemovingVariant] = useState(null);
@@ -112,77 +112,89 @@ export default function Show({ isOpen, onClose, product }) {
                                     type="button"
                                     onClick={() => setIsReducingStockVariant(variant)}
                                 />
-                                <PrimaryButton
-                                    styled={false}
-                                    className="text-emerald-600"
-                                    icon={<Printer className="size-4" />}
-                                    type="button"
-                                    onClick={() => setPrintingVariant(variant)}
-                                />
-                                <PrimaryButton
-                                    styled={false}
-                                    className="text-emerald-600"
-                                    icon={<Pencil className="size-4" />}
-                                    type="button"
-                                    onClick={() => setIsEditingVariant(variant.id)}
-                                />
-                                <PrimaryButton
-                                    styled={false}
-                                    className="text-emerald-600"
-                                    icon={<Trash2 className="size-4" />}
-                                    type="button"
-                                    onClick={() => setIsRemovingVariant(variant.id)}
-                                />
+                                {!isHeadCashier && (
+                                    <PrimaryButton
+                                        styled={false}
+                                        className="text-emerald-600"
+                                        icon={<Printer className="size-4" />}
+                                        type="button"
+                                        onClick={() => setPrintingVariant(variant)}
+                                    />
+                                )}
+                                {!isHeadCashier && (
+                                    <>
+                                        <PrimaryButton
+                                            styled={false}
+                                            className="text-emerald-600"
+                                            icon={<Pencil className="size-4" />}
+                                            type="button"
+                                            onClick={() => setIsEditingVariant(variant.id)}
+                                        />
+                                        <PrimaryButton
+                                            styled={false}
+                                            className="text-emerald-600"
+                                            icon={<Trash2 className="size-4" />}
+                                            type="button"
+                                            onClick={() => setIsRemovingVariant(variant.id)}
+                                        />
+                                    </>
+                                )}
                             </div>
                         </td>
                     </tr>
                 ))}
             </Table>
 
-            <div className="w-full flex justify-center mt-2">
-                <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsAddingVariant(true)}>
-                    Tambah
-                </PrimaryButton>
-            </div>
+            {!isHeadCashier && (
+                <div className="w-full flex justify-center mt-2">
+                    <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsAddingVariant(true)}>
+                        Tambah
+                    </PrimaryButton>
+                </div>
+            )}
 
             <SectionTitle>Harga Spesial Pembelian dengan Jumlah Tertentu</SectionTitle>
 
             <Table
                 isEmpty={product.discounts.length === 0} disableHeight={true}
-                headers={['Min. Pembelian', 'Normal', 'Langganan', 'Aksi']}
+                headers={isHeadCashier ? ['Min. Pembelian', 'Normal', 'Langganan'] : ['Min. Pembelian', 'Normal', 'Langganan', 'Aksi']}
             >
                 {[...product.discounts].sort((a, b) => a.min_qty - b.min_qty).map((discount, index) => (
                     <tr key={index} className="hover:bg-slate-200">
                         <td>{discount.min_qty}</td>
                         <td>{formatPrice(discount.normal_price)}</td>
                         <td>{formatPrice(discount.customer_price)}</td>
-                        <td>
-                            <div className="flex gap-2 items-center">
-                                <PrimaryButton
-                                    styled={false}
-                                    className="text-emerald-600"
-                                    icon={<Pencil className="size-4" />}
-                                    type="button"
-                                    onClick={() => setIsEditingDiscount(discount.id)}
-                                />
-                                <PrimaryButton
-                                    styled={false}
-                                    className="text-emerald-600"
-                                    icon={<Trash2 className="size-4" />}
-                                    type="button"
-                                    onClick={() => setIsRemovingDiscount(discount.id)}
-                                />
-                            </div>
-                        </td>
+                        {!isHeadCashier && (
+                            <td>
+                                <div className="flex gap-2 items-center">
+                                    <PrimaryButton
+                                        styled={false}
+                                        className="text-emerald-600"
+                                        icon={<Pencil className="size-4" />}
+                                        type="button"
+                                        onClick={() => setIsEditingDiscount(discount.id)}
+                                    />
+                                    <PrimaryButton
+                                        styled={false}
+                                        className="text-emerald-600"
+                                        icon={<Trash2 className="size-4" />}
+                                        type="button"
+                                        onClick={() => setIsRemovingDiscount(discount.id)}
+                                    />
+                                </div>
+                            </td>
+                        )}
                     </tr>
                 ))}
             </Table>
 
-            <div className="w-full flex justify-center mt-2">
-                <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsAddingDiscount(true)}>
-                    Tambah
-                </PrimaryButton>
-            </div>
+            {!isHeadCashier && (
+                <div className="w-full flex justify-center mt-2">
+                    <PrimaryButton icon={<Plus className="size-4" />} type="button" onClick={() => setIsAddingDiscount(true)}>
+                        Tambah
+                    </PrimaryButton>
+                </div>
+            )}
 
             {isAddingDiscount && (
                 <AddEditDiscount
@@ -244,6 +256,7 @@ export default function Show({ isOpen, onClose, product }) {
                     onClose={() => setIsAddingStockVariant(null)}
                     variant={isAddingStockVariant}
                     product={product}
+                    isHeadCashier={isHeadCashier}
                 />
             )}
 
@@ -253,6 +266,7 @@ export default function Show({ isOpen, onClose, product }) {
                     onClose={() => setIsReducingStockVariant(null)}
                     variant={isReducingStockVariant}
                     product={product}
+                    isHeadCashier={isHeadCashier}
                 />
             )}
 

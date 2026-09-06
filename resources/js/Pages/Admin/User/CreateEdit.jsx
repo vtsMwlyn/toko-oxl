@@ -7,7 +7,12 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
-const ROLES = ['Admin', 'User'];
+
+const ROLES = [
+    {label: 'Admin', value: 'Admin'}, 
+    {label: 'Kepala Kasir', value: 'HeadCashier'}, 
+    {label: 'Kasir', value: 'User'}
+];
 
 export default function CreateEdit({ mode, isOpen, onClose, user }) {
     const [loading, setLoading] = useState(false);
@@ -88,7 +93,7 @@ export default function CreateEdit({ mode, isOpen, onClose, user }) {
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                         >
                             {ROLES.map(role => (
-                                <option key={role} value={role}>{role}</option>
+                                <option key={role.value} value={role.value}>{role.label}</option>
                             ))}
                         </select>
                         <InputError message={errors.role} className="mt-2" />
