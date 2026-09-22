@@ -16,11 +16,11 @@ class IsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(Auth::user()->role == 'Admin'){
+        // Allow HeadCashier to delete sales for now
+        if (Auth::user()->role == 'Admin' || (Auth::user()->role == 'HeadCashier' && $request->routeIs('admin.sale.destroy*'))) {
             return $next($request);
         }
-        else {
-            abort(403);
-        }
+
+        abort(403);
     }
 }

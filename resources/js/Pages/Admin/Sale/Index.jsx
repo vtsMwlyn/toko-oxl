@@ -169,18 +169,18 @@ function DateSalesModal({
                                                 onClick={() => onView(sale)}
                                             />
                                             {auth.user.role === 'Admin' && (
-                                                <>
-                                                    <PrimaryButton
-                                                        styled={false} className="text-emerald-600"
-                                                        icon={<Pencil className="size-4" />} type="button"
-                                                        onClick={() => onEdit(sale)}
-                                                    />
-                                                    <PrimaryButton
-                                                        styled={false} className="text-emerald-600"
-                                                        icon={<Trash2 className="size-4" />} type="button"
-                                                        onClick={() => onDelete(sale)}
-                                                    />
-                                                </>
+                                                <PrimaryButton
+                                                    styled={false} className="text-emerald-600"
+                                                    icon={<Pencil className="size-4" />} type="button"
+                                                    onClick={() => onEdit(sale)}
+                                                />
+                                            )}
+                                            {(auth.user.role === 'Admin' || auth.user.role === 'HeadCashier') && (
+                                                <PrimaryButton
+                                                    styled={false} className="text-emerald-600"
+                                                    icon={<Trash2 className="size-4" />} type="button"
+                                                    onClick={() => onDelete(sale)}
+                                                />
                                             )}
                                         </div>
                                     </td>
@@ -580,12 +580,14 @@ export default function Index({ today_sales: initialToday_sales, history_sales: 
                                         icon={<Eye className="size-4" />} type="button"
                                         onClick={() => setIsViewing(sale.id)}
                                     />
-                                    <PrimaryButton
-                                        styled={false} className="text-emerald-600"
-                                        icon={<Pencil className="size-4" />} type="button"
-                                        onClick={() => setIsEditing(sale)}
-                                    />
                                     {auth.user.role === 'Admin' && (
+                                        <PrimaryButton
+                                            styled={false} className="text-emerald-600"
+                                            icon={<Pencil className="size-4" />} type="button"
+                                            onClick={() => setIsEditing(sale)}
+                                        />
+                                    )}
+                                    {(auth.user.role === 'Admin' || auth.user.role === 'HeadCashier') && (
                                         <PrimaryButton
                                             styled={false} className="text-emerald-600"
                                             icon={<Trash2 className="size-4" />} type="button"
