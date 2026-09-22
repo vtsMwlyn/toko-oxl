@@ -85,16 +85,7 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
             if (!priceTouched) setPrice('');
             return;
         }
-        if (priceTouched) {
-            // HeadCashier: auto-clamp if price goes out of allowed range
-            if (canEditPrice && priceRange) {
-                const clamped = Math.max(priceRange.min, Math.min(priceRange.max, Number(price)));
-                if (clamped !== Number(price)) {
-                    setPrice(clamped);
-                }
-            }
-            return;
-        }
+        if (priceTouched) return;
         const auto = resolvePrice(matched, discountTier, customerName) ?? '';
         // HeadCashier: clamp auto price to allowed range
         if (canEditPrice && priceRange && auto !== '') {
@@ -144,7 +135,15 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
                 newErrors.qty = `Stok tidak cukup. Tersedia: ${available}${hint}`;
             }
         }
-        if (!price || Number(price) < 0) newErrors.price = 'Harga tidak valid.';
+        if (!price || Number(price) < 0) {
+            newErrors.price = 'Harga tidak valid.';
+        } else if (canEditPrice && priceRange && !priceUnrestricted) {
+            if (Number(price) < priceRange.min) {
+                newErrors.price = `Minimal harga: ${formatPrice(priceRange.min)}`;
+            } else if (Number(price) > priceRange.max) {
+                newErrors.price = `Maksimal harga: ${formatPrice(priceRange.max)}`;
+            }
+        }
         if (discount !== '' && Number(discount) < 0) newErrors.discount = 'Diskon tidak boleh negatif.';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;

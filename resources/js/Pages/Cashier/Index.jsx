@@ -114,19 +114,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
     const discountTier = resolveDiscount(matched?.product?.discounts, effectiveQty);
 
     useEffect(() => {
-        if (field.priceTouched) {
-            // HeadCashier: auto-clamp if price goes out of allowed range (Admin is unrestricted)
-            if (canEditPrice && !priceUnrestricted && matched) {
-                const range = resolveHeadCashierPriceRange(matched);
-                if (range) {
-                    const clamped = Math.max(range.min, Math.min(range.max, Number(field.price)));
-                    if (clamped !== Number(field.price)) {
-                        setField(f => ({ ...f, price: clamped }));
-                    }
-                }
-            }
-            return;
-        }
+        if (field.priceTouched) return;
         const auto = resolveAutoPrice(matched, discountTier, customerName);
         // HeadCashier: also clamp the auto price to the allowed range (Admin is unrestricted)
         if (canEditPrice && !priceUnrestricted && matched) {
@@ -208,7 +196,14 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
                 newErrors.qty = `Stok tidak cukup. Tersedia: ${available}${hint}`;
             }
         }
-        if (field.price === '' || Number(field.price) < 0) newErrors.price = 'Harga tidak valid.';
+        const priceRange = canEditPrice && !priceUnrestricted && matched ? resolveHeadCashierPriceRange(matched) : null;
+        if (field.price === '' || Number(field.price) < 0) {
+            newErrors.price = 'Harga tidak valid.';
+        } else if (priceRange && Number(field.price) < priceRange.min) {
+            newErrors.price = `Minimal harga: ${formatPrice(priceRange.min)}`;
+        } else if (priceRange && Number(field.price) > priceRange.max) {
+            newErrors.price = `Maksimal harga: ${formatPrice(priceRange.max)}`;
+        }
         setErrors(newErrors);
         if (Object.keys(newErrors).length) return;
 
