@@ -28,24 +28,21 @@ function resolvePrice(variant, discountTier, customerName) {
 
 /**
  * Compute the allowed price range for HeadCashier.
- * MIN: customer_price from the special-price tier with min_qty === 20,
- *      or the smallest available tier's customer_price if 20 doesn't exist,
- *      or the base product customer_price when no tiers exist.
+ * MIN: the cheapest customer_price across all special-price tiers,
+ *      or the product's base customer_price when no tiers exist.
  * MAX: the product's base normal_price.
  */
 function resolveHeadCashierPriceRange(variant) {
     if (!variant) return null;
-    const tiers = [...(variant.product?.discounts ?? [])].sort((a, b) => a.min_qty - b.min_qty);
-    const tier20     = tiers.find(d => d.min_qty === 20);
-    const lowestTier = tiers[0];
-    const minPrice   = tier20
-        ? tier20.customer_price
-        : (lowestTier ? lowestTier.customer_price : variant.product.customer_price);
-    const maxPrice   = variant.product.normal_price;
+    const tiers = variant.product?.discounts ?? [];
+    const minPrice = tiers.length
+        ? Math.min(...tiers.map(d => d.customer_price))
+        : variant.product.customer_price;
+    const maxPrice = variant.product.normal_price;
     return { min: minPrice, max: maxPrice };
 }
 
-export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, products, customerName, existingItems = [], canEditPrice = false }) {
+export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, products, customerName, existingItems = [], canEditPrice = false, priceUnrestricted = false }) {
     const [errors, setErrors] = useState({});
 
     const variantOptions = products.flatMap(product =>
@@ -81,7 +78,7 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
 
     const discountTier = resolveDiscount(matched?.product?.discounts, effectiveQty);
 
-    const priceRange = canEditPrice && matched ? resolveHeadCashierPriceRange(matched) : null;
+    const priceRange = canEditPrice && !priceUnrestricted && matched ? resolveHeadCashierPriceRange(matched) : null;
 
     useEffect(() => {
         if (!matched) {
@@ -175,6 +172,9 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
         if (!matched) return null;
         if (canEditPrice && priceRange) {
             return `Kisaran harga: ${formatPrice(priceRange.min)} – ${formatPrice(priceRange.max)}`;
+        }
+        if (canEditPrice && priceUnrestricted) {
+            return null; // Admin: no hint needed, full freedom
         }
         if (priceTouched) return null;
         const isCustomer = !!customerName?.trim();

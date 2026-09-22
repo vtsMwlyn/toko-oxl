@@ -55,7 +55,8 @@ function recalcItemPrices(items, products, customerName) {
 export default function CreateEdit({ mode, isOpen, onClose, sale, products, customers }) {
     const { auth } = usePage().props;
     const isCashier          = auth?.user?.role !== 'Admin';
-    const canEditPrice        = auth?.user?.role === 'HeadCashier';
+    const canEditPrice        = auth?.user?.role === 'HeadCashier' || auth?.user?.role === 'Admin';
+    const priceUnrestricted   = auth?.user?.role === 'Admin';
     const lockDateTimeFields = mode === 'Edit' && isCashier;
     const lockHeaderFields   = mode === 'Edit' && sale?.status === 'Fixed' && isCashier;
 
@@ -353,6 +354,7 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
                     existingItems={itemPopup.type === 'Sell' ? soldItems : returnItems}
                     onClose={() => setItemPopup(null)}
                     canEditPrice={canEditPrice}
+                    priceUnrestricted={priceUnrestricted}
                     onSave={(item) => {
                         handleItemSave(itemPopup.type, item);
                         setItemPopup(null);
