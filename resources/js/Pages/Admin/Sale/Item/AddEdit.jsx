@@ -62,7 +62,7 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
     const [price,          setPrice]          = useState(item?.price    ?? '');
     const [discount,       setDiscount]       = useState(item?.discount ?? '');
 
-    const [priceTouched, setPriceTouched] = useState(false);
+    const [priceTouched, setPriceTouched] = useState(item?.price_edited ?? false);
 
     const matched = selectedOption?.variant ?? null;
 
@@ -160,6 +160,7 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
             price:      Number(price),
             discount:   Number(discount) || 0,
             qty:        Number(qty),
+            price_edited: priceTouched,
         });
     }
 

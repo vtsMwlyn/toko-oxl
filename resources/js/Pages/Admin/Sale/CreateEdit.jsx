@@ -39,6 +39,7 @@ function recalcItemPrices(items, products, customerName) {
     });
 
     return items.map(item => {
+        if (item.price_edited) return item;
         const product = variantProductMap[item.variant_id];
         if (!product) return item;
         const totalQty   = productQtyMap[product.id] || 0;
@@ -64,14 +65,23 @@ export default function CreateEdit({ mode, isOpen, onClose, sale, products, cust
     const [becameFixed, setBecameFixed] = useState(false);
     const [hasPrinted,  setHasPrinted]  = useState(false);
 
-    const [soldItems, setSoldItems] = useState(() =>
-        (sale?.items?.filter(i => i.type === 'Sell') ?? [])
-            .map(i => ({ ...i, _localId: i._localId ?? i.id }))
-    );
-    const [returnItems, setReturnItems] = useState(() =>
-        (sale?.items?.filter(i => i.type === 'Return') ?? [])
-            .map(i => ({ ...i, _localId: i._localId ?? i.id }))
-    );
+    const [soldItems, setSoldItems] = useState(() => {
+        const initial = (sale?.items?.filter(i => i.type === 'Sell') ?? []).map(i => ({ ...i, _localId: i._localId ?? i.id }));
+        const autoPriced = recalcItemPrices(initial, products, sale?.customer_name);
+        return initial.map((item, index) => ({
+            ...item,
+            price_edited: item.price !== autoPriced[index].price
+        }));
+    });
+
+    const [returnItems, setReturnItems] = useState(() => {
+        const initial = (sale?.items?.filter(i => i.type === 'Return') ?? []).map(i => ({ ...i, _localId: i._localId ?? i.id }));
+        const autoPriced = recalcItemPrices(initial, products, sale?.customer_name);
+        return initial.map((item, index) => ({
+            ...item,
+            price_edited: item.price !== autoPriced[index].price
+        }));
+    });
 
     const [itemPopup, setItemPopup] = useState(null);
     // shape: { type: 'Sell'|'Return', mode: 'Create'|'Edit'|'Remove', item?: object }

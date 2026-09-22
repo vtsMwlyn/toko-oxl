@@ -61,6 +61,7 @@ function recalcItemPrices(items, products, customerName) {
     });
 
     return items.map(item => {
+        if (item.price_edited) return item;
         const product = variantProductMap[item.variant_id];
         if (!product) return item;
         const totalQty  = productQtyMap[product.id] || 0;
@@ -217,6 +218,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
             price:      Number(field.price),
             discount:   Number(field.discount) || 0,
             qty:        Number(field.qty),
+            price_edited: field.priceTouched,
         });
 
         setField(blankItem());
