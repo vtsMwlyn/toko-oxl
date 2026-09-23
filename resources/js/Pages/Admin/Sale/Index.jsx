@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage, router } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Eye, ClipboardCheck, CalendarX } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, ClipboardCheck, CalendarX, Undo2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
@@ -168,7 +168,7 @@ function DateSalesModal({
                                                 icon={<Eye className="size-4" />} type="button"
                                                 onClick={() => onView(sale)}
                                             />
-                                            {auth.user.role === 'Admin' && (
+                                            {(auth.user.role === 'Admin' || auth.user.role === 'HeadCashier') && (
                                                 <PrimaryButton
                                                     styled={false} className="text-emerald-600"
                                                     icon={<Pencil className="size-4" />} type="button"
@@ -569,7 +569,7 @@ export default function Index({ today_sales: initialToday_sales, history_sales: 
                                     {sale.status === 'Fixed' && auth.user.role === 'HeadCashier' && (
                                         <PrimaryButton
                                             styled={false} className="text-amber-500"
-                                            icon={<ClipboardCheck className="size-4 rotate-180" />} type="button"
+                                            icon={<Undo2 className="size-4" />} type="button"
                                             title="Kembalikan ke Draft"
                                             onClick={() => setIsRevertingDraft(sale)}
                                         />
@@ -580,7 +580,7 @@ export default function Index({ today_sales: initialToday_sales, history_sales: 
                                         icon={<Eye className="size-4" />} type="button"
                                         onClick={() => setIsViewing(sale.id)}
                                     />
-                                    {auth.user.role === 'Admin' && (
+                                    {(auth.user.role === 'Admin' || auth.user.role === 'HeadCashier') && (
                                         <PrimaryButton
                                             styled={false} className="text-emerald-600"
                                             icon={<Pencil className="size-4" />} type="button"
