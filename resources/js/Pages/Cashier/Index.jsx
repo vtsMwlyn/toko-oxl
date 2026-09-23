@@ -78,7 +78,7 @@ function blankItem() {
     return { selectedOption: null, qty: 1, price: 0, discount: 0, priceTouched: false };
 }
 
-function ItemInputRow({ label, type, products, customerName, onAdd, existingItems = [], canEditPrice = false, priceUnrestricted = false }) {
+function ItemInputRow({ label, type, products, customerName, onAdd, existingItems = [], canEditPrice = false }) {
     const [field,      setField]      = useState(blankItem());
     const [errors,     setErrors]     = useState({});
     const [barcodeVal, setBarcodeVal] = useState('');
@@ -116,8 +116,8 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
     useEffect(() => {
         if (field.priceTouched) return;
         const auto = resolveAutoPrice(matched, discountTier, customerName);
-        // HeadCashier: also clamp the auto price to the allowed range (Admin is unrestricted)
-        if (canEditPrice && !priceUnrestricted && matched) {
+        // HeadCashier and Admin: also clamp the auto price to the allowed range
+        if (canEditPrice && matched) {
             const range = resolveHeadCashierPriceRange(matched);
             if (range && auto !== '') {
                 const clamped = Math.max(range.min, Math.min(range.max, Number(auto)));
@@ -128,7 +128,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
         setField(f => ({ ...f, price: auto ?? '' }));
     }, [matched, field.qty, customerName, field.priceTouched, existingItems]);
 
-    const priceRange = canEditPrice && !priceUnrestricted && matched ? resolveHeadCashierPriceRange(matched) : null;
+    const priceRange = canEditPrice && matched ? resolveHeadCashierPriceRange(matched) : null;
 
     const priceHint = (() => {
         if (!matched) return null;
@@ -196,7 +196,7 @@ function ItemInputRow({ label, type, products, customerName, onAdd, existingItem
                 newErrors.qty = `Stok tidak cukup. Tersedia: ${available}${hint}`;
             }
         }
-        const priceRange = canEditPrice && !priceUnrestricted && matched ? resolveHeadCashierPriceRange(matched) : null;
+        const priceRange = canEditPrice && matched ? resolveHeadCashierPriceRange(matched) : null;
         if (field.price === '' || Number(field.price) < 0) {
             newErrors.price = 'Harga tidak valid.';
         } else if (priceRange && Number(field.price) < priceRange.min) {
@@ -373,7 +373,6 @@ function ItemTable({ items, products, onRemove }) {
 
 export default function Index({ products: initialProducts, customers: initialCustomers, auth }) {
     const canEditPrice = auth?.user?.role === 'HeadCashier' || auth?.user?.role === 'Admin';
-    const priceUnrestricted = auth?.user?.role === 'Admin';
     const [products, setProducts] = useState(initialProducts);
     const [customers, setCustomers] = useState(initialCustomers);
 
@@ -572,7 +571,6 @@ export default function Index({ products: initialProducts, customers: initialCus
                             existingItems={soldItems}
                             onAdd={item => addItem('Sell', item)}
                             canEditPrice={canEditPrice}
-                            priceUnrestricted={priceUnrestricted}
                         />
                         {soldItems.length > 0 && (
                             <div className="mt-4">
@@ -614,7 +612,6 @@ export default function Index({ products: initialProducts, customers: initialCus
                                     existingItems={returnItems}
                                     onAdd={item => addItem('Return', item)}
                                     canEditPrice={canEditPrice}
-                                    priceUnrestricted={priceUnrestricted}
                                 />
                                 {returnItems.length > 0 && (
                                     <div className="mt-4">

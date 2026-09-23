@@ -42,7 +42,7 @@ function resolveHeadCashierPriceRange(variant) {
     return { min: minPrice, max: maxPrice };
 }
 
-export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, products, customerName, existingItems = [], canEditPrice = false, priceUnrestricted = false }) {
+export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, products, customerName, existingItems = [], canEditPrice = false }) {
     const [errors, setErrors] = useState({});
 
     const variantOptions = products.flatMap(product =>
@@ -78,7 +78,7 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
 
     const discountTier = resolveDiscount(matched?.product?.discounts, effectiveQty);
 
-    const priceRange = canEditPrice && !priceUnrestricted && matched ? resolveHeadCashierPriceRange(matched) : null;
+    const priceRange = canEditPrice && matched ? resolveHeadCashierPriceRange(matched) : null;
 
     useEffect(() => {
         if (!matched) {
@@ -137,7 +137,7 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
         }
         if (!price || Number(price) < 0) {
             newErrors.price = 'Harga tidak valid.';
-        } else if (canEditPrice && priceRange && !priceUnrestricted) {
+        } else if (canEditPrice && priceRange) {
             if (Number(price) < priceRange.min) {
                 newErrors.price = `Minimal harga: ${formatPrice(priceRange.min)}`;
             } else if (Number(price) > priceRange.max) {
@@ -172,9 +172,6 @@ export default function AddEdit({ mode, type, isOpen, onClose, onSave, item, pro
         if (!matched) return null;
         if (canEditPrice && priceRange) {
             return `Kisaran harga: ${formatPrice(priceRange.min)} – ${formatPrice(priceRange.max)}`;
-        }
-        if (canEditPrice && priceUnrestricted) {
-            return null; // Admin: no hint needed, full freedom
         }
         if (priceTouched) return null;
         const isCustomer = !!customerName?.trim();
