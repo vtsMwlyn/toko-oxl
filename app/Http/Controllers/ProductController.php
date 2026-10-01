@@ -167,6 +167,7 @@ class ProductController extends Controller
             'stock'               => 'required|numeric|min:0',
             'image'               => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'low_stock_warning'   => 'required|numeric|min:0',
+            'remove_image'        => 'nullable|boolean',
         ]);
 
         if ($request->hasFile('image')) {
@@ -174,7 +175,16 @@ class ProductController extends Controller
                 Storage::disk('public')->delete($variant->image);
             }
             $validatedData['image'] = $request->file('image')->store('products', 'public');
+        } elseif ($request->boolean('remove_image')) {
+            if ($variant->image) {
+                Storage::disk('public')->delete($variant->image);
+            }
+            $validatedData['image'] = null;
+        } else {
+            unset($validatedData['image']);
         }
+        
+        unset($validatedData['remove_image']);
 
         $changes = ModelChangeLogger::getChanges($variant, $validatedData, [
             'special' => [

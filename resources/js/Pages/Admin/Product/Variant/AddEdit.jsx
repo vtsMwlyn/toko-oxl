@@ -22,17 +22,18 @@ export default function AddEdit({ mode, isOpen, onClose, product, variant }) {
         stock: variant?.stock || 0,
         low_stock_warning: variant?.low_stock_warning || 0,
         image: null,
+        remove_image: false,
     });
 
     function handleImageChange(e) {
         const file = e.target.files[0];
         if (!file) return;
-        setData('image', file);
+        setData(data => ({ ...data, image: file, remove_image: false }));
         setPreview(URL.createObjectURL(file));
     }
 
     function clearImage() {
-        setData('image', null);
+        setData(data => ({ ...data, image: null, remove_image: true }));
         setPreview(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -47,6 +48,7 @@ export default function AddEdit({ mode, isOpen, onClose, product, variant }) {
         payload.append('stock', data.stock);
         payload.append('low_stock_warning', data.low_stock_warning);
         if (data.image) payload.append('image', data.image);
+        if (data.remove_image) payload.append('remove_image', 1);
 
         const afterSubmission = {
             onSuccess: () => {
