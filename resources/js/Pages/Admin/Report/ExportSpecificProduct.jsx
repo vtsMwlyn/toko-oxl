@@ -6,7 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 
 export default function ExportSpecificProduct({ isOpen, onClose, products, from, to }) {
-    const [mode,     setMode]    = useState('variant'); // 'variant' | 'product'
+    const [mode,     setMode]     = useState('variant'); // 'variant' | 'product'
     const [selected, setSelected] = useState(null);
     const [percent,  setPercent]  = useState(100);
 
@@ -50,13 +50,22 @@ export default function ExportSpecificProduct({ isOpen, onClose, products, from,
         ),
     [products]);
 
-    const productOptions = useMemo(() =>
-        products.map(product => ({
-            value:   product.id,
-            label:   product.name,
-            product,
-        })),
-    [products]);
+    const productOptions = useMemo(() => {
+        const seenNames = new Set();
+        return products
+            .filter(product => {
+                if (!product.variants || product.variants.length === 0) return false;
+                const key = product.name.trim().toLowerCase();
+                if (seenNames.has(key)) return false;
+                seenNames.add(key);
+                return true;
+            })
+            .map(product => ({
+                value:   product.id,
+                label:   product.name,
+                product,
+            }));
+    }, [products]);
 
     const options     = mode === 'variant' ? variantOptions : productOptions;
     const placeholder = mode === 'variant'

@@ -127,6 +127,11 @@ export default function Index({ from, to, search: initialSearch, omzet_per_day: 
 
     const [dateFrom, setDateFrom] = useState(from);
     const [dateTo,   setDateTo]   = useState(to);
+
+    useEffect(() => {
+        setDateFrom(from);
+        setDateTo(to);
+    }, [from, to]);
     const [search,   setSearch]   = useState(initialSearch ?? '');
     const isFirstRender  = useRef(true);
     const searchPending  = useRef(false);

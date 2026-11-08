@@ -40,7 +40,8 @@ class SaleBySpecificProductExport implements
 
     public function collection()
     {
-        $variantIds = $this->product->variants->pluck('id');
+        $productIds = Product::where('name', $this->product->name)->pluck('id');
+        $variantIds = \App\Models\Variant::whereIn('product_id', $productIds)->pluck('id');
 
         return SaleItem::with(['sale', 'variant'])
             ->whereIn('variant_id', $variantIds)
